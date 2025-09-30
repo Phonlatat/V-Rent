@@ -149,14 +149,23 @@ export async function GET(req) {
     roles.some((r) => /^(Administrator|System Manager)$/i.test(String(r)));
 
   if (!fullName && email) fullName = email.split("@")[0];
-
+  const res = await fetch(
+    `${ERP_BASE}/api/method/erpnext.api.get_user_information`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ user_id: userId }),
+    }
+  );
+  const text = await res.json();
   return NextResponse.json({
     ok: true,
     user: {
       email: email || "",
       fullName: fullName || "",
       phone: phone || "",
-      isAdmin,
+      isAdmin: text.message[5],
     },
     raw: { userId, roles, tried },
   });

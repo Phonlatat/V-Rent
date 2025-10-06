@@ -79,9 +79,13 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <title>MainPage - V-Rent</title>
       <HeaderBar />
-      <main className="flex-grow bg-white">
-        <div className="min-h-screen bg-gray-100 p-6">
-          <div className="max-w-6xl mx-auto">
+      <main
+        className="flex-grow bg-white overflow-x-hidden
+                   pt-[max(1rem,env(safe-area-inset-top))]
+                   pb-[max(1rem,env(safe-area-inset-bottom))]"
+      >
+        <div className="min-h-screen bg-gray-100 px-4 sm:px-6">
+          <div className="mx-auto max-w-full">
             <BookingBox onSearch={handleSearch} />
           </div>
         </div>

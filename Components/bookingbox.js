@@ -306,7 +306,7 @@ export default function BookingBox({ onSearch }) {
                   ))}
                 </select>
               </div>
-
+              {/* Test text */}
               {/* Promo */}
               {/* <div className="md:col-span-6 min-w-0">
               <label className="block text-sm font-medium mb-1">

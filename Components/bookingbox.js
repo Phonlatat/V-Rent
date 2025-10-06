@@ -236,6 +236,7 @@ export default function BookingBox({ onSearch }) {
                 <label className="block text-sm font-medium mb-1">
                   เวลารับรถ *
                 </label>
+                {/* เวลารับรถ (24 ชม. บังคับ en-GB) */}
                 <input
                   type="time"
                   name="pickupTime"
@@ -244,9 +245,8 @@ export default function BookingBox({ onSearch }) {
                   step="60"
                   min="01:00"
                   max="23:59"
-                  lang="en-GB" /* บังคับ UI เป็น 24 ชม. ใน iOS */
+                  lang="en-GB"
                   inputMode="numeric"
-                  pattern="[0-9]{2}:[0-9]{2}"
                   className="w-full max-w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 text-[16px]"
                   required
                 />
@@ -257,16 +257,13 @@ export default function BookingBox({ onSearch }) {
                 <label className="block text-sm font-medium mb-1">
                   วันที่คืนรถ *
                 </label>
+                {/* วันที่คืนรถ — เอา props ของ time ออก ให้เหลือของ date เท่าที่จำเป็น */}
                 <input
                   type="date"
                   name="returnDate"
                   value={form.returnDate}
-                  min="01:00"
-                  max="23:59"
-                  lang="en-GB"
-                  inputMode="numeric"
-                  pattern="[0-9]{2}:[0-9]{2}"
-                  className="w-full max-w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 text-[16px]"
+                  onChange={handleChange}
+                  className="w-full max-w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2"
                   required
                 />
               </div>
@@ -276,14 +273,18 @@ export default function BookingBox({ onSearch }) {
                 <label className="block text-sm font-medium mb-1">
                   เวลาคืนรถ *
                 </label>
+                {/* เวลาคืนรถ (24 ชม. เหมือนกัน) */}
                 <input
                   type="time"
                   name="returnTime"
                   value={form.returnTime}
                   onChange={handleChange}
                   step="60"
-                  lang="th-TH"
-                  className="w-full max-w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2"
+                  min="01:00"
+                  max="23:59"
+                  lang="en-GB" // ✅ เปลี่ยนจาก th-TH → en-GB
+                  inputMode="numeric"
+                  className="w-full max-w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 text-[16px]"
                   required
                 />
               </div>

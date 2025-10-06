@@ -241,6 +241,7 @@ export default function BookingBox({ onSearch }) {
                   type="time"
                   name="pickupTime"
                   value={form.pickupTime}
+                  defaultValue="01:00" // 👈 เพิ่มตรงนี้
                   onChange={handleChange}
                   step="60"
                   min="01:00"
@@ -278,6 +279,7 @@ export default function BookingBox({ onSearch }) {
                   type="time"
                   name="returnTime"
                   value={form.returnTime}
+                  defaultValue="23:59" // 👈 เพิ่มตรงน
                   onChange={handleChange}
                   step="60"
                   min="01:00"

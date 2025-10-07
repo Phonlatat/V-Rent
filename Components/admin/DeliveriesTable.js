@@ -176,6 +176,13 @@ export default function DeliveriesTable() {
               rec?.proof_car ||
               rec?.car_proofs
           );
+          const slipImages = toArray(
+            rec?.slip_images ||
+              rec?.images_slip ||
+              rec?.payment_slip ||
+              rec?.slip_proofs ||
+              rec?.slips
+          );
 
           return {
             // คีย์ภายใน
@@ -212,6 +219,10 @@ export default function DeliveriesTable() {
               typeof rec?.car_proofs_count === "number"
                 ? rec.car_proofs_count
                 : carImages.length,
+            slipImgCount:
+              typeof rec?.slip_proofs_count === "number"
+                ? rec.slip_proofs_count
+                : slipImages.length,
 
             // Modal
             idDocType:
@@ -224,6 +235,7 @@ export default function DeliveriesTable() {
             odometer,
             idImages,
             carImages,
+            slipImages,
           };
         });
 
@@ -456,9 +468,11 @@ export default function DeliveriesTable() {
                     </td>
                     <td className="py-3 pr-4 whitespace-nowrap">
                       <div className="font-medium">
-                        ID: {d.idImgCount} / CAR: {d.carImgCount}
+                        ID: {d.idImgCount} / CAR: {d.carImgCount} / SLIP:{" "}
+                        {d.slipImgCount ?? 0}
                       </div>
                     </td>
+
                     <td className="py-3 pr-2">
                       <div className="flex items-center gap-2">
                         <button
@@ -594,9 +608,9 @@ export default function DeliveriesTable() {
               </div>
 
               {/* รูปหลักฐาน */}
-              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* ID Proofs */}
-                <div className="bg-white rounded-xl border border-gray-200">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                   <div className="px-4 py-2 border-b border-gray-200 text-sm font-semibold text-black">
                     รูปเอกสารยืนยัน (ID Proofs)
                   </div>
@@ -608,6 +622,7 @@ export default function DeliveriesTable() {
                     )}
                     {(selected.idImages || []).map((u, i) => {
                       const src = normalizeImage(u);
+                      if (!src) return null;
                       return (
                         <a
                           key={i}
@@ -621,6 +636,7 @@ export default function DeliveriesTable() {
                             src={src}
                             alt={`id-${i + 1}`}
                             className="w-full h-36 object-cover bg-gray-100"
+                            loading="lazy"
                           />
                         </a>
                       );
@@ -629,7 +645,7 @@ export default function DeliveriesTable() {
                 </div>
 
                 {/* Car Proofs */}
-                <div className="bg-white rounded-xl border border-gray-200">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                   <div className="px-4 py-2 border-b border-gray-200 text-sm font-semibold text-black">
                     รูปสภาพรถ (Car Proofs)
                   </div>
@@ -641,6 +657,7 @@ export default function DeliveriesTable() {
                     )}
                     {(selected.carImages || []).map((u, i) => {
                       const src = normalizeImage(u);
+                      if (!src) return null;
                       return (
                         <a
                           key={i}
@@ -654,6 +671,42 @@ export default function DeliveriesTable() {
                             src={src}
                             alt={`car-${i + 1}`}
                             className="w-full h-36 object-cover bg-gray-100"
+                            loading="lazy"
+                          />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Slip Proofs */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                  <div className="px-4 py-2 border-b border-gray-200 text-sm font-semibold text-black">
+                    สลิปโอนยอดเต็ม (Slip Proofs)
+                  </div>
+                  <div className="p-4 grid grid-cols-2 gap-3">
+                    {(selected.slipImages || []).length === 0 && (
+                      <div className="col-span-2 text-sm text-gray-500">
+                        ไม่มีรูป
+                      </div>
+                    )}
+                    {(selected.slipImages || []).map((u, i) => {
+                      const src = normalizeImage(u);
+                      if (!src) return null;
+                      return (
+                        <a
+                          key={i}
+                          href={src}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block rounded-lg border border-gray-200 overflow-hidden hover:shadow"
+                          title="เปิดรูปเต็ม"
+                        >
+                          <img
+                            src={src}
+                            alt={`slip-${i + 1}`}
+                            className="w-full h-36 object-cover bg-gray-100"
+                            loading="lazy"
                           />
                         </a>
                       );

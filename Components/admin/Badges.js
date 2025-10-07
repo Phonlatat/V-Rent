@@ -1,7 +1,5 @@
-// // บรรทัดบนสุดของ Badges.jsx
-// console.log("Badges.jsx loaded v2 - has inrent & booked mapping");
-
 // components/admin/Badges.jsx
+// console.log("Badges.jsx loaded v2 - has inrent & booked mapping");
 import { cls } from "./utils";
 
 /** ----- Dictionary ไทย <-> อังกฤษ (canonical = อังกฤษ) ----- */
@@ -10,7 +8,7 @@ const EN_TH = {
   available: "ว่าง",
   "in rent": "ถูกจอง",
   "in use": "ถูกยืมอยู่",
-  maintenance: "ซ่อมบำรุง", // ⬅️ เปลี่ยนเป็น “ซ่อมบำรุง”
+  maintenance: "ซ่อมบำรุง",
   "pending delivery": "รอส่ง",
   "pickup overdue": "เลยกำหนดรับ",
   "return overdue": "เลยกำหนดส่ง",
@@ -19,8 +17,9 @@ const EN_TH = {
   "waiting pickup": "รอรับ",
   cancelled: "ยกเลิก",
   completed: "เสร็จสิ้น",
-  // Payment status (ตัด pending payment ออก)
+  // Payment status
   paid: "ชำระแล้ว",
+  "partial paid": "มัดจำแล้ว", // ✅ เพิ่ม
 };
 
 const TH_EN = {
@@ -28,8 +27,8 @@ const TH_EN = {
   ว่าง: "available",
   ถูกยืมอยู่: "in use",
   ถูกจอง: "in rent",
-  ซ่อมบำรุง: "maintenance", // ⬅️ รองรับคำใหม่
-  ซ่อมแซม: "maintenance", // ⬅️ คงคำเก่าไว้เพื่อความเข้ากันได้
+  ซ่อมบำรุง: "maintenance",
+  ซ่อมแซม: "maintenance",
   รอส่ง: "pending delivery",
   เลยกำหนดรับ: "pickup overdue",
   เลยกำหนดส่ง: "return overdue",
@@ -42,7 +41,7 @@ const TH_EN = {
   เสร็จสิ้น: "completed",
   // Payment
   ชำระแล้ว: "paid",
-  // ❌ ไม่มี "รอชำระ"
+  มัดจำแล้ว: "partial paid", // ✅ เพิ่ม
 };
 
 const lc = (s = "") => String(s).trim().toLowerCase().replace(/\s+/g, " ");
@@ -53,14 +52,24 @@ function canonical(raw = "") {
   if (TH_EN[x]) return TH_EN[x];
 
   // Car status EN variants
-  if (x === "in rent" || x === "inrent") return "in rent"; // ⬅️ รองรับทั้งมี/ไม่มีช่องว่าง
+  if (x === "in rent" || x === "inrent") return "in rent";
   if (x === "rented") return "in use";
-  if (x === "reserved" || x === "booked") return "in rent"; // ⬅️ synonym
+  if (x === "reserved" || x === "booked") return "in rent";
   if (x === "overdue pickup") return "pickup overdue";
   if (x === "overdue return") return "return overdue";
-
-  // เผื่อสะกดผิดบ่อย ๆ
   if (x === "maintainance") return "maintenance";
+
+  // Payment variants/synonyms
+  if (
+    [
+      "partial",
+      "partialpaid",
+      "partially paid",
+      "deposit",
+      "deposit paid",
+    ].includes(x)
+  )
+    return "partial paid"; // ✅ map มัดจำ
 
   // คีย์ที่เราจะ “ตัดออก” ถ้ามาเป็นสถานะนี้
   if (["pending payment", "pending", "unpaid"].includes(x))
@@ -77,7 +86,6 @@ function toThai(v = "") {
 }
 
 function isRemovedStatus(v = "") {
-  // ถ้ามีค่าเหล่านี้ ให้ “ไม่เรนเดอร์ป้าย” เพื่อเอาออกจาก UI
   return canonical(v) === "pending payment";
 }
 
@@ -90,7 +98,7 @@ function colorForStatus(en) {
     case "in use":
       return "bg-red-100 text-red-800";
     case "maintenance":
-      return "bg-amber-100 text-amber-800"; // ⬅️ สีเหลือง (amber)
+      return "bg-amber-100 text-amber-800";
     case "pending delivery":
       return "bg-blue-100 text-blue-800";
     case "pickup overdue":
@@ -123,6 +131,8 @@ function colorForPayment(en) {
   switch (en) {
     case "paid":
       return "bg-emerald-100 text-emerald-800";
+    case "partial paid":
+      return "bg-amber-100 text-amber-800"; // ✅ สีเหลือง = มัดจำแล้ว
     case "completed":
       return "bg-sky-100 text-sky-800";
     case "cancelled":
@@ -138,7 +148,6 @@ export const StatusBadge = ({ value, display = "th" }) => {
   const en = toEnglish(value);
   const label = display === "en" ? en : toThai(en);
   const color = colorForStatus(en);
-
   return (
     <span
       className={cls(
@@ -157,7 +166,6 @@ export const BookingBadge = ({ value, display = "th" }) => {
   const en = toEnglish(value);
   const label = display === "en" ? en : toThai(en);
   const color = colorForBooking(en);
-
   return (
     <span
       className={cls(
@@ -176,7 +184,6 @@ export const PayBadge = ({ value, display = "th" }) => {
   const en = toEnglish(value);
   const label = display === "en" ? en : toThai(en);
   const color = colorForPayment(en);
-
   return (
     <span
       className={cls(

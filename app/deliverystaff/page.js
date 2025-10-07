@@ -15,8 +15,13 @@ const cardCls = "bg-white rounded-2xl shadow-lg border border-slate-200";
 
 /* ---------- statuses ---------- */
 const STATUS = {
-  pending: { label: "ส่งมอบ", badge: "bg-amber-100 text-amber-800" },
-  done: { label: "เสร็จสิ้น", badge: "bg-emerald-100 text-emerald-800" },
+  "waiting pickup": { label: "รอรับรถ", badge: "bg-amber-100 text-amber-800" },
+  "pickup overdue": {
+    label: "เลยเวลานัดรับ",
+    badge: "bg-rose-100 text-rose-800",
+  },
+  "in use": { label: "กำลังเช่า", badge: "bg-blue-100 text-blue-800" },
+  completed: { label: "เสร็จสิ้น", badge: "bg-emerald-100 text-emerald-800" },
   cancelled: { label: "ยกเลิก", badge: "bg-slate-200 text-slate-700" },
 };
 
@@ -1024,20 +1029,36 @@ function TodayQueue({ queue, onPick }) {
 
   const todayQueue = useMemo(() => {
     const now = new Date();
-    return queue.filter((j) => {
-      if (!j.pickupTime) return false;
-      // วันนี้เท่านั้น
-      if (!sameDate(new Date(j.pickupTime), now)) return false;
-      const s = String(j.uiStatus || "").toLowerCase();
-      // ตัด completed / cancelled / in use ออก
-      if (s === "completed" || s === "cancelled" || s === "in use")
-        return false;
-      // รับเฉพาะ waiting pickup และ pickup overdue
-      const pick = new Date(j.pickupTime);
-      const isOverdue = pick < now;
-      const isWaiting = s === "waiting pickup";
-      return isWaiting || (isWaiting && isOverdue);
-    });
+
+    return queue
+      .filter((j) => {
+        if (!j.pickupTime) return false;
+
+        // เฉพาะงานที่นัด "วันนี้"
+        if (!sameDate(new Date(j.pickupTime), now)) return false;
+
+        const s = String(j.uiStatus || "").toLowerCase();
+
+        // ตัดสถานะที่ไม่เกี่ยว
+        if (s === "completed" || s === "cancelled" || s === "in use")
+          return false;
+
+        // ✅ รับสองสถานะ: waiting pickup และ pickup overdue (ถ้ามีจากต้นทาง)
+        return s === "waiting pickup" || s === "pickup overdue";
+      })
+      .map((j) => {
+        // ถ้างานยังเป็น waiting pickup แต่เวลานัด < ตอนนี้ => ยกระดับเป็น pickup overdue
+        const pick = new Date(j.pickupTime);
+        const overdue = isFinite(pick.getTime()) && pick < new Date();
+
+        if (
+          overdue &&
+          String(j.uiStatus || "").toLowerCase() === "waiting pickup"
+        ) {
+          return { ...j, uiStatus: "pickup overdue" };
+        }
+        return j;
+      });
   }, [queue]);
 
   return (

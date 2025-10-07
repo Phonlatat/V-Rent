@@ -101,6 +101,12 @@ function PayBadge({ value }) {
         ชำระแล้ว
       </span>
     );
+  if (v === "partial paid")
+    return (
+      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+        มัดจำแล้ว
+      </span>
+    );
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
       รอชำระ
@@ -208,7 +214,19 @@ function normalizeRental(rec) {
   const payRaw = String(
     rec?.payment_status || rec?.pay_status || rec?.payment || ""
   ).toLowerCase();
-  const paymentStatus = payRaw.includes("paid") ? "paid" : "";
+  const depositFlag = String(
+    rec?.down_payment || rec?.deposit_status || ""
+  ).toLowerCase();
+  let paymentStatus = "";
+  if (
+    payRaw.includes("partial") ||
+    payRaw.includes("deposit") ||
+    depositFlag.includes("received")
+  ) {
+    paymentStatus = "partial paid"; // ✅ มัดจำแล้ว
+  } else if (payRaw.includes("paid")) {
+    paymentStatus = "paid"; // ชำระแล้ว
+  }
 
   const bookingStatus = String(rec?.status || rec?.booking_status || "")
     .toLowerCase()
@@ -540,7 +558,26 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    setForm(data || {});
+    const d = data || {};
+    // 3.1 คำนวณสถานะการจองปัจจุบันจากเวลา (จะได้ 'pickup overdue' / 'return overdue' มาถูก)
+    const life = getLifecycle(d, new Date());
+
+    // 3.2 ปรับสถานะชำระเงินให้รองรับ partial และ clear เมื่อยกเลิก
+    const payRaw = String(d.paymentStatus || d.pay_status || "").toLowerCase();
+    let normPay =
+      payRaw.includes("partial") || payRaw.includes("deposit")
+        ? "partial paid"
+        : payRaw.includes("paid")
+        ? "paid"
+        : "";
+    if (life === "cancelled") normPay = ""; // ยกเลิก → ไม่แสดงจ่ายแล้ว
+
+    setForm({
+      ...d,
+      bookingStatus: life || "confirmed",
+      paymentStatus: normPay,
+      docType: d.docType || "บัตรประชาชน",
+    });
     setReceiptFile(null);
     setErr("");
   }, [data]);
@@ -586,7 +623,11 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
       );
       fd.append(
         "payment_status",
-        String(form.paymentStatus || "").toLowerCase() === "paid" ? "Paid" : ""
+        String(form.paymentStatus || "").toLowerCase() === "paid"
+          ? "Paid"
+          : String(form.paymentStatus || "").toLowerCase() === "partial paid"
+          ? "Partial Paid"
+          : ""
       );
 
       const res = await fetch(
@@ -773,16 +814,15 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
               onChange={(e) => set("paymentStatus", e.target.value)}
               className={inputCls}
             >
-              <option value="">เสร็จสิ้น</option>
+              <option value="">รอชำระ</option>+{" "}
+              <option value="partial paid">มัดจำแล้ว</option>
               <option value="paid">ชำระแล้ว</option>
             </select>
           </div>
           <div>
             <div className={labelCls}>สถานะการจอง</div>
             <select
-              value={
-                String(form.bookingStatus || "").toLowerCase() || "confirmed"
-              }
+              value={form.bookingStatus || "confirmed"}
               onChange={(e) => set("bookingStatus", e.target.value)}
               className={inputCls}
             >

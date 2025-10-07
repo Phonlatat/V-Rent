@@ -390,10 +390,20 @@ async function apiEditVehicleStatus({ vid, status }) {
   return text;
 }
 
-/* ───────── Detail Modal ───────── */
+/* ───────── Detail Modal (scrollable body + lock background) ───────── */
 function DetailModal({ open, data, onClose }) {
+  const days = data ? computeDays(data.pickupTime, data.returnTime) : 0;
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   if (!open || !data) return null;
-  const days = computeDays(data.pickupTime, data.returnTime);
 
   const Row = ({ label, value, mono }) => (
     <div className="flex gap-2">
@@ -409,131 +419,140 @@ function DetailModal({ open, data, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-start justify-center bg-black/40 p-4">
-      <div className="w-full max-w-3xl rounded-xl bg-white shadow-xl">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-black">
-            รายละเอียดการจอง — {data.bookingCode}
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm hover:bg-gray-300 text-black"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
-            {/* ซ้าย: ลูกค้า/ระบบ */}
-            <div className="space-y-1.5">
-              <Row label="ลูกค้า:" value={data.customerName} />
-              <Row label="โทร:" value={data.customerPhone} />
-              <Row label="เอกสาร:" value={data.docType || "บัตรประชาชน"} />
-              <Row label="ช่องทางจอง:" value={data.channel || "-"} />
-
-              <Row
-                label="ราคา/วัน:"
-                value={`${fmtBaht(data.pricePerDay)} ฿`}
-                mono
-              />
-              <Row label="วันเช่า:" value={`${days} วัน`} mono />
-              <Row label="รวมสุทธิ:" value={`${fmtBaht(data.total)} ฿`} mono />
-            </div>
-
-            {/* ขวา: รถ/เวลา/สถานะ */}
-            <div className="space-y-1.5">
-              <Row label="รถ:" value={data.carName} />
-              <Row label="ทะเบียน:" value={data.carPlate || "-"} />
-              <Row
-                label="รับรถ:"
-                value={`${fmtDateTimeLocal(data.pickupTime)} (${
-                  data.pickupLocation || "-"
-                })`}
-              />
-              <Row
-                label="คืนรถ:"
-                value={`${fmtDateTimeLocal(data.returnTime)} (${
-                  data.returnLocation || "-"
-                })`}
-              />
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="w-24 shrink-0 text-[13px] text-slate-500">
-                  ชำระเงิน:
-                </div>
-                <PayBadge value={data.paymentStatus} />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-24 shrink-0 text-[13px] text-slate-500">
-                  สถานะ:
-                </div>
-                <BookingBadge value={getLifecycle(data)} />
-              </div>
-            </div>
+    <div
+      className="fixed inset-0 z-[1000] bg-black/40 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="min-h-full flex items-start md:items-center justify-center p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-full max-w-3xl rounded-xl bg-white shadow-xl flex flex-col max-h-[calc(100vh-2rem)]">
+          {/* Header (fixed in box) */}
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between flex-none">
+            <h3 className="text font-bold text-black">
+              รายละเอียดการจอง — {data.bookingCode}
+            </h3>
+            <button
+              onClick={onClose}
+              className="rounded-md px-2 py-1 text-sm hover:bg-gray-300 text-black"
+            >
+              ✕
+            </button>
           </div>
 
-          {/* หมายเหตุ */}
-          <div className="mt-4">
-            <div className="text-xs font-semibold text-black mb-1">
-              หมายเหตุจากลูกค้า
+          {/* Body (scrolls) */}
+          <div className="p-5 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
+              <div className="space-y-1.5">
+                <Row label="ลูกค้า:" value={data.customerName} />
+                <Row label="โทร:" value={data.customerPhone} />
+                <Row label="เอกสาร:" value={data.docType || "บัตรประชาชน"} />
+                <Row label="ช่องทางจอง:" value={data.channel || "-"} />
+                <Row
+                  label="ราคา/วัน:"
+                  value={`${fmtBaht(data.pricePerDay)} ฿`}
+                  mono
+                />
+                <Row label="วันเช่า:" value={`${days} วัน`} mono />
+                <Row
+                  label="รวมสุทธิ:"
+                  value={`${fmtBaht(data.total)} ฿`}
+                  mono
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Row label="รถ:" value={data.carName} />
+                <Row label="ทะเบียน:" value={data.carPlate || "-"} />
+                <Row
+                  label="รับรถ:"
+                  value={`${fmtDateTimeLocal(data.pickupTime)} (${
+                    data.pickupLocation || "-"
+                  })`}
+                />
+                <Row
+                  label="คืนรถ:"
+                  value={`${fmtDateTimeLocal(data.returnTime)} (${
+                    data.returnLocation || "-"
+                  })`}
+                />
+                <div className="flex items-center gap-2">
+                  <div className="w-24 shrink-0 text-[13px] text-slate-500">
+                    ชำระเงิน:
+                  </div>
+                  <PayBadge value={data.paymentStatus} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-24 shrink-0 text-[13px] text-slate-500">
+                    สถานะ:
+                  </div>
+                  <BookingBadge value={getLifecycle(data)} />
+                </div>
+              </div>
             </div>
-            <div className="w-full rounded-lg border border-slate-300 bg-gray-50 px-3 py-2 text-sm text-black">
-              {data.note?.trim() ? data.note : "—"}
-            </div>
-          </div>
 
-          {/* สลิปชำระเงิน */}
-          <div className="mt-4">
-            <div className="text-xs font-semibold text-black mb-1">
-              สลิปชำระเงิน
+            {/* หมายเหตุ */}
+            <div className="mt-4">
+              <div className="text-xs font-semibold text-black mb-1">
+                หมายเหตุจากลูกค้า
+              </div>
+              <div className="w-full rounded-lg border border-slate-300 bg-gray-50 px-3 py-2 text-sm text-black">
+                {data.note?.trim() ? data.note : "—"}
+              </div>
             </div>
 
-            {data.receiptUrl ? (
-              <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
-                <a
-                  href={data.receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                  title="เปิดรูปในแท็บใหม่"
-                >
-                  <img
-                    src={data.receiptUrl}
-                    alt="หลักฐานการชำระเงิน"
-                    className="max-h-72 w-auto mx-auto rounded-lg object-contain"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                  />
-                </a>
-                <div className="mt-2 text-center text-xs text-slate-600 break-all">
+            {/* สลิป */}
+            <div className="mt-4">
+              <div className="text-xs font-semibold text-black mb-1">
+                สลิปชำระเงิน
+              </div>
+              {data.receiptUrl ? (
+                <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
                   <a
                     href={data.receiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline"
+                    className="block"
+                    title="เปิดรูปในแท็บใหม่"
                   >
-                    เปิดไฟล์ / ดาวน์โหลด
+                    <img
+                      src={data.receiptUrl}
+                      alt="หลักฐานการชำระเงิน"
+                      className="max-h-72 w-auto mx-auto rounded-lg object-contain"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
                   </a>
+                  <div className="mt-2 text-center text-xs text-slate-600 break-all ">
+                    <a
+                      href={data.receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      เปิดไฟล์ / ดาวน์โหลด
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="grid place-items-center h-44 border-2 border-dashed rounded-xl text-sm text-gray-400 select-none">
-                — ยังไม่มีสลิป —
-              </div>
-            )}
+              ) : (
+                <div className="grid place-items-center h-44 border-2 border-dashed rounded-xl text-sm text-gray-400 select-none">
+                  — ยังไม่มีสลิป —
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-black hover:bg-slate-50"
-            onClick={onClose}
-          >
-            ปิด
-          </button>
+          {/* Footer (fixed in box) */}
+          <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3 flex-none bg-white">
+            <button
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-black hover:bg-slate-50"
+              onClick={onClose}
+            >
+              ปิด
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -550,20 +569,27 @@ function toSQLDateTime(val) {
   )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-/* ───────── Edit Modal ───────── */
+/* ───────── Edit Modal (แสดงสลิปเดิม + ลบได้ + อัปโหลดใหม่) ───────── */
 function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
   const [form, setForm] = useState(data || {});
-  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptFile, setReceiptFile] = useState(null); // ไฟล์ใหม่ (ถ้ามี)
+  const [removeReceipt, setRemoveReceipt] = useState(false); // ธงลบสลิปเดิม
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  // ล็อกสกอร์ลพื้นหลัง
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   useEffect(() => {
     const d = data || {};
-    // 3.1 คำนวณสถานะการจองปัจจุบันจากเวลา (จะได้ 'pickup overdue' / 'return overdue' มาถูก)
     const life = getLifecycle(d, new Date());
-
-    // 3.2 ปรับสถานะชำระเงินให้รองรับ partial และ clear เมื่อยกเลิก
-    // ถ้ามี paymentStatus มาก่อนให้ใช้เลย ไม่เดาใหม่
     let normPay = (d.paymentStatus || "").toLowerCase();
     if (!normPay) {
       const payRaw = String(d.pay_status || "").toLowerCase();
@@ -571,15 +597,15 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
         normPay = "partial paid";
       else if (payRaw.includes("paid")) normPay = "paid";
     }
-    // if (life === "cancelled") normPay = "";
-
     setForm({
       ...d,
+      receiptUrl: d.receiptUrl || "", // <<— เก็บ URL สลิปเดิมไว้โชว์
       bookingStatus: life || "confirmed",
       paymentStatus: normPay,
       docType: d.docType || "บัตรประชาชน",
     });
     setReceiptFile(null);
+    setRemoveReceipt(false);
     setErr("");
   }, [data]);
 
@@ -604,8 +630,9 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
       fd.append("discount", String(form.discount ?? 0));
       fd.append("down_payment", "0");
       fd.append("contact_platform", form.channel || "");
-      fd.append("additional_options", String(form.addon ?? "")); // ถ้าเป็นจำนวน ให้เปลี่ยน key ตาม backend
+      fd.append("additional_options", String(form.addon ?? ""));
       fd.append("remark", form.note || "");
+
       const days = computeDays(form.pickupTime, form.returnTime);
       const total =
         form.total ??
@@ -613,9 +640,20 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
           (form.addon ?? 0) -
           (form.discount ?? 0);
       fd.append("total_price", String(total));
+
+      // แนบไฟล์ใหม่ถ้ามี
       if (receiptFile) {
         fd.append("receipt", receiptFile, receiptFile.name || "receipt.jpg");
       }
+
+      // ธงลบสลิปเดิม (ถ้าไม่ได้อัปโหลดไฟล์ใหม่ก็ยังลบได้)
+      if (removeReceipt) {
+        fd.append("remove_receipt", "1");
+        // เผื่อ backend เก่า: ส่งคีย์ที่อาจรองรับ
+        fd.append("delete_receipt", "1");
+        fd.append("receipt", "");
+      }
+
       fd.append("rid", form.bookingCode || form.id || "");
       fd.append(
         "status",
@@ -637,15 +675,26 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
           method: "POST",
           body: fd,
           credentials: "include",
-          headers: {
-            ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}),
-          },
+          headers: { ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}) },
         }
       );
       const text = await res.text();
       if (!res.ok) throw new Error(text || "อัปเดตไม่สำเร็จ");
 
-      onSaved?.({ ...form, total });
+      // อัปเดตฝั่ง UI: ถ้าเลือกไฟล์ใหม่ แทนที่ URL เดิมด้วย objectURL ชั่วคราวก็ได้
+      const newRec = {
+        ...form,
+        total,
+        receiptUrl: receiptFile
+          ? typeof URL !== "undefined"
+            ? URL.createObjectURL(receiptFile)
+            : form.receiptUrl
+          : removeReceipt
+          ? ""
+          : form.receiptUrl,
+      };
+
+      onSaved?.(newRec);
       onClose?.();
     } catch (e) {
       setErr(String(e?.message || e));
@@ -659,231 +708,317 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
   const labelCls = "text-xs font-semibold text-black mb-1";
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-start justify-center bg-black/40 p-4">
-      <div className="w-full max-w-4xl rounded-xl bg-white shadow-xl">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-black">แก้ไขการจอง</h3>
-          <button
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm hover:bg-gray-300 text-black"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* รหัสจอง */}
-          <div>
-            <div className={labelCls}>รหัสจอง</div>
-            <input
-              value={form.bookingCode || ""}
-              disabled
-              className={inputCls}
-            />
-          </div>
-          {/* เอกสาร */}
-          <div>
-            <div className={labelCls}>เอกสารยืนยัน</div>
-            <select
-              value={form.docType || "บัตรประชาชน"}
-              onChange={(e) => set("docType", e.target.value)}
-              className={inputCls}
+    <div
+      className="fixed inset-0 z-[999] bg-black/40 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="min-h-full flex items-start md:items-center justify-center p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-full max-w-4xl rounded-xl bg-white shadow-xl flex flex-col max-h-[min(90vh,860px)]">
+          {/* Header */}
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between flex-none">
+            <h3 className="text-lg font-bold text-black">แก้ไขการจอง</h3>
+            <button
+              onClick={onClose}
+              className="rounded-md px-2 py-1 text-sm hover:bg-gray-100"
             >
-              {["บัตรประชาชน", "หนังสือเดินทาง", "ใบขับขี่"].map((d) => (
-                <option key={d}>{d}</option>
-              ))}
-            </select>
+              ✕
+            </button>
           </div>
 
-          {/* ลูกค้า */}
-          <div>
-            <div className={labelCls}>ชื่อลูกค้า</div>
-            <input
-              value={form.customerName || ""}
-              onChange={(e) => set("customerName", e.target.value)}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <div className={labelCls}>เบอร์โทร</div>
-            <input
-              value={form.customerPhone || ""}
-              onChange={(e) => set("customerPhone", e.target.value)}
-              className={inputCls}
-            />
-          </div>
-
-          {/* รถ */}
-          <div>
-            <div className={labelCls}>เลือกรถ</div>
-            <select
-              value={`${form.carName || ""}|${form.carPlate || ""}|${
-                form.pricePerDay ?? 0
-              }`}
-              onChange={(e) => {
-                const [name, plate, price] = e.target.value.split("|");
-                set("carName", name);
-                set("carPlate", plate);
-                set("pricePerDay", Number(price || 0));
-              }}
-              className={inputCls}
-            >
-              {(Array.isArray(carOptions) ? carOptions : []).map((c) => (
-                <option
-                  key={`${c.name}|${c.plate}`}
-                  value={`${c.name}|${c.plate}|${c.pricePerDay ?? 0}`}
+          {/* Body (scrollable) */}
+          <div className="p-5 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* …ฟิลด์เดิมทั้งหมดของคุณ (เหมือนก่อนหน้า)… */}
+              {/* รหัสจอง */}
+              <div>
+                <div className={labelCls}>รหัสจอง</div>
+                <input
+                  value={form.bookingCode || ""}
+                  disabled
+                  className={inputCls}
+                />
+              </div>
+              {/* เอกสาร */}
+              <div>
+                <div className={labelCls}>เอกสารยืนยัน</div>
+                <select
+                  value={form.docType || "บัตรประชาชน"}
+                  onChange={(e) => set("docType", e.target.value)}
+                  className={inputCls}
                 >
-                  {`${c.name}${c.plate ? ` (${c.plate})` : ""} — ${fmtBaht(
-                    c.pricePerDay ?? 0
-                  )}฿/วัน`}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div className={labelCls}>ราคา/วัน (บาท)</div>
-            <input
-              type="number"
-              value={form.pricePerDay ?? 0}
-              onChange={(e) => set("pricePerDay", Number(e.target.value || 0))}
-              className={inputCls}
-            />
-          </div>
+                  {["บัตรประชาชน", "หนังสือเดินทาง", "ใบขับขี่"].map((d) => (
+                    <option key={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* สถานที่ */}
-          <div>
-            <div className={labelCls}>สถานที่รับรถ</div>
-            <input
-              value={form.pickupLocation || ""}
-              onChange={(e) => set("pickupLocation", e.target.value)}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <div className={labelCls}>สถานที่คืนรถ</div>
-            <input
-              value={form.returnLocation || ""}
-              onChange={(e) => set("returnLocation", e.target.value)}
-              className={inputCls}
-            />
-          </div>
+              {/* ลูกค้า */}
+              <div>
+                <div className={labelCls}>ชื่อลูกค้า</div>
+                <input
+                  value={form.customerName || ""}
+                  onChange={(e) => set("customerName", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <div className={labelCls}>เบอร์โทร</div>
+                <input
+                  value={form.customerPhone || ""}
+                  onChange={(e) => set("customerPhone", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
 
-          {/* วันเวลา */}
-          <div>
-            <div className={labelCls}>วัน-เวลา รับรถ</div>
-            <input
-              type="datetime-local"
-              value={(form.pickupTime || "").replace(" ", "T").slice(0, 16)}
-              onChange={(e) => set("pickupTime", e.target.value)}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <div className={labelCls}>วัน-เวลา คืนรถ</div>
-            <input
-              type="datetime-local"
-              value={(form.returnTime || "").replace(" ", "T").slice(0, 16)}
-              onChange={(e) => set("returnTime", e.target.value)}
-              className={inputCls}
-            />
-          </div>
+              {/* รถ */}
+              <div>
+                <div className={labelCls}>เลือกรถ</div>
+                <select
+                  value={`${form.carName || ""}|${form.carPlate || ""}|${
+                    form.pricePerDay ?? 0
+                  }`}
+                  onChange={(e) => {
+                    const [name, plate, price] = e.target.value.split("|");
+                    set("carName", name);
+                    set("carPlate", plate);
+                    set("pricePerDay", Number(price || 0));
+                  }}
+                  className={inputCls}
+                >
+                  {(Array.isArray(carOptions) ? carOptions : []).map((c) => (
+                    <option
+                      key={`${c.name}|${c.plate}`}
+                      value={`${c.name}|${c.plate}|${c.pricePerDay ?? 0}`}
+                    >
+                      {`${c.name}${c.plate ? ` (${c.plate})` : ""} — ${fmtBaht(
+                        c.pricePerDay ?? 0
+                      )}฿/วัน`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className={labelCls}>ราคา/วัน (บาท)</div>
+                <input
+                  type="number"
+                  value={form.pricePerDay ?? 0}
+                  onChange={(e) =>
+                    set("pricePerDay", Number(e.target.value || 0))
+                  }
+                  className={inputCls}
+                />
+              </div>
 
-          {/* ส่วนลด / ช่องทาง */}
-          <div>
-            <div className={labelCls}>ส่วนลด (บาท)</div>
-            <input
-              type="number"
-              value={form.discount ?? 0}
-              onChange={(e) => set("discount", Number(e.target.value || 0))}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <div className={labelCls}>ช่องทาง</div>
-            <input
-              value={form.channel || ""}
-              onChange={(e) => set("channel", e.target.value)}
-              className={inputCls}
-            />
-          </div>
+              {/* สถานที่ */}
+              <div>
+                <div className={labelCls}>สถานที่รับรถ</div>
+                <input
+                  value={form.pickupLocation || ""}
+                  onChange={(e) => set("pickupLocation", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <div className={labelCls}>สถานที่คืนรถ</div>
+                <input
+                  value={form.returnLocation || ""}
+                  onChange={(e) => set("returnLocation", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
 
-          {/* สถานะ */}
-          <div>
-            <div className={labelCls}>สถานะชำระเงิน</div>
-            <select
-              value={form.paymentStatus || ""}
-              onChange={(e) => set("paymentStatus", e.target.value)}
-              className={inputCls}
-            >
-              <option value="">รอชำระ</option>
-              <option value="partial paid">มัดจำแล้ว</option>
-              <option value="paid">ชำระแล้ว</option>
-            </select>
-          </div>
-          <div>
-            <div className={labelCls}>สถานะการจอง</div>
-            <select
-              value={form.bookingStatus || "confirmed"}
-              onChange={(e) => set("bookingStatus", e.target.value)}
-              className={inputCls}
-            >
-              <option value="waiting pickup">รอรับ</option>
-              <option value="pickup overdue">เลยกำหนดรับ</option>
-              <option value="in use">กำลังเช่า</option>
-              <option value="return overdue">เลยกำหนดคืน</option>
-              <option value="cancelled">ยกเลิก</option>
-              <option value="completed">เสร็จสิ้น</option>
-            </select>
-          </div>
+              {/* เวลา */}
+              <div>
+                <div className={labelCls}>วัน-เวลา รับรถ</div>
+                <input
+                  type="datetime-local"
+                  value={(form.pickupTime || "").replace(" ", "T").slice(0, 16)}
+                  onChange={(e) => set("pickupTime", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <div className={labelCls}>วัน-เวลา คืนรถ</div>
+                <input
+                  type="datetime-local"
+                  value={(form.returnTime || "").replace(" ", "T").slice(0, 16)}
+                  onChange={(e) => set("returnTime", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
 
-          {/* หมายเหตุ */}
-          <div className="md:col-span-2">
-            <div className={labelCls}>หมายเหตุ</div>
-            <textarea
-              rows={4}
-              value={form.note || ""}
-              onChange={(e) => set("note", e.target.value)}
-              className={inputCls}
-            />
-          </div>
+              {/* ส่วนลด/ช่องทาง */}
 
-          {/* ไฟล์ */}
-          <div className="md:col-span-2">
-            <div className={labelCls}>สลิปโอนเงิน</div>
-            <input
-              type="file"
-              className="block w-full text-sm text-slate-900"
-              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-            />
-            {receiptFile && (
-              <div className="mt-1 text-xs text-slate-600">
-                เลือกไฟล์: <b>{receiptFile.name}</b>
+              <div>
+                <div className={labelCls}>ช่องทาง</div>
+                <input
+                  value={form.channel || ""}
+                  onChange={(e) => set("channel", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* สถานะ */}
+              <div>
+                <div className={labelCls}>สถานะชำระเงิน</div>
+                <select
+                  value={form.paymentStatus || ""}
+                  onChange={(e) => set("paymentStatus", e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">รอชำระ</option>
+                  <option value="partial paid">มัดจำแล้ว</option>
+                  <option value="paid">ชำระแล้ว</option>
+                </select>
+              </div>
+              <div>
+                <div className={labelCls}>สถานะการจอง</div>
+                <select
+                  value={form.bookingStatus || "confirmed"}
+                  onChange={(e) => set("bookingStatus", e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="waiting pickup">รอรับ</option>
+                  <option value="pickup overdue">เลยกำหนดรับ</option>
+                  <option value="in use">กำลังเช่า</option>
+                  <option value="return overdue">เลยกำหนดคืน</option>
+                  <option value="cancelled">ยกเลิก</option>
+                  <option value="completed">เสร็จสิ้น</option>
+                </select>
+              </div>
+
+              {/* หมายเหตุ */}
+              <div className="md:col-span-2">
+                <div className={labelCls}>หมายเหตุ</div>
+                <textarea
+                  rows={4}
+                  value={form.note || ""}
+                  onChange={(e) => set("note", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* สลิปโอนเงิน (โชว์เดิม / พรีวิวใหม่ / ลบได้) */}
+              <div className="md:col-span-2">
+                <div className={labelCls}>สลิปโอนเงิน</div>
+
+                {/* ถ้ามีไฟล์ใหม่ -> โชว์พรีวิวไฟล์ใหม่ */}
+                {receiptFile ? (
+                  <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
+                    <img
+                      src={URL.createObjectURL(receiptFile)}
+                      alt="สลิปใหม่"
+                      className="max-h-72 w-auto rounded-lg object-contain mx-auto"
+                    />
+                    <div className="mt-2 text-xs text-slate-600 text-center">
+                      ไฟล์ใหม่: <b>{receiptFile.name}</b>
+                    </div>
+                    <div className="mt-2 text-center text-gray-400">
+                      <button
+                        type="button"
+                        className="text-sm underline"
+                        onClick={() => setReceiptFile(null)}
+                      >
+                        ลบไฟล์ใหม่
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* ถ้ายังไม่มีไฟล์ใหม่ -> แสดงสลิปเดิม (ถ้ามีและยังไม่กดลบ) */}
+                    {form.receiptUrl && !removeReceipt ? (
+                      <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
+                        <a
+                          href={form.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <img
+                            src={form.receiptUrl}
+                            alt="สลิปเดิม"
+                            className="max-h-72 w-auto rounded-lg object-contain mx-auto"
+                            loading="lazy"
+                          />
+                        </a>
+                        <div className="mt-2 flex items-center justify-center gap-4 text-sm text-black">
+                          <button
+                            type="button"
+                            className="text-gray-600 underline"
+                            onClick={() => setRemoveReceipt(true)}
+                          >
+                            ลบ
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // สถานะ: ไม่มีสลิปเดิม หรือกด "ลบสลิปเดิม" แล้ว
+                      <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-slate-500">
+                        {removeReceipt ? (
+                          <>
+                            จะ<strong>ลบสลิปเดิม</strong> เมื่อกดบันทึก
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                className="underline"
+                                onClick={() => setRemoveReceipt(false)}
+                              >
+                                ยกเลิกการลบ
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          "ยังไม่มีสลิป"
+                        )}
+                      </div>
+                    )}
+
+                    {/* ปุ่มเลือกไฟล์ใหม่ */}
+                    <div className="mt-3">
+                      <input
+                        type="file"
+                        className="block w-full text-sm text-slate-900"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null;
+                          setReceiptFile(f);
+                          if (f) setRemoveReceipt(false); // ถ้าเลือกไฟล์ใหม่ ไม่ต้องลบเดิม
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {err && (
+              <div className="mt-3 text-sm text-rose-600">
+                เกิดข้อผิดพลาด: {err}
               </div>
             )}
           </div>
-        </div>
 
-        {err && (
-          <div className="px-5 text-sm text-rose-600">
-            เกิดข้อผิดพลาด: {err}
+          {/* Footer */}
+          <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3 flex-none bg-white">
+            <button
+              onClick={onClose}
+              className="rounded-lg border px-4 py-2 text-sm text-black"
+              disabled={saving}
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={handleSave}
+              className="rounded-lg bg-black text-white px-4 py-2 text-sm disabled:opacity-60"
+              disabled={saving}
+            >
+              {saving ? "กำลังบันทึก…" : "บันทึกการเปลี่ยนแปลง"}
+            </button>
           </div>
-        )}
-
-        <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3 text-black">
-          <button
-            onClick={onClose}
-            className="rounded-lg border px-4 py-2 text-sm"
-            disabled={saving}
-          >
-            ยกเลิก
-          </button>
-          <button
-            onClick={handleSave}
-            className="rounded-lg bg-black text-white px-4 py-2 text-sm disabled:opacity-60"
-            disabled={saving}
-          >
-            {saving ? "กำลังบันทึก…" : "บันทึกการเปลี่ยนแปลง"}
-          </button>
         </div>
       </div>
     </div>

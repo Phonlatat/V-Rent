@@ -307,7 +307,7 @@ export default function BookingPage() {
       <Headers />
 
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 overflow-x-hidden">
           {/* Summary */}
           <div className="lg:col-span-2 -mt-2">
             <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm flex flex-wrap gap-x-6 gap-y-2">
@@ -341,7 +341,7 @@ export default function BookingPage() {
           </div>
 
           {/* ซ้าย: ฟอร์ม */}
-          <section className={`${cardCls} p-6 md:p-8`}>
+          <section className={`${cardCls} p-6 md:p-8 min-w-0 overflow-hidden`}>
             <div className="flex items-start gap-4">
               <div className="relative w-28 h-20 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
                 <Image
@@ -366,34 +366,34 @@ export default function BookingPage() {
 
             <div className="mt-6 md:mt-8 grid gap-6">
               {/* สถานที่ */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid md:grid-cols-2 gap-4 min-w-0">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>สถานที่รับรถ</label>
                   <input
                     name="pickupLocation"
                     value={form.pickupLocation}
                     onChange={handleChange}
                     placeholder="เช่น สนามบินเชียงใหม่ (CNX)"
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full`}
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>สถานที่คืนรถ</label>
                   <input
                     name="dropoffLocation"
                     value={form.dropoffLocation}
                     onChange={handleChange}
                     placeholder="เช่น ตัวเมืองเชียงใหม่"
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full`}
                     required
                   />
                 </div>
               </div>
 
               {/* เวลา */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid md:grid-cols-2 gap-4 min-w-0">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>วัน–เวลารับรถ</label>
                   <input
                     type="datetime-local"
@@ -401,11 +401,11 @@ export default function BookingPage() {
                     value={form.pickupAt}
                     onChange={handleChange}
                     min={minDateTime}
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full appearance-none`}
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>วัน–เวลาคืนรถ</label>
                   <input
                     type="datetime-local"
@@ -413,7 +413,7 @@ export default function BookingPage() {
                     value={form.dropoffAt}
                     onChange={handleChange}
                     min={form.pickupAt || minDateTime}
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full appearance-none`}
                     required
                   />
                 </div>
@@ -421,36 +421,36 @@ export default function BookingPage() {
 
               {/* ผู้ติดต่อ */}
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>ชื่อ–นามสกุล</label>
                   <input
                     name="name"
                     value={form.name || ""}
                     onChange={handleChange}
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full`}
                     placeholder="ชื่อผู้จอง"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>เบอร์โทร</label>
                   <input
                     name="phone"
                     value={form.phone || ""}
                     onChange={handleChange}
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full`}
                     placeholder="091-234-5678"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className={labelCls}>อีเมล</label>
                   <input
                     type="email"
                     name="email"
                     value={form.email || ""}
                     onChange={handleChange}
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 max-w-full`}
                     placeholder="you@example.com"
                     required
                   />
@@ -458,7 +458,7 @@ export default function BookingPage() {
               </div>
 
               {/* หมายเหตุ */}
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <label className={labelCls}>หมายเหตุเพิ่มเติม</label>
                 <textarea
                   name="note"
@@ -475,7 +475,7 @@ export default function BookingPage() {
                   }}
                   rows={4}
                   maxLength={NOTE_MAX} // ป้องกันการพิมพ์เกินแบบ native
-                  className={inputCls}
+                  className={`${inputCls} min-w-0 max-w-full`}
                   placeholder="เช่น ต้องการที่นั่งเด็ก 1 ตัว รับรถหน้าประตู 3"
                   aria-describedby="note-counter"
                 />
@@ -529,17 +529,18 @@ export default function BookingPage() {
                 <span>ราคา/วัน</span>
                 <span>฿{Number(car.pricePerDay || 0).toLocaleString()}</span>
               </div>
+              <div className="flex justify-between">
+                <span>ราคามัดจำ</span>
+                <span>฿500</span>
+              </div>
               <hr className="my-3 border-slate-200" />
               <div className="flex justify-between">
                 <span>ราคารถ (x{dayCount})</span>
                 <span>฿{Number(basePrice).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span>ราคาตัวเลือก (รวม)</span>
-                <span>฿{Number(extrasPrice).toLocaleString()}</span>
-              </div>
+
               <div className="flex justify-between text-lg font-extrabold mt-2">
-                <span>รวมทั้งหมด</span>
+                <span>ยอดรวมทั้งหมด</span>
                 <span>฿{Number(total).toLocaleString()}</span>
               </div>
             </div>

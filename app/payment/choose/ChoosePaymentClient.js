@@ -48,7 +48,17 @@ function chooseDateStrings(sp) {
   };
 }
 
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const DEPOSIT_AMOUNT = 500; // ยอดมัดจำ
 
 export default function ChoosePaymentClient() {
   const sp = useSearchParams();
@@ -279,7 +289,8 @@ export default function ChoosePaymentClient() {
       const additional_options = extrasList.join(", ");
 
       const fd = new FormData();
-      fd.append("confirmation_document", key || `WEB-${Date.now()}`);
+      const confirmationDoc = key || `WEB-${Date.now()}`;
+      fd.append("confirmation_document", confirmationDoc);
       // ✅ ส่ง “ข้อมูลผู้เช่าจริง” ตามที่กรอกในฟอร์ม
       fd.append("customer_name", name || "");
       fd.append("customer_phone", phone || "");
@@ -298,7 +309,8 @@ export default function ChoosePaymentClient() {
       fd.append("price_per_day", String(unitPrice));
       fd.append("price", String(unitPrice));
       fd.append("total_price", String(total)); // ยอดสุทธิ
-      fd.append("down_payment", String(total)); // ชำระเต็ม
+      // ตอนนี้เปลี่ยนเป็นจ่ายมัดจำ 500
+      fd.append("down_payment", String(DEPOSIT_AMOUNT));
 
       // ✅ อื่นๆ
       fd.append("pickup_place", pickupLocation || "");
@@ -332,8 +344,63 @@ export default function ChoosePaymentClient() {
         return;
       }
 
-      alert("ชำระเงินเสร็จสิ้น ขอบคุณค่ะ 🙌");
-      window.location.href = "/";
+      // ---- ไปหน้า SUMMARY พร้อมพกข้อมูลทั้งหมด ----
+      const rentalId =
+        j?.message?.name || j?.message?.rental || j?.rental || ""; // เดาช่องจาก ERP
+      let slipPreview = "";
+      if (slip) {
+        try {
+          slipPreview = await fileToDataURL(slip); // data:image/...;base64,xxxx
+          sessionStorage.setItem("vrent_slip_preview", slipPreview);
+        } catch (e) {
+          console.warn("Failed to make dataURL from slip:", e);
+        }
+      }
+      const qp = new URLSearchParams({
+        paymentStatus: "success",
+        method,
+        deposit: String(DEPOSIT_AMOUNT),
+        total: String(total),
+        baseTotal: String(baseTotal),
+        extrasSum: String(extrasSum),
+        dayCount: String(dayCount),
+        has_slip: slip ? "1" : "0",
+
+        // ข้อมูลผู้จอง
+        name: name || "",
+        phone: phone || "",
+        email: (email || "").trim(),
+        note: (note || "").slice(0, 140),
+
+        // สถานที่/เวลา
+        pickupLocation: pickupLocation || "",
+        dropoffLocation: dropoffLocation || "",
+        pickup_at: calcPick || displayPick || "",
+        return_at: calcDrop || displayDrop || "",
+
+        // รถ
+        carId: String(carId || ""),
+        carName: car?.name || "",
+        carBrand: car?.brand || carBrand || "",
+        carType: car?.type || carType || "",
+        carYear: String(car?.year || carYear || ""),
+        carTransmission: car?.transmission || carTransmission || "",
+        carSeats: String(car?.seats || carSeats || ""),
+        carFuel: car?.fuel || carFuel || "",
+        pricePerDay: String(unitPrice),
+        companyName: car?.company?.name || companyName || "",
+        companySlug: car?.company?.slug || companySlug || "",
+        carImage: car?.image || "",
+
+        // อื่น ๆ
+        passengers: passengers || "",
+        promo: promo || "",
+        ftype: ftype || "",
+        confirmation: confirmationDoc,
+        rental_id: rentalId,
+      }).toString();
+
+      router.push(`/payment/summary?${qp}`);
     } catch (e) {
       console.error(e);
       alert("เกิดข้อผิดพลาดระหว่างบันทึกการชำระเงิน");
@@ -474,7 +541,7 @@ export default function ChoosePaymentClient() {
                   ชำระเงินด้วย PromptPay
                 </h3>
                 <p className="text-sm text-slate-700 mt-1">
-                  สแกน QR เพื่อชำระยอดรวม จากนั้นอัปโหลดสลิปเพื่อยืนยัน
+                  สแกน QR เพื่อชำระยอดมัดจำ จากนั้นอัปโหลดสลิปเพื่อยืนยัน
                 </p>
 
                 <div className="mt-5 flex flex-col sm:flex-row items-center gap-6">
@@ -488,9 +555,12 @@ export default function ChoosePaymentClient() {
                     />
                   </div>
                   <div className="flex-1 w-full">
-                    <div className="text-sm text-slate-700">ยอดที่ต้องชำระ</div>
+                    <div className="text-sm text-slate-700">
+                      ยอดมัดจำที่ต้องชำระ
+                    </div>
                     <div className="text-4xl font-extrabold tracking-tight text-slate-900">
-                      ฿{fmt(total)}
+                      ฿500
+                      {/* ฿{fmt(total)} */}
                     </div>
 
                     <div className="mt-4">
@@ -679,8 +749,13 @@ export default function ChoosePaymentClient() {
               <span>฿{fmt(baseTotal)}</span>
             </div>
 
+            <div className="flex justify-between gap-4">
+              <span>ราคามัดจำ</span>
+              <span>฿500</span>
+            </div>
+
             <div className="flex justify-between text-lg font-extrabold mt-2 gap-4">
-              <span>รวมทั้งหมด</span>
+              <span>ยอดรวมทั้งหมด</span>
               <span>฿{fmt(total)}</span>
             </div>
 

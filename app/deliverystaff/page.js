@@ -301,6 +301,7 @@ function AdminDeliveryContent() {
   });
   const [idProofs, setIdProofs] = useState([]);
   const [carProofs, setCarProofs] = useState([]);
+  const [slipProofs, setSlipProofs] = useState([]); // ✅ สำหรับรูปสลิปโอนยอดเต็ม
 
   const [queue, setQueue] = useState([]);
   const [queueLoading, setQueueLoading] = useState(true);
@@ -474,6 +475,10 @@ function AdminDeliveryContent() {
     });
     carProofs.forEach((p, i) => {
       if (p?.blob) fd.append("car_proofs", p.blob, `car_proof_${i + 1}.jpg`);
+    });
+    // ✅ แนบสลิปโอนยอดเต็ม
+    slipProofs.forEach((p, i) => {
+      if (p?.blob) fd.append("slip_proofs", p.blob, `slip_${i + 1}.jpg`);
     });
 
     setSubmitting(true);
@@ -819,6 +824,53 @@ function AdminDeliveryContent() {
             )}
           </div>
 
+          {/* ✅ proofs: slip */}
+          <div className="space-y-3">
+            <CameraBox
+              title="ถ่ายรูปสลิปการโอนยอดเต็มของลูกค้า"
+              onCapture={(img) =>
+                setSlipProofs((p) => [
+                  ...p,
+                  { url: img.url, blob: img.blob, dataUrl: img.dataUrl },
+                ])
+              }
+              buttonLabel="ถ่ายรูปสลิป"
+            />
+            {!!slipProofs.length && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {slipProofs.map((p, i) => (
+                  <div
+                    key={i}
+                    className="relative rounded-lg overflow-hidden border border-slate-300"
+                  >
+                    <img
+                      src={p.dataUrl || p.url}
+                      alt={`Slip Proof ${i + 1}`}
+                      className="w-full h-32 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSlipProofs((prev) => {
+                          const cp = [...prev];
+                          try {
+                            if (cp[i]?.url?.startsWith("blob:"))
+                              URL.revokeObjectURL(cp[i].url);
+                          } catch {}
+                          cp.splice(i, 1);
+                          return cp;
+                        })
+                      }
+                      className="absolute top-1 right-1 px-2 py-0.5 text-xs rounded bg-black/70 text-white"
+                    >
+                      ลบ
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* notes */}
           <div className="space-y-2">
             <label className={labelCls}>หมายเหตุเพิ่มเติม</label>
@@ -921,20 +973,24 @@ function AdminDeliveryContent() {
             </span>
           </div>
           <div className="flex justify-between">
-            <span>รูปที่แนบ</span>
-            <span>{idProofs.length + carProofs.length} รูป</span>
+            <span>รูปที่แนบทั้งหมด</span>
+            <span>
+              {idProofs.length + carProofs.length + slipProofs.length} รูป
+            </span>
           </div>
+          <div className="flex justify-between">
+            <span>สลิปโอนยอดเต็ม</span>
+            <span>{slipProofs.length ? "แนบแล้ว" : "-"}</span>
+          </div>
+
           <div className="flex justify-between">
             <span>น้ำมัน</span>
             <span>{form.fuelLevel}</span>
           </div>
-          <div className="flex justify-between">
-            <span>เลขไมล์</span>
-            <span>{form.odometer || "-"}</span>
-          </div>
+
           <div className="flex justify-between">
             <span>เงินมัดจำ</span>
-            <span>{form.depositReceived ? "รับแล้ว" : "ยังไม่รับ"}</span>
+            <span>รับแล้ว</span>
           </div>
         </div>
       </aside>

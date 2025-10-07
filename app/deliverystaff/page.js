@@ -1062,74 +1062,118 @@ function TodayQueue({ queue, onPick }) {
   }, [queue]);
 
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-slate-600">
-            <th className="py-2 pr-3 text-left">เวลา</th>
-            <th className="py-2 pr-3 text-left">รหัส</th>
-            <th className="py-2 pr-3 text-left">รถ / ป้าย</th>
-            <th className="py-2 pr-3 text-left">ลูกค้า</th>
-            <th className="py-2 pr-3 text-left">สถานะ</th>
-            <th className="py-2 pr-3 text-left">สถานที่</th>
-            <th className="py-2 pr-0 text-left">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {todayQueue.map((j) => (
-            <tr key={j.bookingCode}>
-              <td className="py-2 pr-3">{fmtTime(j.pickupTime)}</td>
-              <td className="py-2 pr-3 font-medium">{j.bookingCode}</td>
-              <td className="py-2 pr-3">
-                {j.carName}
-                <div className="text-xs text-slate-600">{j.carPlate}</div>
-              </td>
-              <td className="py-2 pr-3">
-                {j.customerName}
-                <div className="text-xs text-slate-600">{j.customerPhone}</div>
-              </td>
-              <td className="py-2 pr-3">
-                {(() => {
-                  const s = STATUS[j.uiStatus] ?? STATUS.pending;
-                  return (
-                    <span
-                      className={cx(
-                        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-                        s.badge
-                      )}
-                    >
-                      {s.label}
-                    </span>
-                  );
-                })()}
-              </td>
-              <td className="py-2 pr-3">
-                <div>{j.pickupPlace || j.pickupLocation || "-"}</div>
-                <div className="text-xs text-slate-600">
-                  คืน: {j.returnPlace || j.returnLocation || "-"}
-                </div>
-              </td>
-              <td className="py-2 pr-0">
-                <button
-                  type="button"
-                  onClick={() => onPick(j)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50"
-                  title="เปิดฟอร์มด้วยข้อมูลนี้"
+    <div className="mt-3">
+      <div className="mb-2 text-[11px] sm:text-xs text-slate-600">
+        ทั้งหมด {todayQueue.length} งานในวันนี้
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full text-[10px] sm:text-xs leading-tight">
+          <thead className="bg-slate-50 sticky top-0 z-10">
+            <tr className="text-slate-600">
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left w-14">
+                เวลา
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left w-24">
+                รหัส
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left">
+                รถ / ป้าย
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left hidden sm:table-cell">
+                ลูกค้า
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left hidden md:table-cell">
+                สถานที่
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left w-24">
+                สถานะ
+              </th>
+              <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left w-20">
+                จัดการ
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-200">
+            {todayQueue
+              .slice()
+              .sort((a, b) => new Date(a.pickupTime) - new Date(b.pickupTime))
+              .map((j) => {
+                const stat = STATUS[j.uiStatus] ?? STATUS["waiting pickup"];
+                return (
+                  <tr key={j.bookingCode} className="hover:bg-slate-50">
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 whitespace-nowrap font-mono">
+                      {fmtTime(j.pickupTime)}
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 font-medium whitespace-nowrap truncate max-w-[88px]">
+                      {j.bookingCode}
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2">
+                      <div className="font-medium truncate max-w-[120px] sm:max-w-none">
+                        {j.carName || "-"}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] text-slate-600 truncate">
+                        {j.carPlate || "-"}
+                      </div>
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 hidden sm:table-cell">
+                      <div className="truncate">{j.customerName || "-"}</div>
+                      <div className="text-[11px] text-slate-600 truncate">
+                        {j.customerPhone || "-"}
+                      </div>
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 hidden md:table-cell">
+                      <div className="truncate">
+                        {j.pickupPlace || j.pickupLocation || "-"}
+                      </div>
+                      <div className="text-[11px] text-slate-600 truncate">
+                        คืน: {j.returnPlace || j.returnLocation || "-"}
+                      </div>
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2">
+                      <span
+                        className={cx(
+                          "inline-flex items-center rounded-full px-1.5 py-[2px] text-[10px] sm:text-[11px] font-medium",
+                          stat.badge
+                        )}
+                      >
+                        {stat.label}
+                      </span>
+                    </td>
+
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2">
+                      <button
+                        type="button"
+                        onClick={() => onPick(j)}
+                        className="h-6 sm:h-7 px-2 rounded-md border border-slate-300 hover:bg-slate-100"
+                        title="เปิดฟอร์มด้วยข้อมูลนี้"
+                      >
+                        เปิดฟอร์ม
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+
+            {!todayQueue.length && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-3 py-5 text-center text-slate-500"
                 >
-                  เปิดฟอร์ม
-                </button>
-              </td>
-            </tr>
-          ))}
-          {!todayQueue.length && (
-            <tr>
-              <td colSpan={7} className="py-4 text-center text-slate-500">
-                วันนี้ยังไม่มีคิวรับรถ
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                  วันนี้ยังไม่มีคิวรับรถ
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

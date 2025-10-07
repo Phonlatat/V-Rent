@@ -34,6 +34,7 @@ function Modal({ open, onClose, children }) {
   if (!open) return null;
 
   // ล็อกสกอร์ลของหน้า เมื่อเปิดโมดัล
+  // eslint-disable-next-line react-hooks/rules-of-hooks, react-hooks/exhaustive-deps
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";

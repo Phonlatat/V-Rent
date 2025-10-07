@@ -563,14 +563,15 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
     const life = getLifecycle(d, new Date());
 
     // 3.2 ปรับสถานะชำระเงินให้รองรับ partial และ clear เมื่อยกเลิก
-    const payRaw = String(d.paymentStatus || d.pay_status || "").toLowerCase();
-    let normPay =
-      payRaw.includes("partial") || payRaw.includes("deposit")
-        ? "partial paid"
-        : payRaw.includes("paid")
-        ? "paid"
-        : "";
-    if (life === "cancelled") normPay = ""; // ยกเลิก → ไม่แสดงจ่ายแล้ว
+    // ถ้ามี paymentStatus มาก่อนให้ใช้เลย ไม่เดาใหม่
+    let normPay = (d.paymentStatus || "").toLowerCase();
+    if (!normPay) {
+      const payRaw = String(d.pay_status || "").toLowerCase();
+      if (payRaw.includes("partial") || payRaw.includes("deposit"))
+        normPay = "partial paid";
+      else if (payRaw.includes("paid")) normPay = "paid";
+    }
+    // if (life === "cancelled") normPay = "";
 
     setForm({
       ...d,
@@ -814,7 +815,7 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
               onChange={(e) => set("paymentStatus", e.target.value)}
               className={inputCls}
             >
-              <option value="">รอชำระ</option>+{" "}
+              <option value="">รอชำระ</option>
               <option value="partial paid">มัดจำแล้ว</option>
               <option value="paid">ชำระแล้ว</option>
             </select>
@@ -892,6 +893,7 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
 /* ───────── Compact List (มือถือ/จอเล็ก) ───────── */
 function CompactList({
   rows,
+  now,
   onOpenDetail,
   onEdit,
   onComplete,
@@ -913,7 +915,7 @@ function CompactList({
       {rows.map((b) => {
         const days = computeDays(b.pickupTime, b.returnTime);
         const total = b.total ?? b.pricePerDay * days;
-        const life = getLifecycle(b);
+        const life = getLifecycle(b, now);
 
         return (
           <div
@@ -936,7 +938,7 @@ function CompactList({
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <PayBadge value={life === "cancelled" ? "" : b.paymentStatus} />
+                <PayBadge value={b.paymentStatus} />
                 <BookingBadge value={life} />
               </div>
             </div>
@@ -1010,6 +1012,20 @@ export default function BookingsTable({
   const [completingId, setCompletingId] = useState("");
   const [cancellingId, setCancellingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
+  // ✅ ตรวจขนาดหน้าจอ (ดูว่าเป็น desktop หรือ mobile)
+  const [isMdUp, setIsMdUp] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 768px)");
+    const onChange = (e) => setIsMdUp(e.matches);
+    setIsMdUp(mql.matches);
+    if (mql.addEventListener) mql.addEventListener("change", onChange);
+    else mql.addListener(onChange);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", onChange);
+      else mql.removeListener(onChange);
+    };
+  }, []);
 
   // กันการยิง stage รถซ้ำ ๆ ต่อคัน
   const startedSetRef = useRef(new Set()); // key = carKey
@@ -1183,15 +1199,25 @@ export default function BookingsTable({
   }, [rows, q, statusF, now]);
 
   // ✅ เมื่อมี booking ที่อยู่ใน stage "in use" ให้ยิง API เปลี่ยน Stage รถ (ครั้งเดียวต่อคัน)
+  const inUseKeys = useMemo(() => {
+    return filtered
+      .filter((r) => getLifecycle(r, now) === "in use")
+      .map((r) =>
+        (resolveVehicleId(r) || r.carPlate || r.carName || "")
+          .trim()
+          .toLowerCase()
+      )
+      .join("|"); // string key เดียว เพื่อลด churn
+  }, [filtered, now]);
+
   useEffect(() => {
     filtered.forEach((r) => {
       if (getLifecycle(r, now) === "in use") {
-        // fire and forget
         ensureVehicleBorrowed(r);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, now]);
+  }, [inUseKeys]);
 
   /* edit + detail modal states */
   const [editOpen, setEditOpen] = useState(false);
@@ -1444,155 +1470,120 @@ export default function BookingsTable({
 
       {!loading && !err && (
         <>
-          {/* จอเล็ก: แบบการ์ด */}
-          <div className="mt-4 md:hidden">
-            <CompactList
-              rows={filtered}
-              onOpenDetail={openDetail}
-              onEdit={openEdit}
-              onComplete={handleComplete}
-              onCancel={handleCancel}
-              onDelete={handleDelete}
-              completingId={completingId}
-              cancellingId={cancellingId}
-              deletingId={deletingId}
-            />
-          </div>
-
-          {/* จอ md ขึ้นไป: ตาราง */}
-
-          <div className="mt-4 hidden md:block">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th className="py-2 pr-3">รับ → คืน</th>
-                  <th className="py-2 pr-3">รหัสจอง</th>
-                  <th className="py-2 pr-3">ลูกค้า</th>
-                  <th className="py-2 pr-3">รถ/ทะเบียน</th>
-                  <th className="py-2 pr-3 text-right hidden lg:table-cell">
-                    ราคา/วัน
-                  </th>
-                  <th className="py-2 pr-3 text-right hidden lg:table-cell">
-                    วันเช่า
-                  </th>
-                  <th className="py-2 pr-3 text-right">รวมสุทธิ</th>
-                  <th className="py-2 pr-3">ชำระเงิน</th>
-                  <th className="py-2 pr-3">สถานะ</th>
-                  <th className="py-2 pr-3">การจัดการ</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-                {filtered.map((b) => {
-                  const days = computeDays(b.pickupTime, b.returnTime);
-                  const total = b.total ?? b.pricePerDay * days;
-                  const life = getLifecycle(b, now);
-
-                  return (
-                    <tr key={b.id} className="align-top">
-                      <td className="py-3 pr-3 text-black break-words">
-                        <div>{fmtDateTimeLocal(b.pickupTime)}</div>
-                        <div className="text-xs text-gray-500">
-                          → {fmtDateTimeLocal(b.returnTime)}
-                        </div>
-                      </td>
-                      {/* รหัส/ลูกค้า/รถ */}
-                      <td className="py-3 pr-3 font-medium text-black break-words">
-                        {b.bookingCode}
-                      </td>
-                      <td className="py-3 pr-3 text-black break-words">
-                        <div>{b.customerName}</div>
-                        <div className="text-xs text-gray-500">
-                          {b.customerPhone}
-                        </div>
-                      </td>{" "}
-                      <td className="py-3 pr-3 text-black break-words">
-                        {(b.carName || "—") + " / " + (b.carPlate || "—")}+{" "}
-                      </td>
-                      {/* ราคา/วัน / วันเช่า / รวมสุทธิ */}
-                      <td className="py-3 pr-3 text-right text-black whitespace-nowrap font-mono tabular-nums hidden lg:table-cell">
-                        {fmtBaht(b.pricePerDay)}&nbsp;฿
-                      </td>
-                      <td className="py-3 pr-3 text-right text-black whitespace-nowrap font-mono tabular-nums hidden lg:table-cell">
-                        {days}&nbsp;วัน
-                      </td>
-                      <td className="py-3 pr-3 text-right text-black whitespace-nowrap font-mono tabular-nums">
-                        {fmtBaht(total)}&nbsp;฿
-                      </td>
-                      {/* ชำระ/สถานะ */}
-                      <td className="py-3 pr-3 text-black">
-                        {life === "cancelled" ? (
-                          <BookingBadge value="cancelled" />
-                        ) : (
-                          <PayBadge value={b.paymentStatus} />
-                        )}
-                      </td>
-                      <td className="py-3 pr-3">
-                        <BookingBadge value={life} />
-                      </td>
-                      {/* การจัดการ */}
-                      <td className="py-3 pr-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            onClick={() => openEdit(b)}
-                            className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-black hover:bg-gray-300"
-                          >
-                            แก้ไข
-                          </button>
-
-                          <button
-                            onClick={() => openDetail(b)}
-                            className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-black hover:bg-gray-300"
-                          >
-                            รายละเอียด
-                          </button>
-
-                          {(life === "in use" || life === "return overdue") && (
-                            <button
-                              onClick={() => handleComplete(b)}
-                              disabled={completingId === b.bookingCode}
-                              className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-black hover:bg-gray-300 disabled:opacity-60"
-                            >
-                              {completingId === b.bookingCode
-                                ? "กำลังบันทึก…"
-                                : "เสร็จสิ้น"}
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleCancel(b)}
-                            disabled={cancellingId === b.bookingCode}
-                            className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-black hover:bg-gray-300 disabled:opacity-60"
-                          >
-                            {cancellingId === b.bookingCode
-                              ? "กำลังยกเลิก…"
-                              : "ยกเลิก"}
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(b)}
-                            disabled={deletingId === b.bookingCode}
-                            className="inline-flex shrink-0 rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-black hover:bg-gray-300 disabled:opacity-60"
-                            title="ลบรายการจองนี้"
-                          >
-                            {deletingId === b.bookingCode ? "กำลังลบ…" : "ลบ"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {filtered.length === 0 && (
+          {isMdUp ? (
+            // ✅ โหมดเดสก์ท็อป (ปุ่มสไตล์เดียวกับ CompactList)
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-[950px] w-full table-auto text-sm text-black">
+                <thead className="text-left text-slate-600 border-b">
                   <tr>
-                    <td colSpan={10} className="py-6 text-center text-gray-600">
-                      ไม่พบรายการที่ตรงกับตัวกรอง
-                    </td>
+                    <th className="py-2 px-3 font-semibold">รหัสจอง</th>
+                    <th className="py-2 px-3 font-semibold">ลูกค้า</th>
+                    <th className="py-2 px-3 font-semibold">รถ</th>
+                    <th className="py-2 px-3 font-semibold">วันที่รับ-คืน</th>
+                    <th className="py-2 px-3 font-semibold text-right">รวม</th>
+                    <th className="py-2 px-3 font-semibold">ชำระเงิน</th>
+                    <th className="py-2 px-3 font-semibold">สถานะ</th>
+                    <th className="py-2 px-3 font-semibold">การทำงาน</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map((b) => {
+                    const days = computeDays(b.pickupTime, b.returnTime);
+                    const total = b.total ?? b.pricePerDay * days;
+                    const life = getLifecycle(b, now);
+
+                    return (
+                      <tr key={b.id} className="hover:bg-gray-50 align-top">
+                        <td className="py-3 px-3">{b.bookingCode}</td>
+                        <td className="py-3 px-3">{b.customerName}</td>
+                        <td className="py-3 px-3">
+                          {(b.carName || "—") + " / " + (b.carPlate || "—")}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-gray-500">
+                          {fmtDateTimeLocal(b.pickupTime)} →{" "}
+                          {fmtDateTimeLocal(b.returnTime)}
+                        </td>
+                        <td className="py-3 px-3 text-right text-gray-800">
+                          {fmtBaht(total)} ฿
+                        </td>
+                        <td className="py-3 px-3">
+                          <PayBadge value={b.paymentStatus} />
+                        </td>
+                        <td className="py-3 px-3">
+                          <BookingBadge value={life} />
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => openEdit(b)}
+                              className="rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-sm hover:bg-gray-300 text-gray-900"
+                            >
+                              แก้ไข
+                            </button>
+
+                            <button
+                              onClick={() => openDetail(b)}
+                              className="rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-sm hover:bg-gray-300 text-gray-900"
+                            >
+                              รายละเอียด
+                            </button>
+
+                            {(life === "in use" ||
+                              life === "return overdue") && (
+                              <button
+                                onClick={() => handleComplete(b)}
+                                disabled={completingId === b.bookingCode}
+                                className="rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-sm hover:bg-gray-300 text-gray-900 disabled:opacity-60"
+                              >
+                                {completingId === b.bookingCode
+                                  ? "กำลังบันทึก…"
+                                  : "เสร็จสิ้น"}
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleCancel(b)}
+                              disabled={cancellingId === b.bookingCode}
+                              className="rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-sm hover:bg-gray-300 text-gray-900 disabled:opacity-60"
+                            >
+                              {cancellingId === b.bookingCode
+                                ? "กำลังยกเลิก…"
+                                : "ยกเลิก"}
+                            </button>
+
+                            <button
+                              onClick={() => handleDelete(b)}
+                              disabled={deletingId === b.bookingCode}
+                              className="rounded-lg border border-gray-300 bg-gray-200 px-3 py-1.5 text-sm hover:bg-gray-300 text-gray-900 disabled:opacity-60"
+                              title="ลบรายการจองนี้"
+                            >
+                              {deletingId === b.bookingCode ? "กำลังลบ…" : "ลบ"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            // ✅ โหมดมือถือ
+            <div className="mt-4">
+              <CompactList
+                rows={filtered}
+                now={now}
+                onOpenDetail={openDetail}
+                onEdit={openEdit}
+                onComplete={handleComplete}
+                onCancel={handleCancel}
+                onDelete={handleDelete}
+                completingId={completingId}
+                cancellingId={cancellingId}
+                deletingId={deletingId}
+              />
+            </div>
+          )}
         </>
       )}
 

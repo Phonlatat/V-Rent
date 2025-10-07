@@ -3,7 +3,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StatusBadge } from "./Badges";
-import { fmtBaht, fmtDateTimeLocal } from "./utils";
+import { fmtBaht } from "./utils";
+import { createPortal } from "react-dom";
 
 const MAX_FILE_MB = 3;
 
@@ -19,7 +20,7 @@ const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
 function normalizeImage(u) {
   if (!u) return "";
   const s0 = String(u).trim();
-  if (/^(data:|blob:)/i.test(s0)) return s0; // ไม่แตะ data: / blob:
+  if (/^(data:|blob:)/i.test(s0)) return s0;
   let s = s0;
   if (s.startsWith("//")) s = "https:" + s;
   if (s.startsWith("/")) s = ERP_BASE.replace(/\/+$/, "") + s;
@@ -29,17 +30,45 @@ function normalizeImage(u) {
   return encodeURI(s);
 }
 
+function Modal({ open, onClose, children }) {
+  if (!open) return null;
+
+  // ล็อกสกอร์ลของหน้า เมื่อเปิดโมดัล
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  return createPortal(
+    // ชั้นนอกของโมดัล: เต็มจอ + สกอร์ลเองได้
+    <div className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain">
+      {/* ฉากหลัง */}
+      <div
+        className="fixed inset-0 bg-black/60"
+        onClick={onClose}
+        aria-label="ปิด"
+      />
+      {/* ตัวห่อ ให้จัดกลางและมีระยะขอบ */}
+      <div className="relative min-h-full flex items-start justify-center p-4">
+        {/* children = กล่องขาว + เนื้อหา ที่คุณใช้เดิม */}
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function CarsTable({
   cars = [],
   bookings = [],
   now = new Date(),
-  nextBookingMap = {},
   onEdit,
   onDelete,
 
-  // ✅ default แปลง EN/TH → TH (robust)
   getCarRowStatus = (c) => {
-    // เลือกค่าที่ “ไม่ว่างจริงๆ” ตัวแรกจากหลายคีย์
     const firstNonEmpty = (...xs) =>
       xs.find(
         (s) =>
@@ -58,13 +87,12 @@ export default function CarsTable({
     );
     const raw = String(raw0)
       .normalize("NFKC")
-      .replace(/\u00A0|\u200B|\u200C|\u200D/g, " ") // NBSP/ZWSP → space
+      .replace(/\u00A0|\u200B|\u200C|\u200D/g, " ")
       .trim()
       .toLowerCase()
-      .replace(/\s+/g, " "); // squeeze spaces
-    const compact = raw.replace(/\s+/g, ""); // "inrent", "inuse" etc.
+      .replace(/\s+/g, " ");
+    const compact = raw.replace(/\s+/g, "");
 
-    // ถูกจอง
     if (
       raw === "in rent" ||
       compact === "inrent" ||
@@ -74,7 +102,6 @@ export default function CarsTable({
     )
       return "ถูกจอง";
 
-    // กำลังใช้งาน
     if (
       raw === "in use" ||
       compact === "inuse" ||
@@ -84,7 +111,6 @@ export default function CarsTable({
     )
       return "ถูกยืมอยู่";
 
-    // ซ่อมบำรุง
     if (
       raw === "maintenance" ||
       raw === "maintainance" ||
@@ -93,10 +119,8 @@ export default function CarsTable({
     )
       return "ซ่อมบำรุง";
 
-    // ว่าง
     if (raw === "available" || raw === "ว่าง") return "ว่าง";
 
-    // ไม่รู้จัก → ว่าง (กัน UI พัง)
     return "ว่าง";
   },
 
@@ -119,17 +143,14 @@ export default function CarsTable({
   const editImgRef = useRef(null);
 
   // ───────── Filter state ─────────
-  const [filterQ, setFilterQ] = useState(""); // ค้นหา
-  const [filterStatus, setFilterStatus] = useState("ทั้งหมด"); // สถานะ
+  const [filterQ, setFilterQ] = useState("");
+  const [filterStatus, setFilterStatus] = useState("ทั้งหมด");
 
-  // sync external cars
   useEffect(() => setRows(cars), [cars]);
 
-  // auto-fetch list
   useEffect(() => {
     if (!autoFetchIfEmpty) return;
     if (Array.isArray(cars) && cars.length > 0) return;
-
     const controller = new AbortController();
     (async () => {
       try {
@@ -149,7 +170,6 @@ export default function CarsTable({
           [];
         setRows(normalizeVehicles(rawList));
       } catch (e) {
-        // ✅ ถ้าเป็น abort ไม่ต้องแสดง error
         if (
           e?.name === "AbortError" ||
           String(e?.message).includes("aborted")
@@ -164,7 +184,6 @@ export default function CarsTable({
     return () => controller.abort();
   }, [apiUrl, autoFetchIfEmpty, cars]);
 
-  // ─── modal handlers ───
   const openEdit = (car) => {
     setSelectedId(car?.id ?? null);
     setImgError("");
@@ -182,11 +201,9 @@ export default function CarsTable({
       fuel: car?.fuel ?? "เบนซิน",
       year: String(car?.year ?? ""),
       pricePerDay: String(car?.pricePerDay ?? 0),
-      // TIP: field status เก็บอะไรก็ได้ (EN/TH) — เราจะแปลงตอนโชว์/กรองด้วย getCarRowStatus
       status: toEN(car?.status ?? "Available"),
       company: car?.company || "",
       description: car?.description ?? "",
-      // ✅ รูปปัจจุบัน normalize ให้เป็น URL เต็ม (รองรับ /files/xxx)
       imageData: normalizeImage(car?.imageData || car?.imageUrl || ""),
       imageRemoved: false,
     });
@@ -217,7 +234,7 @@ export default function CarsTable({
     reader.onload = () =>
       setEditForm((p) => ({
         ...p,
-        imageData: String(reader.result), // data: URL
+        imageData: String(reader.result),
         imageRemoved: false,
       }));
     reader.onerror = () => {
@@ -233,7 +250,6 @@ export default function CarsTable({
     if (editImgRef.current) editImgRef.current.value = "";
   };
 
-  /** 🔗 บันทึกไป ERPNext: edit_vehicles (FormData) */
   const saveEdit = async (e) => {
     e.preventDefault();
     if (saving) return;
@@ -276,10 +292,10 @@ export default function CarsTable({
       }
 
       const nextImageData = newFile
-        ? URL.createObjectURL(newFile) // blob: แสดงใน UI ทันที
+        ? URL.createObjectURL(newFile)
         : editForm.imageRemoved
         ? ""
-        : editForm.imageData; // ค่าที่ normalize มาแล้ว
+        : editForm.imageData;
 
       const updatedLocal = {
         id: editForm.id || selectedId,
@@ -318,7 +334,6 @@ export default function CarsTable({
     }
   };
 
-  /** ลบคันรถ (ERP DELETE) */
   const openDelete = (car) => {
     setSelectedId(car?.id ?? null);
     setSelectedPlate(car?.licensePlate || "");
@@ -365,11 +380,9 @@ export default function CarsTable({
     }
   };
 
-  // ───────── Filtered rows (apply ค้นหา + สถานะ) ─────────
   const filteredRows = useMemo(() => {
     const q = filterQ.trim().toLowerCase();
     return rows.filter((c) => {
-      // ✅ ใช้สถานะที่ผ่าน getCarRowStatus เพื่อให้เข้ากับค่าตัวกรองที่เป็นภาษาไทย
       const displayStatus = getCarRowStatus(c, bookings, now);
       const matchStatus =
         filterStatus === "ทั้งหมด" ? true : displayStatus === filterStatus;
@@ -385,7 +398,6 @@ export default function CarsTable({
     });
   }, [rows, filterQ, filterStatus, bookings, now, getCarRowStatus]);
 
-  // สำหรับ column runnum → ใช้ filteredRows
   const dataForRender = useMemo(
     () => filteredRows.map((c, i) => ({ ...c, _idx: i })),
     [filteredRows]
@@ -415,30 +427,32 @@ export default function CarsTable({
 
       {/* ───────── Filter Bar ───────── */}
       <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
           <input
             value={filterQ}
             onChange={(e) => setFilterQ(e.target.value)}
             placeholder="รุ่น / ยี่ห้อ / ป้ายทะเบียน..."
-            className="w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400 focus:border-gray-700 focus:ring-gray-700"
+            className="w-full sm:w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400 focus:border-gray-700 focus:ring-gray-700"
           />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-black focus:border-gray-700 focus:ring-gray-700"
-          >
-            <option>ทั้งหมด</option>
-            <option>ว่าง</option>
-            <option>ถูกจอง</option>
-            <option>ถูกยืมอยู่</option>
-            <option>ซ่อมบำรุง</option>
-          </select>
-          <button
-            onClick={clearFilters}
-            className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-black hover:bg-gray-200"
-          >
-            ล้างตัวกรอง
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-black focus:border-gray-700 focus:ring-gray-700"
+            >
+              <option>ทั้งหมด</option>
+              <option>ว่าง</option>
+              <option>ถูกจอง</option>
+              <option>ถูกยืมอยู่</option>
+              <option>ซ่อมบำรุง</option>
+            </select>
+            <button
+              onClick={clearFilters}
+              className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-black hover:bg-gray-200"
+            >
+              ล้างตัวกรอง
+            </button>
+          </div>
         </div>
 
         <div className="text-sm text-black">
@@ -446,8 +460,101 @@ export default function CarsTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto mt-4">
+      {/* ───────────────── MOBILE LIST (<= md) ───────────────── */}
+      <div className="mt-4 grid gap-3 md:hidden">
+        {loading && rows.length === 0 ? (
+          <div className="rounded-lg border border-gray-200 p-4 text-center text-black">
+            กำลังโหลดข้อมูล…
+          </div>
+        ) : filteredRows.length === 0 ? (
+          <div className="rounded-lg border border-gray-200 p-4 text-center text-black">
+            ไม่พบข้อมูลตามตัวกรอง
+          </div>
+        ) : (
+          dataForRender.map((c) => {
+            const displayStatus = getCarRowStatus(c, bookings, now);
+            const img = normalizeImage(c.imageData || c.imageUrl || "");
+            return (
+              <div
+                key={String(c.id)}
+                className="rounded-2xl border border-gray-200 p-4 shadow-sm"
+              >
+                {/* row 1: รูป + ชื่อ/ป้าย + ราคา */}
+                <div className="flex items-start gap-3">
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={c.name}
+                      className="h-16 w-24 flex-none rounded-lg object-cover border"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-16 w-24 flex-none rounded-lg bg-gray-100 border grid place-items-center text-xs text-gray-500">
+                      ไม่มีรูป
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-black truncate">
+                      {c.name || "—"}
+                    </div>
+                    <div className="text-xs text-gray-600 truncate">
+                      {c.brand ? `${c.brand} • ` : ""}
+                      {c.type || "—"}
+                    </div>
+                    <div className="mt-0.5 text-sm text-gray-800">
+                      ป้าย:{" "}
+                      <span className="font-medium">
+                        {c.licensePlate || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">ราคา/วัน</div>
+                    <div className="text-base font-bold text-black">
+                      {fmtBaht(Number(c.pricePerDay || 0))} ฿
+                    </div>
+                  </div>
+                </div>
+
+                {/* row 2: สถานะ */}
+                <div className="mt-3">
+                  <StatusBadge
+                    value={
+                      displayStatus ||
+                      c.status ||
+                      c.stage ||
+                      c.vehicle_stage ||
+                      c.car_status ||
+                      "ว่าง"
+                    }
+                  />
+                </div>
+
+                {/* row 3: ปุ่มจัดการ */}
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => openEdit(c)}
+                    className="flex-1 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-black hover:bg-gray-200 active:scale-[.99]"
+                  >
+                    ✎ แก้ไข
+                  </button>
+                  <button
+                    onClick={() => openDelete(c)}
+                    className="flex-1 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-black hover:bg-gray-200 active:scale-[.99]"
+                  >
+                    ลบ
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ───────────────── DESKTOP TABLE (md+) ───────────────── */}
+      <div className="overflow-x-auto mt-4 hidden md:block">
         <table className="w-full min-w-full text-sm">
           <thead>
             <tr className="text-left text-black">
@@ -458,7 +565,6 @@ export default function CarsTable({
               <th className="py-2 pr-3">ประเภทรถ</th>
               <th className="py-2 pr-3">ราคา/วัน</th>
               <th className="py-2 pr-3">สถานะ</th>
-              <th className="py-2 pr-3">จองถัดไป</th>
               <th className="py-2 pr-3">การจัดการ</th>
             </tr>
           </thead>
@@ -466,37 +572,19 @@ export default function CarsTable({
           <tbody className="divide-y divide-gray-200 text-black">
             {loading && rows.length === 0 ? (
               <tr>
-                {/* ✅ มี 9 คอลัมน์ -> colSpan=9 */}
-                <td colSpan={9} className="py-6 text-center">
+                <td colSpan={8} className="py-6 text-center">
                   กำลังโหลดข้อมูล…
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                {/* ✅ มี 9 คอลัมน์ -> colSpan=9 */}
-                <td colSpan={9} className="py-6 text-center">
+                <td colSpan={8} className="py-6 text-center">
                   ไม่พบข้อมูลตามตัวกรอง
                 </td>
               </tr>
             ) : (
               dataForRender.map((c) => {
                 const displayStatus = getCarRowStatus(c, bookings, now);
-                const hideNext = [
-                  "ซ่อมบำรุง",
-                  "ซ่อมแซม",
-                  "ถูกยืมอยู่",
-                  "ถูกจอง",
-                  "เลยกำหนดรับ",
-                  "เลยกำหนดส่ง",
-                ].includes(displayStatus);
-
-                const nb = hideNext
-                  ? null
-                  : nextBookingMap[c.id] ||
-                    nextBookingMap[c.licensePlate || c.name] ||
-                    null;
-                // // ใน map ของตาราง ก่อน return <tr>
-                // console.log("row", { rawStatus: c.status, displayStatus });
                 return (
                   <tr key={String(c.id)}>
                     <td className="py-3 pr-3">{c._idx + 1}</td>
@@ -519,19 +607,7 @@ export default function CarsTable({
                         }
                       />
                     </td>
-                    <td className="py-3 pr-3">
-                      {nb ? (
-                        <div className="leading-tight">
-                          <div className="font-medium">{nb.bookingCode}</div>
-                          <div className="text-xs text-gray-600">
-                            {fmtDateTimeLocal(nb.pickupTime)} →{" "}
-                            {fmtDateTimeLocal(nb.returnTime)}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
-                    </td>
+
                     <td className="py-3 pr-3">
                       <div className="flex items-center gap-2">
                         <button
@@ -557,301 +633,290 @@ export default function CarsTable({
       </div>
 
       {/* Modal: แก้ไขรถ */}
-      {editOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-gray-800/60 hover:bg-gray-900/70 transition-colors"
-            onClick={closeEdit}
-          />
-          <div className="relative z-10 w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-black">
-                แก้ไขข้อมูลรถ #{selectedId}
-              </h3>
-              <button
-                onClick={closeEdit}
-                className="rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100"
-                aria-label="ปิด"
+      <Modal open={editOpen} onClose={closeEdit}>
+        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl text-black max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold">แก้ไขข้อมูลรถ #{selectedId}</h3>
+            <button
+              onClick={closeEdit}
+              className="rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form
+            onSubmit={saveEdit}
+            className="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3"
+          >
+            {/* ====== ฟิลด์เดิมของคุณ วางกลับเข้ามาทั้งชุดได้เลย ====== */}
+            {/* ชื่อรถ */}
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold mb-1">
+                ชื่อรถ *
+              </label>
+              <input
+                name="name"
+                value={editForm.name}
+                onChange={handleEditChange}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+            {/* ยี่ห้อ */}
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold mb-1">
+                ยี่ห้อ *
+              </label>
+              <input
+                name="brand"
+                value={editForm.brand}
+                onChange={handleEditChange}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+            {/* ประเภท */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">ประเภท</label>
+              <select
+                name="type"
+                value={editForm.type}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
               >
-                ✕
-              </button>
+                <option>Sedan</option>
+                <option>SUV</option>
+                <option>Hatchback</option>
+                <option>Pickup</option>
+                <option>JDM</option>
+                <option>Van</option>
+              </select>
+            </div>
+            {/* ระบบเกียร์ */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">
+                ระบบเกียร์
+              </label>
+              <select
+                name="transmission"
+                value={editForm.transmission}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              >
+                <option value="อัตโนมัติ">อัตโนมัติ (Auto)</option>
+                <option value="ธรรมดา">ธรรมดา (Manual)</option>
+              </select>
+            </div>
+            {/* ป้ายทะเบียน */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">
+                ป้ายทะเบียน
+              </label>
+              <div className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-gray-700">
+                {editForm.licensePlate || "—"}
+              </div>
             </div>
 
-            <form
-              onSubmit={saveEdit}
-              className="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 text-black"
-            >
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold mb-1">
-                  ชื่อรถ *
-                </label>
-                <input
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleEditChange}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold mb-1">
-                  ยี่ห้อ *
-                </label>
-                <input
-                  name="brand"
-                  value={editForm.brand}
-                  onChange={handleEditChange}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
+            {/* ที่นั่ง */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">
+                จำนวนที่นั่ง
+              </label>
+              <input
+                type="number"
+                min="1"
+                name="seats"
+                value={editForm.seats}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+            {/* เชื้อเพลิง */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">
+                ประเภทเชื้อเพลิง
+              </label>
+              <select
+                name="fuel"
+                value={editForm.fuel}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              >
+                <option>เบนซิน</option>
+                <option>ดีเซล</option>
+                <option>ไฮบริด</option>
+                <option>ไฟฟ้า (EV)</option>
+                <option>LPG</option>
+                <option>NGV</option>
+              </select>
+            </div>
+            {/* ปี */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold mb-1">
+                ปีของรถ
+              </label>
+              <input
+                type="number"
+                name="year"
+                min="1980"
+                max="2100"
+                value={editForm.year}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+            {/* ราคา */}
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold mb-1">
+                ราคา/วัน (บาท) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="pricePerDay"
+                value={editForm.pricePerDay}
+                onChange={handleEditChange}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+            {/* สถานะ */}
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold mb-1">สถานะ</label>
+              <select
+                name="status"
+                value={editForm.status}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              >
+                <option value="Available">ว่าง</option>
+                <option value="Reserved">ถูกจอง</option>
+                <option value="In Use">ถูกยืมอยู่</option>
+                <option value="Maintenance">ซ่อมบำรุง</option>
+              </select>
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  ประเภท
-                </label>
-                <select
-                  name="type"
-                  value={editForm.type}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                >
-                  <option>Sedan</option>
-                  <option>SUV</option>
-                  <option>Hatchback</option>
-                  <option>Pickup</option>
-                  <option>JDM</option>
-                  <option>Van</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  ระบบเกียร์
-                </label>
-                <select
-                  name="transmission"
-                  value={editForm.transmission}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                >
-                  <option value="อัตโนมัติ">อัตโนมัติ (Auto)</option>
-                  <option value="ธรรมดา">ธรรมดา (Manual)</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  ป้ายทะเบียน
-                </label>
-                <input
-                  name="licensePlate"
-                  value={editForm.licensePlate}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
+            {/* รูปเดียวต่อคัน */}
+            <div className="md:col-span-6">
+              <label className="block text-xs font-semibold mb-1">
+                รูปรถ (อัปโหลดใหม่/ลบ) — ระบบรองรับรูปเดียวต่อคัน
+              </label>
+              <input
+                ref={editImgRef}
+                type="file"
+                accept="image/*"
+                onChange={handleEditImageChange}
+                className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-gray-200 file:px-3 file:py-2 file:text-black hover:file:bg-gray-300"
+              />
+              {imgError && (
+                <div className="mt-1 text-xs text-rose-600">{imgError}</div>
+              )}
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  จำนวนที่นั่ง
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  name="seats"
-                  value={editForm.seats}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  ประเภทเชื้อเพลิง
-                </label>
-                <select
-                  name="fuel"
-                  value={editForm.fuel}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                >
-                  <option>เบนซิน</option>
-                  <option>ดีเซล</option>
-                  <option>ไฮบริด</option>
-                  <option>ไฟฟ้า (EV)</option>
-                  <option>LPG</option>
-                  <option>NGV</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold mb-1">
-                  ปีของรถ
-                </label>
-                <input
-                  type="number"
-                  name="year"
-                  min="1980"
-                  max="2100"
-                  value={editForm.year}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
-
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold mb-1">
-                  ราคา/วัน (บาท) *
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  name="pricePerDay"
-                  value={editForm.pricePerDay}
-                  onChange={handleEditChange}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold mb-1">
-                  สถานะ
-                </label>
-                <select
-                  name="status"
-                  value={editForm.status}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                >
-                  {/* ค่าใน ERP จะเป็น EN ก็ได้ เราแปลงทีหลังตอนแสดง */}
-                  <option value="Available">ว่าง</option>
-                  <option value="Reserved">ถูกจอง</option>
-                  <option value="In Use">ถูกยืมอยู่</option>
-                  <option value="Maintenance">ซ่อมบำรุง</option>
-                </select>
-              </div>
-
-              {/* รูปเดียวต่อคัน */}
-              <div className="md:col-span-6">
-                <label className="block text-xs font-semibold mb-1">
-                  รูปรถ (อัปโหลดใหม่/ลบ) — ระบบรองรับรูปเดียวต่อคัน
-                </label>
-                <input
-                  ref={editImgRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleEditImageChange}
-                  className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-gray-200 file:px-3 file:py-2 file:text-black hover:file:bg-gray-300"
-                />
-                {imgError && (
-                  <div className="mt-1 text-xs text-rose-600">{imgError}</div>
-                )}
-
-                {editForm.imageData ? (
-                  <div className="mt-3">
-                    {/* ✅ ใช้ normalizeImage กันพาธ /files/... */}
-                    <img
-                      src={normalizeImage(editForm.imageData)}
-                      alt="ตัวอย่างรูปรถ"
-                      className="h-28 w-auto rounded-lg border object-cover"
-                    />
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={clearEditImage}
-                        className="rounded-md bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-                      >
-                        ลบรูป
-                      </button>
-                    </div>
+              {editForm.imageData ? (
+                <div className="mt-3">
+                  <img
+                    src={normalizeImage(editForm.imageData)}
+                    alt="ตัวอย่างรูปรถ"
+                    className="h-28 w-auto rounded-lg border object-cover"
+                  />
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={clearEditImage}
+                      className="rounded-md bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
+                    >
+                      ลบรูป
+                    </button>
                   </div>
-                ) : editForm.imageRemoved ? (
-                  <p className="mt-1 text-xs text-gray-500">
-                    จะลบรูปเดิมเมื่อกด “บันทึกการเปลี่ยนแปลง”
-                  </p>
-                ) : (
-                  <p className="mt-1 text-xs text-gray-500">
-                    รองรับไฟล์ .jpg .png .webp ≤ {MAX_FILE_MB}MB
-                  </p>
-                )}
-              </div>
-
-              <div className="md:col-span-6">
-                <label className="block text-xs font-semibold mb-1">
-                  คำอธิบายเพิ่มเติม
-                </label>
-                <textarea
-                  name="description"
-                  rows={4}
-                  value={editForm.description}
-                  onChange={handleEditChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
-                />
-              </div>
-
-              <div className="md:col-span-6 flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeEdit}
-                  className="px-4 py-2 rounded-lg bg-gray-200 text-black hover:bg-gray-300"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-60"
-                >
-                  {saving ? "กำลังบันทึก…" : "บันทึกการเปลี่ยนแปลง"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: ยืนยันลบ */}
-      {delOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-gray-800/60 hover:bg-gray-900/70 transition-colors"
-            onClick={closeDelete}
-          />
-          <div className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl text-black">
-            <h3 className="text-lg font-bold">ยืนยันการลบ</h3>
-            <p className="mt-2 text-sm text-gray-700">
-              ต้องการลบรถ
-              {selectedName ? (
-                <>
-                  {" "}
-                  <b>{selectedName}</b>
-                </>
-              ) : null}{" "}
-              {selectedPlate ? (
-                <>
-                  (ป้ายทะเบียน <b>{selectedPlate}</b>)
-                </>
+                </div>
+              ) : editForm.imageRemoved ? (
+                <p className="mt-1 text-xs text-gray-500">
+                  จะลบรูปเดิมเมื่อกด “บันทึกการเปลี่ยนแปลง”
+                </p>
               ) : (
-                <>
-                  หมายเลข <b>#{selectedId}</b>
-                </>
-              )}{" "}
-              ใช่หรือไม่?
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2">
+                <p className="mt-1 text-xs text-gray-500">
+                  รองรับไฟล์ .jpg .png .webp ≤ 3MB
+                </p>
+              )}
+            </div>
+
+            {/* คำอธิบาย */}
+            <div className="md:col-span-6">
+              <label className="block text-xs font-semibold mb-1">
+                คำอธิบายเพิ่มเติม
+              </label>
+              <textarea
+                name="description"
+                rows={4}
+                value={editForm.description}
+                onChange={handleEditChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-gray-700 focus:ring-gray-700"
+              />
+            </div>
+
+            <div className="md:col-span-6 flex items-center justify-end gap-3 pt-2">
               <button
-                onClick={closeDelete}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                type="button"
+                onClick={closeEdit}
+                className="px-4 py-2 rounded-lg bg-gray-200 text-black hover:bg-gray-300"
               >
                 ยกเลิก
               </button>
               <button
-                onClick={doDelete}
-                className="px-5 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800"
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-60"
               >
-                ลบ
+                {saving ? "กำลังบันทึก…" : "บันทึกการเปลี่ยนแปลง"}
               </button>
             </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Modal: ยืนยันลบ */}
+      <Modal open={delOpen} onClose={closeDelete}>
+        <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl text-black max-h-[90vh] overflow-y-auto">
+          <h3 className="text-lg font-bold">ยืนยันการลบ</h3>
+          <p className="mt-2 text-sm text-gray-700">
+            ต้องการลบรถ
+            {selectedName ? (
+              <>
+                {" "}
+                <b>{selectedName}</b>
+              </>
+            ) : null}{" "}
+            {selectedPlate ? (
+              <>
+                {" "}
+                (ป้ายทะเบียน <b>{selectedPlate}</b>)
+              </>
+            ) : (
+              <>
+                {" "}
+                หมายเลข <b>#{selectedId}</b>
+              </>
+            )}{" "}
+            ใช่หรือไม่?
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              onClick={closeDelete}
+              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={doDelete}
+              className="px-5 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800"
+            >
+              ลบ
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
@@ -863,14 +928,11 @@ const toEN = (s) => {
     .trim()
     .toLowerCase();
   const compact = x0.replace(/\s+/g, "");
-
-  // ถูกจอง → Reserved (canonical)
   if (
     ["in rent", "reserved", "booked", "ถูกจอง"].includes(x0) ||
     compact === "inrent"
   )
     return "Reserved";
-  // กำลังเช่า → In Use (canonical)
   if (
     ["in use", "rented", "กำลังเช่า", "ถูกยืมอยู่"].includes(x0) ||
     compact === "inuse"
@@ -881,8 +943,6 @@ const toEN = (s) => {
   if (["available", "ว่าง"].includes(x0)) return "Available";
   return "Available";
 };
-
-/* helpers */
 
 function initCar() {
   return {
@@ -915,20 +975,18 @@ const isPlainObject = (v) =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 function mapVehicleObject(v) {
-  // รูป: รองรับ vehicle_image และพาธ /files/...
   const rawImg =
     v.imageData ||
     v.image_url ||
     v.image ||
     v.photo ||
     v.thumbnail ||
-    v.vehicle_image || // <- สำคัญกับ payload ชุดนี้
+    v.vehicle_image ||
     "";
   const img = normalizeImage(rawImg);
 
-  // แปลงตัวเลข/สตริง
   const priceNum = Number(v.price_per_day ?? v.rate ?? v.price ?? 0);
-  const seatsNum = Number(v.seats ?? v.seat ?? 5); // <- รองรับ seat
+  const seatsNum = Number(v.seats ?? v.seat ?? 5);
   const yearNum = Number(v.year ?? 0);
 
   return {
@@ -952,15 +1010,14 @@ function mapVehicleObject(v) {
       v.car_status ||
       v.status_text ||
       "ว่าง",
-    // รองรับหลายคีย์จาก backend
     type: v.type || v.v_type || v.ftype || v.category || "Sedan",
-    transmission: v.transmission || v.gear_system || "อัตโนมัติ", // <- รองรับ gear_system
+    transmission: v.transmission || v.gear_system || "อัตโนมัติ",
     seats: seatsNum,
-    fuel: v.fuel || v.fuel_type || "เบนซิน", // <- รองรับ fuel_type
+    fuel: v.fuel || v.fuel_type || "เบนซิน",
     year: yearNum,
     company: v.company || "",
     description: v.description || "",
-    imageData: img, // ใช้ URL เต็ม / data: / blob: ได้
+    imageData: img,
     imageUrl: img,
   };
 }

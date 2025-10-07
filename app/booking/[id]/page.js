@@ -1,3 +1,4 @@
+// app/booking/[id]/page.js  (หรือไฟล์ BookingPage ของคุณ)
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -27,6 +28,9 @@ function diffDays(a, b) {
 }
 const toBool = (v) => String(v ?? "").toLowerCase() === "true";
 const get = (sp, key, fallback = "") => sp.get(key) ?? fallback;
+
+/* ---------- Const ---------- */
+const NOTE_MAX = 140;
 
 /* ---------- Page ---------- */
 export default function BookingPage() {
@@ -130,6 +134,8 @@ export default function BookingPage() {
   );
 
   // ---------- form ----------
+  const [showNoteLimit, setShowNoteLimit] = useState(false);
+
   const [form, setForm] = useState({
     pickupLocation: pickupLocation_q || "",
     dropoffLocation: dropoffLocation_q || "",
@@ -149,14 +155,14 @@ export default function BookingPage() {
       gps: toBool(get(search, "gps")),
       fullInsurance: toBool(get(search, "fullInsurance")),
     },
-    note: get(search, "note"),
+    // ตัดให้ไม่เกินตั้งแต่รับค่าจาก URL
+    note: (get(search, "note") || "").slice(0, NOTE_MAX),
   });
 
   const [isAdmin] = useState(false);
 
-  /* === Autofill จาก user_id (อีเมล) + API erpnext.api.get_user_information === */
+  /* === Autofill จาก user_id === */
   useEffect(() => {
-    // 1) เอา user_id จาก query หรือ fallback เป็นค่าใน LS
     const uidFromQuery = get(search, "user_id");
     let uid = uidFromQuery;
     if (!uid) {
@@ -172,10 +178,8 @@ export default function BookingPage() {
     uid = (uid || "").trim();
     if (!uid) return;
 
-    // 2) กรอกช่องอีเมลด้วย user_id
     setForm((prev) => ({ ...prev, email: prev.email || uid }));
 
-    // 3) ดึงชื่อ/เบอร์จาก API ที่ใช้อยู่จริง
     (async () => {
       try {
         const r = await fetch(
@@ -186,22 +190,16 @@ export default function BookingPage() {
         );
         if (!r.ok) return;
         const j = await r.json();
-
-        // โครงสร้างตามสกรีนช็อต: { message: [fullName, phone, city, tier, avatar, isAdminFlag] }
         const msg = Array.isArray(j?.message) ? j.message : null;
         if (!msg) return;
-
         const fullName = msg[0] || "";
         const phone = msg[1] || "";
-
         setForm((prev) => ({
           ...prev,
           name: fullName || prev.name,
           phone: phone || prev.phone,
         }));
-      } catch {
-        /* noop */
-      }
+      } catch {}
     })();
   }, [search]);
 
@@ -230,8 +228,19 @@ export default function BookingPage() {
     }
   }, [form.pickupAt, form.dropoffAt]);
 
+  // เปลี่ยนค่าแบบคุมความยาวหมายเหตุ
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (name === "note") {
+      if (value.length > NOTE_MAX) {
+        setShowNoteLimit(true);
+      }
+      const clipped = value.slice(0, NOTE_MAX);
+      setForm((f) => ({ ...f, note: clipped }));
+      return;
+    }
+
     if (name.startsWith("extras.")) {
       const k = name.split(".")[1];
       setForm((f) => ({ ...f, extras: { ...f.extras, [k]: checked } }));
@@ -253,7 +262,6 @@ export default function BookingPage() {
   // ---------- ไปหน้า Choose Payment ----------
   const goToPayment = () => {
     const qp = new URLSearchParams({
-      // ฟอร์ม
       pickupAt: form.pickupAt,
       dropoffAt: form.dropoffAt,
       pickupLocation: form.pickupLocation,
@@ -264,9 +272,9 @@ export default function BookingPage() {
       childSeat: String(form.extras.childSeat),
       gps: String(form.extras.gps),
       fullInsurance: String(form.extras.fullInsurance),
-      note: form.note || "",
+      // ส่งค่าที่ถูก clip แล้วแน่นอน
+      note: (form.note || "").slice(0, NOTE_MAX),
 
-      // รถ
       carId: String(car.id || ""),
       carName: car.name || "",
       carBrand: car.brand || "",
@@ -280,17 +288,13 @@ export default function BookingPage() {
       companySlug: car.company?.slug || "",
       carImage: car.image || "",
 
-      // ISO สำหรับ backend
       pickup_at: new Date(form.pickupAt).toISOString(),
       return_at: new Date(form.dropoffAt).toISOString(),
 
-      // ค่าจาก search เดิม
       passengers: String(passengers || ""),
       promo: promo || "",
       ftype: ftype || "",
       key: key || "",
-
-      // flag
       isAdmin: String(isAdmin),
     }).toString();
 
@@ -460,10 +464,31 @@ export default function BookingPage() {
                   name="note"
                   value={form.note || ""}
                   onChange={handleChange}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text");
+                    const next = ((form.note || "") + text).slice(0, NOTE_MAX);
+                    if ((form.note || "").length + text.length > NOTE_MAX) {
+                      e.preventDefault();
+                      setShowNoteLimit(true);
+                      setForm((f) => ({ ...f, note: next }));
+                    }
+                  }}
                   rows={4}
+                  maxLength={NOTE_MAX} // ป้องกันการพิมพ์เกินแบบ native
                   className={inputCls}
                   placeholder="เช่น ต้องการที่นั่งเด็ก 1 ตัว รับรถหน้าประตู 3"
+                  aria-describedby="note-counter"
                 />
+                <div className="flex items-center justify-between">
+                  <p id="note-counter" className="text-xs text-slate-500">
+                    {(form.note || "").length}/{NOTE_MAX}
+                  </p>
+                  {(form.note || "").length >= NOTE_MAX && (
+                    <span className="text-xs text-red-600">
+                      ถึงขีดจำกัด {NOTE_MAX} ตัวอักษร
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* ปุ่ม */}
@@ -523,6 +548,38 @@ export default function BookingPage() {
       </main>
 
       <Footer />
+
+      {/* ===== Modal: เกิน 140 ตัวอักษร ===== */}
+      {showNoteLimit && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+        >
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowNoteLimit(false)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">
+              ข้อความยาวเกินกำหนด
+            </h3>
+            <p className="mt-1 text-sm text-slate-700">
+              หมายเหตุสามารถใส่ได้ไม่เกิน {NOTE_MAX} ตัวอักษร
+              ระบบได้ตัดให้พอดีแล้วค่ะ
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-black"
+                onClick={() => setShowNoteLimit(false)}
+              >
+                เข้าใจแล้ว
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -314,6 +314,7 @@ function AdminDeliveryContent() {
 
   // 🔒 ล็อกปุ่มระหว่างส่ง
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState({ open: false, warn: "" });
 
   /* ---- fetch rentals ---- */
   useEffect(() => {
@@ -516,18 +517,16 @@ function AdminDeliveryContent() {
       }
 
       // 2) เปลี่ยนสถานะใบจองเป็น In Use
+      let warn = "";
       try {
         await updateRentalStatus(form.bookingCode, "In Use");
       } catch (e) {
         console.error("RENTAL_STATUS_UPDATE_ERROR", e);
-        alert(
-          "บันทึกส่งมอบสำเร็จ แต่เปลี่ยนสถานะไม่สำเร็จ: " +
-            (e.message || String(e))
-        );
+        warn = "แต่เปลี่ยนสถานะใบจองไม่สำเร็จ: " + (e.message || String(e));
       }
 
-      // 3) รีเฟรชหน้าเร็วๆ
-      window.location.reload();
+      // 3) เปิด popup เรียบ ๆ ให้ผู้ใช้กดไปต่อก่อนรีหน้า
+      setSuccess({ open: true, warn });
     } catch (err) {
       console.error(err);
       alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
@@ -938,6 +937,32 @@ function AdminDeliveryContent() {
             โหลดคิวล้มเหลว: {queueErr}
           </p>
         )}
+
+        {success.open && (
+          <div className="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-[360px] rounded-xl shadow-2xl border border-slate-200 p-5 text-center">
+              <div className="text-3xl">✅</div>
+              <h4 className="mt-2 text-lg font-bold">บันทึกสำเร็จ</h4>
+
+              {!!success.warn && (
+                <p className="mt-1 text-xs text-slate-600 whitespace-pre-line">
+                  {success.warn}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccess({ open: false, warn: "" });
+                  window.location.reload();
+                }}
+                className="mt-4 w-full rounded-lg bg-black text-white py-2 hover:bg-slate-900"
+              >
+                ไปต่อ
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ขวา: สรุปโดยย่อ */}
@@ -1147,11 +1172,11 @@ function TodayQueue({ queue, onPick }) {
                       </span>
                     </td>
 
-                    <td className="px-1.5 py-1 sm:px-2 sm:py-2">
+                    <td>
                       <button
                         type="button"
                         onClick={() => onPick(j)}
-                        className="h-6 sm:h-7 px-2 rounded-md border border-slate-300 hover:bg-slate-100"
+                        className="h-6 sm:h-7 px-2 rounded-md border border-slate-300 hover:bg-slate-100 "
                         title="เปิดฟอร์มด้วยข้อมูลนี้"
                       >
                         เปิดฟอร์ม

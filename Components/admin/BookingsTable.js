@@ -418,7 +418,7 @@ function DetailModal({ open, data, onClose }) {
           </h3>
           <button
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm hover:bg-gray-100"
+            className="rounded-md px-2 py-1 text-sm hover:bg-gray-300 text-black"
           >
             ✕
           </button>
@@ -665,7 +665,7 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
           <h3 className="text-lg font-bold text-black">แก้ไขการจอง</h3>
           <button
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm hover:bg-gray-100"
+            className="rounded-md px-2 py-1 text-sm hover:bg-gray-300 text-black"
           >
             ✕
           </button>

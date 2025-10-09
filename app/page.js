@@ -17,7 +17,7 @@ export default function Home() {
         >
           Continue
         </Link>
-        {/* First Commit */}
+        {/* First Commit Version 4 */}
       </div>
     </div>
   );

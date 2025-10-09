@@ -37,7 +37,12 @@ function clampTime(t = "") {
  * Headnsearch
  * - พื้นหลังรูปภาพ + Header + กล่องค้นหา
  */
-export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
+export default function Headnsearch({
+  bgSrc = "/images/View2.jpg",
+  onSearch,
+  pickupLocation, // รับมาจากหน้า Home
+  setPickupLocation, // (ถ้ามี) ไว้ยิงกลับขึ้นไปเวลาแก้ไขในช่อง
+}) {
   const router = useRouter();
 
   // ====== User session (ส่วนของ Header) ======
@@ -161,7 +166,7 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
 
   // ====== BookingBox (ย้ายมาอยู่ไฟล์เดียวกัน) ======
   const [form, setForm] = useState({
-    pickupLocation: "",
+    pickupLocation: pickupLocation || "",
     returnSame: true,
     dropoffLocation: "",
     pickupDate: "",
@@ -172,6 +177,11 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
     passengers: 1,
     promo: "",
   });
+
+  // ถ้า prop pickupLocation เปลี่ยน ให้ดันเข้า form
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, pickupLocation: pickupLocation || "" }));
+  }, [pickupLocation]);
   const [showMore, setShowMore] = useState(false);
 
   const handleFormChange = (e) => {
@@ -328,7 +338,7 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
                 {/* สถานที่ */}
                 <div className="lg:col-span-5">
                   <label className="sr-only">สถานที่รับรถ</label>
-                  <div className="h-14 w-full rounded-xl border border-slate-300 focus-within:border-black bg-white px-3 sm:px-4 flex items-center gap-3 text-slate-900">
+                  <div className="h-14 w-full rounded-xl border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500/40 border-slate-300 bg-white px-3 sm:px-4 flex items-center gap-3 text-slate-900">
                     {/* icon pin */}
                     <svg
                       viewBox="0 0 24 24"
@@ -339,40 +349,66 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
                     </svg>
                     <input
                       type="text"
+                      placeholder="สถานที่รับรถ (เช่น สนามบินเชียงใหม่)"
+                      className="w-full bg-transparent outline-none text-slate-900 placeholder:text-slate-500"
                       name="pickupLocation"
                       value={form.pickupLocation}
-                      onChange={handleFormChange}
-                      className="w-full h-full outline-none bg-transparent text-[15px] text-slate-900 placeholder:text-slate-600"
-                      placeholder="สถานที่รับรถ (เช่น ท่าอากาศยานเชียงใหม่)"
+                      onChange={(e) => {
+                        handleFormChange(e);
+                        setPickupLocation?.(e.target.value);
+                      }}
                     />
                   </div>
 
                   {/* toggle คืนรถคนละที่ */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      id="returnSame"
-                      type="checkbox"
-                      name="returnSame"
-                      checked={form.returnSame}
-                      onChange={handleFormChange}
-                      className="rounded border-slate-400 text-black focus:ring-black"
-                    />
-                    <label
-                      htmlFor="returnSame"
-                      className="text-sm text-slate-800"
-                    >
-                      คืนรถจุดเดิม
-                    </label>
-                    {!form.returnSame && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {/* checkbox + label */}
+                    <label className="inline-flex items-center gap-2">
                       <input
-                        type="text"
-                        name="dropoffLocation"
-                        placeholder="จุดคืนรถ"
-                        value={form.dropoffLocation}
+                        id="returnSame"
+                        type="checkbox"
+                        name="returnSame"
+                        checked={form.returnSame}
                         onChange={handleFormChange}
-                        className="ml-2 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-600"
+                        className="rounded border-slate-400 text-black focus:ring-black"
+                        aria-controls="dropoffWrap"
+                        aria-expanded={!form.returnSame}
                       />
-                    )}
+                      <span className="text-sm text-slate-800">
+                        คืนรถจุดเดิม
+                      </span>
+                    </label>
+
+                    {/* ช่อง “จุดคืนรถ” พร้อมอนิเมชัน สูง/จาง อย่างนุ่ม */}
+                    <div
+                      id="dropoffWrap"
+                      className={[
+                        // ใช้ grid-rows เพื่อ animate ความสูงแบบไม่พัง margin ภายใน
+                        "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+                        form.returnSame
+                          ? "grid-rows-[0fr] opacity-0 pointer-events-none"
+                          : "grid-rows-[1fr] opacity-100",
+                        // layout: กว้างพอดีบรรทัดบนมือถือ และยืดได้เมื่อมีที่ว่าง
+                        "w-full sm:flex-1",
+                      ].join(" ")}
+                    >
+                      {/* ตัวห่อภายในต้อง overflow-hidden เพื่อกันเนื้อหาทะลักระหว่าง animate */}
+                      <div className="overflow-hidden">
+                        <input
+                          type="text"
+                          name="dropoffLocation"
+                          placeholder="จุดคืนรถ"
+                          value={form.dropoffLocation}
+                          onChange={handleFormChange}
+                          className="
+          mt-2 sm:mt-0 w-full sm:min-w-[220px]
+          rounded-lg border border-slate-300
+          px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-600
+          bg-white
+        "
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -495,8 +531,13 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
                 </div>
               </div>
 
-              {showMore && (
-                <div className="pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div
+                className={`
+    transition-all duration-500 ease-in-out overflow-hidden
+    ${showMore ? "max-h-[400px] opacity-100 pt-3" : "max-h-0 opacity-0 pt-0"}
+  `}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm mb-1 text-slate-800">
                       ประเภทรถ
@@ -547,7 +588,7 @@ export default function Headnsearch({ bgSrc = "/images/View2.jpg", onSearch }) {
                     />
                   </div>
                 </div>
-              )}
+              </div>
             </form>
           </div>
         </div>

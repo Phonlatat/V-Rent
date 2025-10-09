@@ -17,6 +17,7 @@ export default function Home() {
         >
           Continue
         </Link>
+        {/* First Commit */}
       </div>
     </div>
   );

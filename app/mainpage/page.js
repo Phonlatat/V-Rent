@@ -1,9 +1,10 @@
 "use client";
 
 import CardAddOn from "@/Components/CardAddOn";
-import Footer from "@/Components/FooterMinimal";
+import Footer from "@/Components/Footer";
 import Header from "@/Components/Headnsearch";
 import Slidemodal from "@/Components/Slidemodal";
+import BookingBox from "@/Components/bookingbox";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -121,7 +122,6 @@ export default function Home() {
         </main>
 
         {/* FOOTER */}
-        <Footer />
       </div>
     </div>
   );

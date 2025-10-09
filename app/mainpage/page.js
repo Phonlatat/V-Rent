@@ -4,7 +4,6 @@ import CardAddOn from "@/Components/CardAddOn";
 import Footer from "@/Components/Footer";
 import Header from "@/Components/Headnsearch";
 import Slidemodal from "@/Components/Slidemodal";
-import BookingBox from "@/Components/bookingbox";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

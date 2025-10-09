@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import CardAddOn from "@/Components/CardAddOn";
 
 export default function Slidemodal() {
   const tabs = useMemo(

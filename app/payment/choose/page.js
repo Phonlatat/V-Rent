@@ -2,7 +2,7 @@
 // ไฟล์นี้เป็น Server Component โดยค่าเริ่มต้น
 
 import { Suspense } from "react";
-import Headers from "@/Components/Header";
+import Headers from "@/Components/HeaderISO";
 import Footer from "@/Components/Footer";
 import ChoosePaymentClient from "./ChoosePaymentClient"; // Import Client Component ที่สร้างใหม่
 

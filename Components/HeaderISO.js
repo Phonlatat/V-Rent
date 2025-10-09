@@ -131,9 +131,15 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full bg-black text-white px-6 py-4 flex items-center justify-between shadow-md">
+    <header className="w-full bg-white text-slate-900 px-6 py-4 flex items-center justify-between shadow-md relative z-10">
       <div className="text-2xl font-bold">
-        <Link href="/mainpage">V-Rent</Link>
+        <Link href="/mainpage" className="flex items-center gap-1">
+          <span>V</span>
+          <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+            -
+          </span>
+          <span>Rent</span>
+        </Link>
       </div>
 
       <div className="flex items-center space-x-3">

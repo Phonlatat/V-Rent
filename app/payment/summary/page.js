@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Headers from "@/Components/Header";
+import Headers from "@/Components/HeaderISO";
 import Footer from "@/Components/Footer";
 import SummaryClient from "./SummaryClient";
 import EntryNoticeClient from "./EntryNoticeClient";

@@ -1,7 +1,9 @@
 "use client";
 
+import CardAddOn from "@/Components/CardAddOn";
 import Footer from "@/Components/Footer";
-import HeaderBar from "@/Components/Header";
+import Header from "@/Components/Headnsearch";
+import Slidemodal from "@/Components/Slidemodal";
 import BookingBox from "@/Components/bookingbox";
 import { useRouter } from "next/navigation";
 
@@ -78,19 +80,30 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <title>MainPage - V-Rent</title>
-      <HeaderBar />
-      <main
-        className="flex-grow bg-white overflow-x-hidden
-                   pt-[max(1rem,env(safe-area-inset-top))]
-                   pb-[max(1rem,env(safe-area-inset-bottom))]"
-      >
-        <div className="min-h-screen bg-gray-100 px-4 sm:px-6">
-          <div className="mx-auto max-w-full">
-            <BookingBox onSearch={handleSearch} />
+      <div>
+        <Header />
+        {/* BODY: กล่องสีขาวขอบมน ว่างเปล่า */}
+        <main className="flex-1 bg-[#f5f7fb]">
+          +{" "}
+          <div className="pt-0">
+            {/* ดึงกล่องขึ้นมาทับ */}
+            <div className="w-full -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-36 relative z-20">
+              <section
+                className="
+                rounded-4xl bg-white shadow-xl ring-1 ring-black/5
+                min-h-[55vh] p-4 sm:p-6
+              "
+              >
+                {/* เว้นว่างไว้ตามต้องการ ใส่คอนเทนต์ภายหลัง */}
+                <CardAddOn />
+                <Slidemodal />
+              </section>
+            </div>
           </div>
-        </div>
-      </main>
-      <Footer />
+        </main>
+
+        {/* FOOTER */}
+      </div>
     </div>
   );
 }

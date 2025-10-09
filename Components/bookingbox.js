@@ -42,6 +42,7 @@ export default function BookingBox({ onSearch }) {
     passengers: 1,
     promo: "",
   });
+  const [showMore, setShowMore] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -105,7 +106,7 @@ export default function BookingBox({ onSearch }) {
         ? { ftype: carTypeToFType[form.carType] }
         : {}),
       _raw: { ...form },
-      return_same: form.returnSame, // เผื่อฝั่งรับเป็น snake_case
+      return_same: form.returnSame,
     };
 
     // 4) query ไป /cars
@@ -129,227 +130,235 @@ export default function BookingBox({ onSearch }) {
     }
 
     router.push(`/cars?${q.toString()}`);
-    console.log("Booking search payload:", payload);
   };
 
   return (
-    <section className="w-full text-black pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
-      <div className="mx-auto w-full max-w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
-        <div className="rounded-2xl shadow-lg border border-gray-200 bg-white/95 backdrop-blur">
-          <div className="overflow-hidden rounded-2xl">
-            <form
-              onSubmit={handleSubmit}
-              className="w-full box-border p-4 sm:p-5 md:p-6 lg:p-8"
-            >
-              <div className="mb-4 md:mb-6 flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight">
-                  ค้นหายานพาหนะ
-                </h2>
+    <section className="w-full text-black">
+      <div className="mx-auto w-full max-w-6xl">
+        {/* แถบค้นหาแบบบรรทัดเดียว */}
+        <form
+          onSubmit={handleSubmit}
+          className="
+            rounded-2xl bg-white shadow-xl/30 shadow-black/5 border border-slate-200
+            backdrop-blur px-3 sm:px-4 py-2
+          "
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 items-stretch">
+            {/* สถานที่ */}
+            <div className="lg:col-span-5">
+              <label className="sr-only">สถานที่รับรถ</label>
+              <div className="h-14 w-full rounded-xl border border-slate-300 focus-within:border-black bg-white px-3 sm:px-4 flex items-center gap-3">
+                {/* icon pin */}
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 text-slate-500 shrink-0"
+                  fill="currentColor"
+                >
+                  <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5Z" />
+                </svg>
+                <input
+                  type="text"
+                  name="pickupLocation"
+                  placeholder="สถานที่รับรถ (เช่น ท่าอากาศยานเชียงใหม่)"
+                  value={form.pickupLocation}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  className="w-full h-full outline-none bg-transparent text-[15px]"
+                />
               </div>
 
-              {/* กริดหลัก: มือถือ 1 คอลัมน์ / md=มือถือแนวนอน+ไอแพด 6 / xl เดสก์ท็อป 12 */}
-              <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-4 md:gap-5 min-w-0">
-                {/* Pickup Location */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    จุดรับรถ *
-                  </label>
-                  <div className="relative focus-within:z-10">
+              {/* toggle คืนรถคนละที่ */}
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  id="returnSame"
+                  type="checkbox"
+                  name="returnSame"
+                  checked={form.returnSame}
+                  onChange={handleChange}
+                  className="rounded border-slate-400 text-black focus:ring-black"
+                />
+                <label htmlFor="returnSame" className="text-sm">
+                  คืนรถจุดเดิม
+                </label>
+                {!form.returnSame && (
+                  <input
+                    type="text"
+                    name="dropoffLocation"
+                    placeholder="จุดคืนรถ"
+                    value={form.dropoffLocation}
+                    onChange={handleChange}
+                    className="ml-2 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* รับรถ (วัน/เวลา) */}
+            <div className="lg:col-span-3">
+              <div className="h-14 w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 flex items-center">
+                <div className="w-full grid grid-cols-2 gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-500">วันรับรถ</span>
                     <input
-                      type="text"
-                      name="pickupLocation"
-                      placeholder="เช่น สนามบินหาดใหญ่"
-                      value={form.pickupLocation}
+                      type="date"
+                      name="pickupDate"
+                      value={form.pickupDate}
                       onChange={handleChange}
-                      autoComplete="off"
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
+                      className="outline-none bg-transparent text-[15px]"
                       required
                     />
                   </div>
-                  <label className="mt-2 inline-flex items-center gap-2 text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-500">เวลา</span>
                     <input
-                      type="checkbox"
-                      name="returnSame"
-                      checked={form.returnSame}
+                      type="time"
+                      name="pickupTime"
+                      value={form.pickupTime}
                       onChange={handleChange}
-                      className="rounded border-gray-500 text-black focus:ring-black"
-                    />
-                    คืนรถที่จุดเดิม
-                  </label>
-                </div>
-
-                {/* Drop-off Location */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    จุดคืนรถ {form.returnSame ? "(ล็อกเป็นจุดรับรถ)" : ""}
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <input
-                      type="text"
-                      name="dropoffLocation"
-                      placeholder="เช่น สาขาหาดใหญ่"
-                      value={
-                        form.returnSame
-                          ? form.pickupLocation
-                          : form.dropoffLocation
-                      }
-                      onChange={handleChange}
-                      disabled={form.returnSame}
-                      autoComplete="off"
-                      className={`w-full rounded-lg md:rounded-xl px-3 py-2 h-11 appearance-none border ${
-                        form.returnSame
-                          ? "bg-gray-100 border-gray-300 text-gray-500"
-                          : "border-gray-500 focus:border-black focus:ring-black"
-                      }`}
+                      step="60"
+                      min="01:00"
+                      max="23:59"
+                      lang="en-GB"
+                      inputMode="numeric"
+                      className="outline-none bg-transparent text-[15px]"
+                      required
                     />
                   </div>
-                </div>
-
-                {/* Car Type */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    ประเภทรถ
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <select
-                      name="carType"
-                      value={form.carType}
-                      onChange={handleChange}
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                    >
-                      {carTypes.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* ===== กลุ่ม วันที่/เวลา รับรถ : กริดย่อย 2 ช่อง ===== */}
-                <div className="md:col-span-6 xl:col-span-6 min-w-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        วันที่รับรถ *
-                      </label>
-                      <input
-                        type="date"
-                        name="pickupDate"
-                        value={form.pickupDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                        required
-                      />
-                    </div>
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        เวลารับรถ *
-                      </label>
-                      <input
-                        type="time"
-                        name="pickupTime"
-                        value={form.pickupTime}
-                        onChange={handleChange}
-                        step="60"
-                        min="01:00"
-                        max="23:59"
-                        lang="en-GB"
-                        inputMode="numeric"
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none text-[16px]"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ===== กลุ่ม วันที่/เวลา คืนรถ : กริดย่อย 2 ช่อง ===== */}
-                <div className="md:col-span-6 xl:col-span-6 min-w-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        วันที่คืนรถ *
-                      </label>
-                      <input
-                        type="date"
-                        name="returnDate"
-                        value={form.returnDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                        required
-                      />
-                    </div>
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        เวลาคืนรถ *
-                      </label>
-                      <input
-                        type="time"
-                        name="returnTime"
-                        value={form.returnTime}
-                        onChange={handleChange}
-                        step="60"
-                        min="01:00"
-                        max="23:59"
-                        lang="en-GB"
-                        inputMode="numeric"
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none text-[16px]"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Passengers */}
-                <div className="md:col-span-3 xl:col-span-3 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    ผู้โดยสาร
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <select
-                      name="passengers"
-                      value={form.passengers}
-                      onChange={handleChange}
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                    >
-                      {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <div className="md:col-span-6 xl:col-span-12 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-xl md:rounded-2xl bg-black text-white font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-[.99] transition"
-                    title={!canSubmit ? "กรอกข้อมูลที่จำเป็นให้ครบก่อน" : ""}
-                  >
-                    ค้นหารถว่าง
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="h-5 w-5"
-                    >
-                      <path d="M13.5 4.5a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 1 .75.75v5.25a.75.75 0 0 1-1.5 0V6.31l-7.22 7.22a.75.75 0 1 1-1.06-1.06l7.22-7.22h-3.44a.75.75 0 0 1-.75-.75Z" />
-                      <path d="M3.75 5.25A2.25 2.25 0 0 1 6 3h5.25a.75.75 0 0 1 0 1.5H6A.75.75 0 0 0 5.25 5.25v12A.75.75 0 0 0 6 18h12a.75.75 0 0 0 .75-.75V12a.75.75 0 0 1 1.5 0v5.25A2.25 2.25 0 0 1 18 19.5H6A2.25 2.25 0 0 1 3.75 17.25v-12Z" />
-                    </svg>
-                  </button>
                 </div>
               </div>
+            </div>
 
-              <p className="mt-3 text-xs">
-                *
-                กรุณากรอกข้อมูลที่จำเป็นให้ครบเพื่อค้นหารถว่างตามช่วงเวลาที่คุณต้องการ
-              </p>
-            </form>
+            {/* คืนรถ (วัน/เวลา) */}
+            <div className="lg:col-span-3">
+              <div className="h-14 w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 flex items-center">
+                <div className="w-full grid grid-cols-2 gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-500">วันคืนรถ</span>
+                    <input
+                      type="date"
+                      name="returnDate"
+                      value={form.returnDate}
+                      onChange={handleChange}
+                      className="outline-none bg-transparent text-[15px]"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-500">เวลา</span>
+                    <input
+                      type="time"
+                      name="returnTime"
+                      value={form.returnTime}
+                      onChange={handleChange}
+                      step="60"
+                      min="01:00"
+                      max="23:59"
+                      lang="en-GB"
+                      inputMode="numeric"
+                      className="outline-none bg-transparent text-[15px]"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ปุ่มค้นหา */}
+            <div className="lg:col-span-1 flex">
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="
+                  w-full h-14 rounded-xl font-semibold
+                  bg-[#2563eb] text-white
+                  hover:bg-[#1d4ed8] disabled:bg-slate-300
+                  inline-flex items-center justify-center gap-2
+                "
+                title={!canSubmit ? "กรอกข้อมูลที่จำเป็นให้ครบก่อน" : ""}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5"
+                  fill="currentColor"
+                >
+                  <path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4a1 1 0 0 0 1.4-1.4l-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4Z" />
+                </svg>
+                ค้นหา
+              </button>
+            </div>
           </div>
-        </div>
+
+          {/* ตัวเลือกเพิ่มเติม (พับเก็บ) */}
+          <div className="mt-2 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowMore((s) => !s)}
+              className="text-sm text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
+            >
+              ตัวเลือกเพิ่มเติม
+              <svg
+                viewBox="0 0 24 24"
+                className={`w-4 h-4 transition ${showMore ? "rotate-180" : ""}`}
+                fill="currentColor"
+              >
+                <path d="M12 15.5 5 8.5h14l-7 7Z" />
+              </svg>
+            </button>
+
+            {/* แสดงสรุประยะเวลาเบาๆ */}
+            <div className="text-xs text-slate-500">
+              * โปรดเลือกวัน-เวลาให้ครบเพื่อค้นหารถว่าง
+            </div>
+          </div>
+
+          {showMore && (
+            <div className="pt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm mb-1">ประเภทรถ</label>
+                <select
+                  name="carType"
+                  value={form.carType}
+                  onChange={handleChange}
+                  className="w-full h-11 rounded-lg border border-slate-300 px-3"
+                >
+                  {carTypes.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">ผู้โดยสาร</label>
+                <select
+                  name="passengers"
+                  value={form.passengers}
+                  onChange={handleChange}
+                  className="w-full h-11 rounded-lg border border-slate-300 px-3"
+                >
+                  {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">โค้ดโปรโมชัน</label>
+                <input
+                  type="text"
+                  name="promo"
+                  value={form.promo}
+                  onChange={handleChange}
+                  placeholder="กรอกถ้ามี"
+                  className="w-full h-11 rounded-lg border border-slate-300 px-3"
+                />
+              </div>
+            </div>
+          )}
+        </form>
       </div>
     </section>
   );

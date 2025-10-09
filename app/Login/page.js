@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Headers from "@/Components/Header";
+import Headers from "@/Components/HeaderISO";
 import Footer from "@/Components/FooterMinimal";
 
 const USER_PATH = "/mainpage"; // ✅ ไปหน้า mainpage เสมอ

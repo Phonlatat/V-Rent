@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import Headers from "@/Components/Header";
+import Headers from "@/Components/HeaderISO";
 import Footer from "@/Components/Footer";
 import Image from "next/image";
 import Link from "next/link";

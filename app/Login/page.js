@@ -1,4 +1,4 @@
-// app/Login/page.jsx (หรือที่ไฟล์คุณอยู่)
+// app/Login/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Headers from "@/Components/HeaderISO";
 import Footer from "@/Components/FooterMinimal";
 
-const USER_PATH = "/mainpage"; // ✅ ไปหน้า mainpage เสมอ
+const USER_PATH = "/mainpage";
 
 export default function Login() {
   const router = useRouter();
@@ -34,7 +34,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // ✅ Login กับ ERPNext/Frappe
       const res = await fetch("https://demo.erpeazy.com/api/method/login", {
         method: "POST",
         headers: {
@@ -43,10 +42,7 @@ export default function Login() {
         },
         credentials: "include",
         redirect: "follow",
-        body: JSON.stringify({
-          usr: email,
-          pwd: password,
-        }),
+        body: JSON.stringify({ usr: email, pwd: password }),
       });
 
       const rawText = await res.text();
@@ -58,15 +54,10 @@ export default function Login() {
       }
 
       if (!res.ok) {
-        const msg =
-          data?.message ||
-          data?.exc ||
-          data?.raw ||
-          "Login failed. Please check your credentials.";
+        const msg = data?.message || data?.exc || data?.raw || "Login failed.";
         throw new Error(typeof msg === "string" ? msg : "Login failed.");
       }
 
-      // ✅ จำอีเมลตามตัวเลือก
       try {
         if (remember) {
           localStorage.setItem("vrent_login_email", email);
@@ -75,13 +66,10 @@ export default function Login() {
           localStorage.removeItem("vrent_login_email");
           localStorage.removeItem("vrent_remember");
         }
-        // เก็บ user id ไว้ใช้ที่หน้าอื่น
         localStorage.setItem("vrent_user_id", String(email || ""));
-        // ถ้าหน้าอื่นอ้างอิงค่านี้อยู่ ให้รีเซ็ตเป็น 0 ไปก่อน
         localStorage.setItem("vrent_is_admin", "0");
       } catch {}
 
-      // ✅ ไป mainpage เสมอ
       router.push(USER_PATH);
     } catch (err) {
       console.error(err);
@@ -92,80 +80,75 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-slate-200">
+    <div className="min-h-[100svh] flex flex-col bg-black text-white">
       <title>Login - V-Rent</title>
       <Headers />
 
-      {/* background aurora / glow */}
+      {/* brand glows (same vibe as Signup) */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       >
         <div
-          className="absolute left-1/2 top-[-10%] w-[60rem] h-[60rem] -translate-x-1/2 rounded-full opacity-30 blur-3xl"
+          className="absolute left-1/2 top-[-22%] w-[60rem] h-[60rem] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
           style={{
             background:
-              "radial-gradient(50% 50% at 50% 50%, #7C5CFF 0%, rgba(124,92,255,0.0) 60%)",
+              "radial-gradient(50% 50% at 50% 50%, #F59E0B 0%, rgba(245,158,11,0) 60%)",
           }}
         />
+        {/* white glow เพิ่มความสว่างด้านล่างเหมือนหน้า Signup */}
         <div
-          className="absolute left-[10%] bottom-[-20%] w-[50rem] h-[50rem] rounded-full opacity-20 blur-3xl"
+          className="absolute right-[-10%] bottom-[-30%] w-[55rem] h-[55rem] rounded-full opacity-20 blur-3xl"
           style={{
             background:
-              "radial-gradient(50% 50% at 50% 50%, #34D399 0%, rgba(52,211,153,0.0) 60%)",
+              "radial-gradient(50% 50% at 50% 50%, #FFFFFF 0%, rgba(255,255,255,0) 65%)",
           }}
         />
       </div>
 
-      <main className="flex flex-1 items-center justify-center p-4">
+      {/* main */}
+      <main className="flex flex-1 items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-md">
-          {/* glass card */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40">
-            <div className="px-8 pt-8 pb-6">
-              {/* V-Rent icon */}
-              <div
-                className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full 
-                bg-gradient-to-br from-[#1B1B2F] to-[#0A0A12] 
-                shadow-2xl ring-2 ring-indigo-500/60"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="56"
-                  height="56"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-white"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 4L12 20L21 4"
-                    stroke="white"
-                    strokeWidth="3.5"
-                    strokeLinejoin="miter"
-                  />
-                  <path
-                    d="M6 4L12 15L18 4"
-                    stroke="white"
-                    strokeWidth="2.5"
-                    strokeLinejoin="miter"
-                    opacity="0.85"
-                  />
-                </svg>
+          {/* Card: โทน/เงา/ไล่สีเหมือน Signup */}
+          <div
+            className="
+              rounded-3xl border border-white/15
+              bg-gradient-to-b from-black/60 via-white/5 to-black/40
+              backdrop-blur-xl
+              shadow-[0_12px_50px_rgba(255,255,255,0.06),0_10px_40px_rgba(0,0,0,0.6)]
+              transition-transform duration-200 will-change-transform active:scale-[.995]
+            "
+          >
+            <div className="px-6 sm:px-8 pt-8 pb-6">
+              {/* Brand */}
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-neutral-900 shadow-lg ring-2 ring-white/30">
+                <span className="text-2xl font-extrabold bg-gradient-to-br from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                  V
+                </span>
               </div>
 
-              <h1 className="text-center text-2xl font-semibold">V-Rent</h1>
-              <p className="mt-1 text-center text-sm text-slate-400">
+              <h1 className="text-center text-2xl font-semibold text-white">
+                V-Rent
+              </h1>
+              <p className="mt-1 text-center text-sm text-white/80">
                 Connected You to Every Road.
               </p>
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              {/* divider ขาวจาง ให้ mood เหมือน Signup */}
+              <div className="mt-4 mb-2 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+              <form
+                id="loginForm"
+                onSubmit={handleSubmit}
+                className="mt-4 space-y-4"
+              >
                 {/* Email */}
                 <label className="block">
-                  <span className="mb-2 block text-sm text-slate-300">
+                  <span className="mb-2 block text-sm text-white">
                     Email Address / Username
                   </span>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/70">
                       <svg
                         width="18"
                         height="18"
@@ -197,18 +180,28 @@ export default function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@domain.com"
                       autoComplete="username"
-                      className="w-full rounded-xl border border-white/10 bg-[#0F1530]/60 px-10 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
+                      autoCapitalize="none"
+                      inputMode="email"
+                      enterKeyHint="next"
+                      className="
+                        w-full rounded-xl border border-white/30
+                        bg-white/[0.06] px-10 py-3 text-sm
+                        placeholder:text-white/60 outline-none
+                        hover:bg-white/[0.08]
+                        focus:bg-white/[0.10] focus:border-white
+                        focus:ring-2 focus:ring-white/30
+                      "
                     />
                   </div>
                 </label>
 
                 {/* Password */}
                 <label className="block">
-                  <span className="mb-2 block text-sm text-slate-300">
+                  <span className="mb-2 block text-sm text-white">
                     Password
                   </span>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/70">
                       <svg
                         width="18"
                         height="18"
@@ -240,13 +233,32 @@ export default function Login() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       autoComplete="current-password"
-                      className="w-full rounded-xl border border-white/10 bg-[#0F1530]/60 px-10 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
+                      autoCapitalize="none"
+                      enterKeyHint="done"
+                      className="
+                        w-full rounded-xl border border-white/30
+                        bg-white/[0.06] px-10 py-3 pr-10 text-sm
+                        placeholder:text-white/60 outline-none
+                        hover:bg-white/[0.08]
+                        focus:bg-white/[0.10] focus:border-white
+                        focus:ring-2 focus:ring-white/30
+                      "
+                      onFocus={() => {
+                        // iPhone: อย่าให้คีย์บอร์ดทับฟอร์ม
+                        setTimeout(() => {
+                          document.getElementById("loginForm")?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                        }, 120);
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => setShow((s) => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/80 hover:text-white active:scale-95 transition"
                       aria-label={show ? "Hide password" : "Show password"}
+                      aria-pressed={show}
                     >
                       {show ? (
                         <svg
@@ -296,17 +308,21 @@ export default function Login() {
 
                 {/* error */}
                 {errMsg && (
-                  <div className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                  <div
+                    className="rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white"
+                    role="alert"
+                    aria-live="polite"
+                  >
                     {errMsg}
                   </div>
                 )}
 
-                {/* remember + signup */}
+                {/* remember + link signup */}
                 <div className="mt-1 flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <label className="flex items-center gap-2 text-sm text-white/90 active:scale-[.98] transition">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-white/10 bg-[#0F1530] text-indigo-500 focus:ring-indigo-500/40"
+                      className="h-4 w-4 rounded border-white/30 bg-transparent text-yellow-500 focus:ring-white/30"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
                     />
@@ -314,20 +330,60 @@ export default function Login() {
                   </label>
                   <a
                     href="/Signup"
-                    className="text-sm text-indigo-400 hover:text-indigo-300"
+                    className="text-sm text-white hover:opacity-90 active:scale-[.98] transition"
                   >
-                    Sign up
+                    Create account
                   </a>
                 </div>
 
-                {/* Login */}
+                {/* CTA primary */}
                 <button
                   type="submit"
                   disabled={loading}
                   aria-busy={loading}
-                  className="mt-2 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-medium text-white shadow-lg shadow-indigo-900/40 transition hover:from-indigo-400 hover:to-violet-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="
+                    mt-2 w-full rounded-xl
+                    bg-gradient-to-r from-yellow-400 to-amber-500
+                    py-3 text-sm font-semibold text-black
+                    shadow-lg shadow-amber-900/30
+                    transition hover:from-yellow-300 hover:to-amber-400
+                    active:scale-[.985]
+                    focus:outline-none focus:ring-2 focus:ring-yellow-400/40
+                    disabled:cursor-not-allowed disabled:opacity-60
+                    flex items-center justify-center gap-2
+                  "
                 >
-                  {loading ? "Logging in..." : "Login"}
+                  {loading && (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-20"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-90"
+                        d="M22 12a10 10 0 0 1-10 10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                    </svg>
+                  )}
+                  <span>{loading ? "Logging in..." : "Login"}</span>
+                </button>
+
+                {/* secondary action ให้โทนขาวเหมือน Signup */}
+                <button
+                  type="button"
+                  onClick={() => router.push("/Signup")}
+                  className="w-full rounded-xl border border-white/50 text-white/90 py-3 text-sm mt-2 hover:bg-white/10 active:scale-[.985] transition"
+                >
+                  Don’t have an account?{" "}
+                  <span className="underline underline-offset-4">Sign up</span>
                 </button>
               </form>
             </div>

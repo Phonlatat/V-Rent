@@ -1,34 +1,13 @@
 // app/cars/CarsPageContent.js
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+
 import BookingBox from "@/Components/bookingbox";
 import CarsFilter from "@/Components/CarsCard/carsfilter";
 import CarList from "@/Components/CarsCard/carList";
-
-/* ===== utilities (เฉพาะที่จำเป็น) ===== */
-function toLocalISO(dateStr, timeStr) {
-  const [y, m, d] = (dateStr || "").split("-").map(Number);
-  const [hh = 0, mm = 0] = (timeStr || "00:00").split(":").map(Number);
-  if (!y || !m || !d) return "";
-  const dt = new Date(y, (m || 1) - 1, d, hh, mm, 0, 0);
-  return Number.isNaN(dt.getTime()) ? "" : dt.toISOString();
-}
-function clampTime(t = "") {
-  if (!/^\d{2}:\d{2}$/.test(t)) return "01:00";
-  return t < "01:00" ? "01:00" : t > "23:59" ? "23:59" : t;
-}
-function fromISOToInputs(iso) {
-  if (!iso) return { date: "", time: "" };
-  const d = new Date(iso);
-  if (isNaN(d)) return { date: "", time: "" };
-  const pad = (n) => String(n).padStart(2, "0");
-  return {
-    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-  };
-}
+import FilterDrawer from "@/Components/CarsCard/FilterDrawer"; // drawer สำหรับมือถือ
 
 export default function CarsPageContent() {
   const search = useSearchParams();
@@ -40,6 +19,8 @@ export default function CarsPageContent() {
     const passengers = Number(search.get("passengers") || 1);
     const promo = search.get("promo") || "";
     const ftype = search.get("ftype") || "";
+
+    // เฉพาะใช้บน UI (ไม่ส่งเข้า API ตรง ๆ)
     const pickupLocation =
       search.get("pickupLocation") || search.get("pickup_location") || "";
     const dropoffLocation =
@@ -59,38 +40,134 @@ export default function CarsPageContent() {
     };
   }, [search]);
 
-  /* ------ ตัวกรองฝั่งซ้าย ------ */
+  /* ------ ตัวกรอง ------ */
   const [flt, setFlt] = useState({
+    search: "", // <— เพิ่ม
     type: payload.ftype || "", // SEDAN | SUV | ...
     seatBucket: "", // "5-" | "6-7" | "8+"
     trans: "", // "auto" | "manual"
     priceMin: "",
     priceMax: "",
-    popular: {
-      freeCancel: false,
-      instantConfirm: false,
-      delivery: false,
-    },
+    popular: { freeCancel: false, instantConfirm: false, delivery: false },
   });
 
+  const resetFilter = () =>
+    setFlt({
+      search: "", // <— เพิ่ม
+      type: payload.ftype || "",
+      seatBucket: "",
+      trans: "",
+      priceMin: "",
+      priceMax: "",
+      popular: { freeCancel: false, instantConfirm: false, delivery: false },
+    });
+
+  /* ------ สร้าง catalog สำหรับ suggest (brand / brand+model) ------ */
+  const [catalogFromDB, setCatalogFromDB] = useState([]);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/vehicles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pickup_at: payload.pickup_at,
+            return_at: payload.return_at,
+            passengers: payload.passengers,
+            promo: payload.promo,
+            ftype: payload.ftype,
+            search: flt.search, // <— เพิ่ม (ส่งเข้า CarList)
+          }),
+          signal: ac.signal,
+        });
+        const text = await res.text();
+        const data = (() => {
+          try {
+            return JSON.parse(text);
+          } catch {
+            return {};
+          }
+        })();
+
+        const raw = Array.isArray(data?.message)
+          ? data.message
+          : Array.isArray(data)
+          ? data
+          : [];
+
+        const seen = new Set();
+        const out = [];
+        for (const c of raw) {
+          const brand = String(c.brand || c.make || "").trim();
+          const model = String(
+            c.model || c.vehicle_model || c.vehicle_name || c.name || ""
+          ).trim();
+
+          if (brand) {
+            const kb = `b:${brand.toLowerCase()}`;
+            if (!seen.has(kb)) {
+              seen.add(kb);
+              out.push({ brand });
+            }
+          }
+          if (brand && model) {
+            const kbm = `bm:${brand.toLowerCase()} ${model.toLowerCase()}`;
+            if (!seen.has(kbm)) {
+              seen.add(kbm);
+              out.push({ brand, model });
+            }
+          }
+        }
+        setCatalogFromDB(out);
+      } catch {
+        setCatalogFromDB([]);
+      }
+    })();
+    return () => ac.abort();
+  }, [
+    payload.pickup_at,
+    payload.return_at,
+    payload.passengers,
+    payload.promo,
+    payload.ftype,
+  ]);
+
+  /* ------ สำหรับ Drawer บนมือถือ ------ */
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const filtered = useMemo(
+    () =>
+      !!flt.type ||
+      !!flt.seatBucket ||
+      !!flt.trans ||
+      !!flt.priceMin ||
+      !!flt.priceMax ||
+      !!flt.popular?.freeCancel ||
+      !!flt.popular?.instantConfirm ||
+      !!flt.popular?.delivery,
+    [flt]
+  );
+
   /* ------ รวม query ส่งเข้า CarList ------ */
-  // ถ้าจะใช้ค่าจากฟอร์มวัน-เวลา (กรณีหน้าอื่น) ให้ประกอบด้วย toLocalISO + clampTime ได้ตามต้องการ
-  const listQuery = useMemo(() => {
-    return {
-      // ค่าหลักจาก URL
+  const listQuery = useMemo(
+    () => ({
       pickup_at: payload.pickup_at,
       return_at: payload.return_at,
       passengers: payload.passengers,
       promo: payload.promo,
       ftype: payload.ftype,
-      // ตัวกรองเสริม
+      search: flt.search, // ← สำคัญ
+
+      // filters
       seatBucket: flt.seatBucket,
       trans: flt.trans,
       priceMin: flt.priceMin,
       priceMax: flt.priceMax,
       popular: flt.popular,
-    };
-  }, [payload, flt]);
+    }),
+    [payload, flt]
+  );
 
   /* ------ UI ------ */
   return (
@@ -101,28 +178,64 @@ export default function CarsPageContent() {
           <BookingBox />
         </div>
 
+        {/* แถบปุ่มสำหรับมือถือ เปิด Drawer */}
+        <div className="flex items-center justify-between lg:hidden">
+          <div className="text-sm text-slate-600">
+            {filtered ? "มีการใช้ตัวกรอง" : "ตัวกรองทั้งหมด"}
+          </div>
+          <button
+            onClick={() => setMobileFilterOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+              <path d="M3 5h18v2H3V5Zm4 6h10v2H7v-2Zm3 6h4v2h-4v-2Z" />
+            </svg>
+            ตัวกรอง
+            {filtered && (
+              <span className="ml-1 h-2 w-2 rounded-full bg-amber-500" />
+            )}
+          </button>
+        </div>
+
+        {/* Drawer (มือถือ) */}
+        <FilterDrawer
+          open={mobileFilterOpen}
+          onClose={() => setMobileFilterOpen(false)}
+          title="ตัวกรองรถ"
+        >
+          <CarsFilter
+            value={flt}
+            onChange={setFlt}
+            onReset={resetFilter}
+            catalog={catalogFromDB /* [{brand,model}, ...] */}
+          />
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => setMobileFilterOpen(false)}
+              className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-white font-medium hover:bg-amber-600"
+            >
+              ดูผลลัพธ์
+            </button>
+            <button
+              onClick={resetFilter}
+              className="rounded-lg px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50"
+            >
+              ล้าง
+            </button>
+          </div>
+        </FilterDrawer>
+
         <div className="grid grid-cols-4 gap-4">
-          {/* ซ้าย: ฟิลเตอร์ */}
-          <div>
-            <CarsFilter
-              value={flt}
-              onChange={setFlt}
-              onReset={() =>
-                setFlt({
-                  type: payload.ftype || "",
-                  seatBucket: "",
-                  trans: "",
-                  priceMin: "",
-                  priceMax: "",
-                  popular: {
-                    freeCancel: false,
-                    instantConfirm: false,
-                    delivery: false,
-                  },
-                })
-              }
-              className=""
-            />
+          {/* ซ้าย: ฟิลเตอร์ (เฉพาะจอใหญ่) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-4">
+              <CarsFilter
+                value={flt}
+                onChange={setFlt}
+                onReset={resetFilter}
+                catalog={catalogFromDB /* [{brand,model}, ...] */}
+              />
+            </div>
           </div>
 
           {/* ขวา: รายการรถ */}

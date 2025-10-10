@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 
 const noImg = "/noimage.jpg"; // ชี้ไปที่ public/noimage.jpg
+
+const norm = (s) =>
+  String(s || "")
+    .toLowerCase()
+    .trim();
 /* ====== helpersที่อ่านคีย์จาก API ชุดใหม่ก่อน ====== */
 const nthai = (v) =>
   Number(v ?? 0).toLocaleString("th-TH", { maximumFractionDigits: 0 });
@@ -158,6 +163,26 @@ export default function CarList({ query, onSelect }) {
 
         // กรองเฉพาะที่ "ว่าง"
         let list = rawCars.filter(isCarAvailable);
+
+        // 2.1 กรองด้วย search (brand / model / ชื่อรถ / คำอธิบาย)
+        if (query?.search && norm(query.search)) {
+          const kw = norm(query.search);
+          list = list.filter((c) => {
+            const brand = norm(c.brand || c.make);
+            const model = norm(
+              c.model || c.vehicle_model || c.vehicle_name || c.name
+            );
+            const title = norm(c.vehicle_name || c.name || "");
+            const desc = norm(c.description || "");
+            return (
+              brand.includes(kw) ||
+              model.includes(kw) ||
+              `${brand} ${model}`.includes(kw) || // รองรับพิมพ์ติดกัน
+              title.includes(kw) ||
+              desc.includes(kw)
+            );
+          });
+        }
 
         // กรองฝั่ง client เพิ่มเติม
         if (query?.seatBucket) {

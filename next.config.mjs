@@ -12,9 +12,15 @@ const nextConfig = {
         hostname: "v-rent-app-916879005749.asia-southeast1.run.app",
         pathname: "/**",
       },
-      // ถ้ามีโดเมนรูปอื่น ๆ ใส่เพิ่มที่นี่
     ],
     unoptimized: true,
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "http", hostname: "203.150.243.195", pathname: "**" },
+      // ถ้าใช้ ERP อื่น ๆ ด้วย
+      { protocol: "https", hostname: "demo.erpeazy.com", pathname: "**" },
+    ],
   },
 };
 

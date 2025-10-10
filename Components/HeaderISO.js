@@ -131,7 +131,10 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full bg-white text-slate-900 px-6 py-4 flex items-center justify-between shadow-md relative z-10">
+    <header
+      className="w-full bg-white text-slate-900 px-6 py-4 flex items-center justify-between border-0 shadow-none ring-0 outline-none"
+      style={{ boxShadow: "none" }}
+    >
       <div className="text-3xl font-bold">
         <Link href="/mainpage" className="flex items-center gap-1">
           <span>V</span>
@@ -146,7 +149,7 @@ export default function Header() {
         {userId ? (
           <>
             <span
-              className="px-3 py-1.5 text-sm text-gray-300 rounded-md bg-gray-800 cursor-default select-none"
+              className="px-3 py-1.5 text-sm text-slate-700 rounded-md bg-slate-100 cursor-default select-none"
               title="ชื่อผู้ใช้"
             >
               {displayName || userId}
@@ -163,7 +166,7 @@ export default function Header() {
         ) : (
           <Link
             href="/Login"
-            className="px-3 py-1.5 text-sm text-gray-400 rounded-md hover:bg-gray-200 transition-colors"
+            className="px-3 py-1.5 text-sm text-slate-700 rounded-md hover:bg-slate-100 transition-colors"
           >
             Login
           </Link>

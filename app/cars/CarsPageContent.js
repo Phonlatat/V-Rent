@@ -1,234 +1,139 @@
 // app/cars/CarsPageContent.js
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
+import BookingBox from "@/Components/bookingbox";
+import CarsFilter from "@/Components/CarsCard/carsfilter";
+import CarList from "@/Components/CarsCard/carList";
 
-const IMG_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
-const PLACEHOLDER = "/noimage.jpg";
-
-function normalizeImage(u) {
-  if (!u) return PLACEHOLDER;
-  let s = String(u).trim();
-  if (s.startsWith("//")) s = "https:" + s;
-  if (s.startsWith("/")) s = IMG_BASE.replace(/\/+$/, "") + s;
-  if (!/^https?:\/\//i.test(s))
-    s = IMG_BASE.replace(/\/+$/, "") + "/" + s.replace(/^\/+/, "");
-  return encodeURI(s);
+/* ===== utilities (เฉพาะที่จำเป็น) ===== */
+function toLocalISO(dateStr, timeStr) {
+  const [y, m, d] = (dateStr || "").split("-").map(Number);
+  const [hh = 0, mm = 0] = (timeStr || "00:00").split(":").map(Number);
+  if (!y || !m || !d) return "";
+  const dt = new Date(y, (m || 1) - 1, d, hh, mm, 0, 0);
+  return Number.isNaN(dt.getTime()) ? "" : dt.toISOString();
 }
-const slugify = (v) =>
-  String(v ?? "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-
-// คืน true เฉพาะรถที่ "ว่าง"
-const isCarAvailable = (car) => {
-  // ธง boolean ที่บาง API ชอบส่งมา
-  if (typeof car.available === "boolean") return car.available;
-  if (typeof car.is_available === "boolean") return car.is_available;
-  if (typeof car.is_free === "boolean") return car.is_free;
-  if (typeof car.rented === "boolean") return !car.rented; // ถ้า rented = false → ว่าง
-  if (typeof car.is_busy === "boolean") return !car.is_busy;
-
-  // สถานะเป็นข้อความ
-  const raw =
-    car.status ??
-    car.vehicle_status ??
-    car.stage ??
-    car.state ??
-    car.stage_code ??
-    car.availability ??
-    "";
-  const s = String(raw).trim().toLowerCase();
-
-  // รองรับทั้ง EN/TH
-  if (["available", "ว่าง"].includes(s)) return true;
-  if (
-    [
-      "in use",
-      "borrowed",
-      "maintenance",
-      "busy",
-      "unavailable",
-      "ถูกยืมอยู่",
-      "ซ่อมแซม",
-    ].includes(s)
-  )
-    return false;
-
-  // ถ้าไม่รู้จริง ๆ ว่าสถานะอะไร → ไม่แสดง (เข้มงวดตามที่ขอ)
-  return false;
-};
+function clampTime(t = "") {
+  if (!/^\d{2}:\d{2}$/.test(t)) return "01:00";
+  return t < "01:00" ? "01:00" : t > "23:59" ? "23:59" : t;
+}
+function fromISOToInputs(iso) {
+  if (!iso) return { date: "", time: "" };
+  const d = new Date(iso);
+  if (isNaN(d)) return { date: "", time: "" };
+  const pad = (n) => String(n).padStart(2, "0");
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+}
 
 export default function CarsPageContent() {
   const search = useSearchParams();
 
+  /* ------ ดึงค่าจาก URL (payload คงค่า form ของผู้ใช้) ------ */
   const payload = useMemo(() => {
     const pickup_at = search.get("pickup_at") || "";
     const return_at = search.get("return_at") || "";
     const passengers = Number(search.get("passengers") || 1);
     const promo = search.get("promo") || "";
     const ftype = search.get("ftype") || "";
-    return { pickup_at, return_at, passengers, promo, ftype };
+    const pickupLocation =
+      search.get("pickupLocation") || search.get("pickup_location") || "";
+    const dropoffLocation =
+      search.get("dropoffLocation") || search.get("dropoff_location") || "";
+    const returnSameRaw =
+      search.get("returnSame") ?? search.get("return_same") ?? "true";
+
+    return {
+      pickup_at,
+      return_at,
+      passengers,
+      promo,
+      ftype,
+      pickupLocation,
+      dropoffLocation,
+      returnSame: String(returnSameRaw) !== "false",
+    };
   }, [search]);
 
-  const [cars, setCars] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  /* ------ ตัวกรองฝั่งซ้าย ------ */
+  const [flt, setFlt] = useState({
+    type: payload.ftype || "", // SEDAN | SUV | ...
+    seatBucket: "", // "5-" | "6-7" | "8+"
+    trans: "", // "auto" | "manual"
+    priceMin: "",
+    priceMax: "",
+    popular: {
+      freeCancel: false,
+      instantConfirm: false,
+      delivery: false,
+    },
+  });
 
-  // helper: ทำให้ type เป็นตัวพิมพ์ใหญ่/ตัดช่องว่าง
-  const norm = (s) =>
-    String(s ?? "")
-      .trim()
-      .toUpperCase();
-  const selectedFtype = norm(payload.ftype); // เช่น "SEDAN" | "" (ไม่เลือก)
+  /* ------ รวม query ส่งเข้า CarList ------ */
+  // ถ้าจะใช้ค่าจากฟอร์มวัน-เวลา (กรณีหน้าอื่น) ให้ประกอบด้วย toLocalISO + clampTime ได้ตามต้องการ
+  const listQuery = useMemo(() => {
+    return {
+      // ค่าหลักจาก URL
+      pickup_at: payload.pickup_at,
+      return_at: payload.return_at,
+      passengers: payload.passengers,
+      promo: payload.promo,
+      ftype: payload.ftype,
+      // ตัวกรองเสริม
+      seatBucket: flt.seatBucket,
+      trans: flt.trans,
+      priceMin: flt.priceMin,
+      priceMax: flt.priceMax,
+      popular: flt.popular,
+    };
+  }, [payload, flt]);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    (async () => {
-      setLoading(true);
-      setErr("");
-      try {
-        const res = await fetch("/api/vehicles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: ac.signal,
-        });
-        const text = await res.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = { raw: text };
-        }
-        if (!res.ok)
-          throw new Error(`HTTP ${res.status} ${text?.slice?.(0, 200) || ""}`);
-
-        const rawCars = Array.isArray(data?.message)
-          ? data.message
-          : Array.isArray(data)
-          ? data
-          : [];
-
-        // 1) กรองเฉพาะรถที่ว่าง
-        const onlyAvailable = rawCars.filter(isCarAvailable);
-        // 2) ถ้ามีเลือกประเภท เพิ่มกรองซ้ำ
-        const filtered = !selectedFtype
-          ? onlyAvailable
-          : onlyAvailable.filter((car) => {
-              const carType = norm(car.ftype ?? car.type ?? car.v_type);
-              return carType === selectedFtype;
-            });
-        setCars(filtered);
-      } catch (e) {
-        if (e.name !== "AbortError") {
-          setErr(String(e));
-          setCars([]);
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => ac.abort();
-  }, [payload]);
-
-  // (ทางเลือกเสริมปลอดภัย) ถ้าต้องการกรองซ้ำตอน render ก็ทำผ่าน useMemo นี้ได้
-  // const carsToShow = useMemo(() => {
-  //   if (!selectedFtype) return cars;
-  //   return cars.filter((car) => norm(car.ftype ?? car.type ?? car.v_type) === selectedFtype);
-  // }, [cars, selectedFtype]);
-  // แล้วเปลี่ยนด้านล่างจาก cars เป็น carsToShow
-
+  /* ------ UI ------ */
   return (
-    <>
-      <div className="mb-6 rounded-xl border border-gray-600 bg-gray-900/60 p-4 text-sm">
-        <div>รับ: {payload.pickup_at || "-"}</div>
-        <div>คืน: {payload.return_at || "-"}</div>
-        <div>ผู้โดยสาร: {payload.passengers}</div>
-        {payload.ftype && <div>ประเภทรถ: {payload.ftype}</div>}
-        {payload.promo && <div>โค้ดส่วนลด: {payload.promo}</div>}
+    <div className="w-full min-h-[1px]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* การ์ด BookingBox (กรอบอยู่ฝั่งหน้าครอบไว้) */}
+        <div className="rounded-2xl border border-slate-300 shadow-lg p-3 sm:p-4 bg-white">
+          <BookingBox />
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          {/* ซ้าย: ฟิลเตอร์ */}
+          <div>
+            <CarsFilter
+              value={flt}
+              onChange={setFlt}
+              onReset={() =>
+                setFlt({
+                  type: payload.ftype || "",
+                  seatBucket: "",
+                  trans: "",
+                  priceMin: "",
+                  priceMax: "",
+                  popular: {
+                    freeCancel: false,
+                    instantConfirm: false,
+                    delivery: false,
+                  },
+                })
+              }
+              className=""
+            />
+          </div>
+
+          {/* ขวา: รายการรถ */}
+          <div className="col-span-4 lg:col-span-3 rounded-2xl border border-slate-200 shadow-sm p-4 bg-white">
+            <CarList
+              query={listQuery}
+              onSelect={(car) => console.log("select car:", car)}
+            />
+          </div>
+        </div>
       </div>
-
-      {loading && <div className="text-gray-300">กำลังโหลดข้อมูล...</div>}
-      {err && (
-        <div className="text-red-400 mb-4 break-all">โหลดล้มเหลว: {err}</div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
-        {cars.length > 0 ? (
-          cars.map((car, i) => {
-            const rawKey =
-              car.name ??
-              car.id ??
-              car.vehicle_id ??
-              car.vehicle_name ??
-              String(i);
-
-            const q = new URLSearchParams();
-            for (const [k, v] of [
-              ["pickup_at", payload.pickup_at],
-              ["return_at", payload.return_at],
-              ["passengers", payload.passengers],
-              ["promo", payload.promo],
-              ["ftype", payload.ftype],
-            ]) {
-              if (v !== undefined && v !== null && String(v).trim() !== "")
-                q.set(k, String(v));
-            }
-            const pickupLoc =
-              search.get("pickupLocation") || search.get("pickup_location");
-            const dropoffLoc =
-              search.get("dropoffLocation") || search.get("dropoff_location");
-            const returnSame =
-              search.get("returnSame") ?? search.get("return_same");
-            if (pickupLoc) q.set("pickupLocation", pickupLoc);
-            if (dropoffLoc) q.set("dropoffLocation", dropoffLoc);
-            if (returnSame != null) q.set("returnSame", String(returnSame));
-
-            const href = `/car/${slugify(rawKey)}?${q.toString()}`;
-            const img = normalizeImage(car.vehicle_image || car.image);
-
-            return (
-              <Link key={rawKey} href={href} className="block">
-                <div className="bg-white text-black rounded-xl border border-gray-300 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="relative w-full aspect-[3/4] overflow-hidden rounded-t-xl">
-                    <Image
-                      src={img}
-                      alt={car.vehicle_name || car.name || "รถ"}
-                      fill
-                      className="object-cover"
-                      sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
-                    />
-                  </div>
-                  <div className="p-3 space-y-1.5">
-                    <h3 className="text-base font-semibold leading-snug">
-                      {car.vehicle_name || car.name || "Vehicle"}
-                    </h3>
-                    <p className="text-sm leading-tight">
-                      {(car.brand || "").toString()} •{" "}
-                      {(car.ftype || car.type || "-").toString()}
-                    </p>
-                    <p className="text-sm font-bold mt-1">
-                      {car.price_per_day ?? car.price ?? car.rate_per_day
-                        ? `${Number(
-                            car.price_per_day ?? car.price ?? car.rate_per_day
-                          ).toLocaleString("th-TH")} บาท/วัน`
-                        : "-"}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })
-        ) : !loading ? (
-          <div className="text-gray-300">ไม่พบรถว่าง</div>
-        ) : null}
-      </div>
-    </>
+    </div>
   );
 }

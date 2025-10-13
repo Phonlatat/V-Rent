@@ -478,11 +478,11 @@ export default function ChoosePaymentClient() {
       )}
 
       <div className="grid md:grid-cols-[2fr_1fr] gap-6 items-start min-w-0">
-        <section className="bg-white rounded-2xl shadow-lg border border-slate-300 p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+        <section className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8 transition-all duration-300 hover:shadow-xl">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
             เลือกวิธีการชำระเงิน
           </h1>
-          <p className="text-slate-700 mt-1">
+          <p className="text-slate-600 mt-1">
             โปรดเลือกวิธีชำระเงินเพื่อดำเนินการจองให้เสร็จสมบูรณ์
           </p>
 
@@ -490,19 +490,19 @@ export default function ChoosePaymentClient() {
             <button
               type="button"
               onClick={() => setMethod("promptpay")}
-              className={`text-left rounded-xl border p-4 transition hover:shadow-sm ${
+              className={`text-left rounded-xl border p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
                 method === "promptpay"
-                  ? "border-slate-900 ring-2 ring-slate-900"
-                  : "border-slate-400"
+                  ? "border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50"
+                  : "border-slate-300 hover:border-slate-400"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white font-bold">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold">
                   ฿
                 </span>
                 <div>
-                  <div className="font-semibold text-slate-900">PromptPay</div>
-                  <div className="text-sm text-slate-700">
+                  <div className="font-semibold text-slate-800">PromptPay</div>
+                  <div className="text-sm text-slate-600">
                     โอนผ่าน QR พร้อมเพย์ (อัปโหลดสลิป)
                   </div>
                 </div>
@@ -512,21 +512,21 @@ export default function ChoosePaymentClient() {
             <button
               type="button"
               onClick={() => setMethod("visa")}
-              className={`text-left rounded-xl border p-4 transition hover:shadow-sm ${
+              className={`text-left rounded-xl border p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
                 method === "visa"
-                  ? "border-slate-900 ring-2 ring-slate-900"
-                  : "border-slate-400"
+                  ? "border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50"
+                  : "border-slate-300 hover:border-slate-400"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600 font-bold text-slate-900">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-400 font-bold text-slate-700">
                   VISA
                 </span>
                 <div>
-                  <div className="font-semibold text-slate-900">
+                  <div className="font-semibold text-slate-800">
                     บัตรเครดิต / เดบิต
                   </div>
-                  <div className="text-sm text-slate-700">
+                  <div className="text-sm text-slate-600">
                     รองรับ Visa / Mastercard
                   </div>
                 </div>
@@ -536,16 +536,16 @@ export default function ChoosePaymentClient() {
 
           <div className="mt-8">
             {method === "promptpay" ? (
-              <div className="rounded-xl border border-slate-300 p-5">
-                <h3 className="font-bold text-lg text-slate-900">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+                <h3 className="font-bold text-lg text-slate-800 mb-2">
                   ชำระเงินด้วย PromptPay
                 </h3>
-                <p className="text-sm text-slate-700 mt-1">
+                <p className="text-sm text-slate-600 mb-4">
                   สแกน QR เพื่อชำระยอดมัดจำ จากนั้นอัปโหลดสลิปเพื่อยืนยัน
                 </p>
 
-                <div className="mt-5 flex flex-col sm:flex-row items-center gap-6">
-                  <div className="h-44 w-44 rounded-lg border border-slate-300 grid place-items-center overflow-hidden bg-white">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="h-44 w-44 rounded-xl border border-slate-200 grid place-items-center overflow-hidden bg-white shadow-sm">
                     <img
                       src="https://commons.wikimedia.org/wiki/Special:FilePath/Rickrolling_QR_code.png"
                       alt="PromptPay QR"
@@ -555,16 +555,15 @@ export default function ChoosePaymentClient() {
                     />
                   </div>
                   <div className="flex-1 w-full">
-                    <div className="text-sm text-slate-700">
+                    <div className="text-sm text-slate-600 mb-2">
                       ยอดมัดจำที่ต้องชำระ
                     </div>
-                    <div className="text-4xl font-extrabold tracking-tight text-slate-900">
+                    <div className="text-4xl font-bold text-slate-800 mb-4">
                       ฿500
-                      {/* ฿{fmt(total)} */}
                     </div>
 
-                    <div className="mt-4">
-                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-400 hover:bg-slate-50 cursor-pointer text-slate-900">
+                    <div>
+                      <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 cursor-pointer text-slate-700 transition-all duration-300 hover:border-slate-400">
                         <input
                           type="file"
                           accept="image/*"
@@ -574,9 +573,12 @@ export default function ChoosePaymentClient() {
                             setSlip(f);
                           }}
                         />
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                        </svg>
                         <span>อัปโหลดสลิป</span>
                       </label>
-                      <p className="text-xs text-slate-700 mt-1">
+                      <p className="text-xs text-slate-500 mt-2">
                         รองรับ .jpg, .png (สูงสุด ~5MB)
                         {slip ? ` • ไฟล์: ${slip.name}` : ""}
                       </p>
@@ -585,37 +587,37 @@ export default function ChoosePaymentClient() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-slate-300 p-5">
-                <h3 className="font-bold text-lg text-slate-900">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+                <h3 className="font-bold text-lg text-slate-800 mb-2">
                   ชำระเงินด้วยบัตร
                 </h3>
-                <p className="text-sm text-slate-700 mt-1">
+                <p className="text-sm text-slate-600 mb-4">
                   กรอกข้อมูลบัตรเครดิต/เดบิตของคุณให้ครบถ้วน
                 </p>
 
-                <div className="mt-4 grid gap-4">
+                <div className="grid gap-4">
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-900">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">
                         เลขที่บัตร
                       </label>
                       <input
                         inputMode="numeric"
                         placeholder="4242 4242 4242 4242"
-                        className="w-full rounded-lg border border-slate-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                         value={card.number}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, number: e.target.value }))
                         }
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-900">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">
                         ชื่อบนบัตร
                       </label>
                       <input
                         placeholder="NAME SURNAME"
-                        className="w-full rounded-lg border border-slate-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                         value={card.nameOnCard}
                         onChange={(e) =>
                           setCard((c) => ({
@@ -628,27 +630,27 @@ export default function ChoosePaymentClient() {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-900">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">
                         วันหมดอายุ (MM/YY)
                       </label>
                       <input
                         placeholder="12/27"
-                        className="w-full rounded-lg border border-slate-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                         value={card.exp}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, exp: e.target.value }))
                         }
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-900">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">
                         CVC
                       </label>
                       <input
                         inputMode="numeric"
                         placeholder="123"
-                        className="w-full rounded-lg border border-slate-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                         value={card.cvc}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, cvc: e.target.value }))
@@ -663,7 +665,7 @@ export default function ChoosePaymentClient() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
                 href={`/booking/${encodeURIComponent(carId || "")}${tailQS}`}
-                className="px-4 py-2 rounded-lg border border-slate-400 bg-white hover:bg-slate-50 text-center"
+                className="px-6 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-center text-slate-700 hover:text-slate-900 transition-all duration-300 hover:border-slate-400"
               >
                 กลับไปแก้ไขข้อมูลการจอง
               </Link>
@@ -671,10 +673,10 @@ export default function ChoosePaymentClient() {
                 type="button"
                 onClick={handlePay}
                 disabled={submitting}
-                className={`px-5 py-2.5 rounded-lg text-white font-semibold ${
+                className={`px-8 py-3 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-105 ${
                   submitting
                     ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-slate-900 hover:bg-black"
+                    : "bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 hover:from-yellow-600 hover:to-amber-600 shadow-lg hover:shadow-yellow-500/30"
                 }`}
               >
                 {submitting ? "กำลังบันทึก..." : "ดำเนินการชำระเงิน"}
@@ -694,85 +696,92 @@ export default function ChoosePaymentClient() {
         </section>
 
         {/* สรุปรายการจอง */}
-        <aside className="bg-white rounded-2xl shadow-lg border border-slate-300 p-6 md:p-8 h-fit md:sticky md:top-4 min-w-0">
-          <h3 className="text-lg font-bold text-slate-900">สรุปรายการจอง</h3>
-          <div className="mt-4 text-sm space-y-3 break-words">
-            <div className="flex justify-between gap-4">
-              <span>รถ</span>
-              <span className="font-medium text-right max-w-[65%] break-all">
+        <aside className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8 h-fit md:sticky md:top-4 min-w-0 transition-all duration-300 hover:shadow-xl">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+            <div className="w-6 h-6 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </div>
+            สรุปรายการจอง
+          </h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">รถ</span>
+              <span className="font-medium text-slate-800 text-right max-w-[65%] break-all">
                 {car?.name || "-"}
               </span>
             </div>
 
-            <div className="flex justify-between gap-4">
-              <span>รับรถ</span>
-              <span className="text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">รับรถ</span>
+              <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {pickupLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-700">{displayPick || "-"}</span>
+                <span className="text-slate-600 text-xs">{displayPick || "-"}</span>
               </span>
             </div>
 
-            <div className="flex justify-between gap-4">
-              <span>คืนรถ</span>
-              <span className="text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">คืนรถ</span>
+              <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {dropoffLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-700">{displayDrop || "-"}</span>
+                <span className="text-slate-600 text-xs">{displayDrop || "-"}</span>
               </span>
             </div>
 
-            <div className="flex justify-between gap-4">
-              <span>ชื่อผู้จอง</span>
-              <span className="font-medium text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">ชื่อผู้จอง</span>
+              <span className="font-medium text-slate-800 text-right max-w-[65%] break-all">
                 {name || "-"}
               </span>
             </div>
 
-            <div className="flex justify-between gap-4">
-              <span>ติดต่อ</span>
-              <span className="text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">ติดต่อ</span>
+              <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {phone || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-700">{email || "-"}</span>
+                <span className="text-slate-600 text-xs">{email || "-"}</span>
               </span>
             </div>
 
-            <hr className="my-2 border-slate-300" />
+            <hr className="my-4 border-slate-200" />
 
-            <div className="flex justify-between gap-4">
-              <span>ราคาต่อวัน</span>
-              <span>฿{fmt(unitPrice)}</span>
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">ราคาต่อวัน</span>
+              <span className="font-medium text-slate-800">฿{fmt(unitPrice)}</span>
             </div>
-            <div className="flex justify-between gap-4">
-              <span>ราคารถรวม (x{dayCount})</span>
-              <span>฿{fmt(baseTotal)}</span>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <span>ราคามัดจำ</span>
-              <span>฿500</span>
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">ราคารถรวม (x{dayCount})</span>
+              <span className="font-medium text-slate-800">฿{fmt(baseTotal)}</span>
             </div>
 
-            <div className="flex justify-between text-lg font-extrabold mt-2 gap-4">
-              <span>ยอดรวมทั้งหมด</span>
-              <span>฿{fmt(total)}</span>
+            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span className="text-slate-600">ราคามัดจำ</span>
+              <span className="font-medium text-slate-800">฿500</span>
             </div>
 
-            <hr className="my-2 border-slate-300" />
+            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200">
+              <span className="text-lg font-bold text-slate-800">ยอดรวมทั้งหมด</span>
+              <span className="text-xl font-bold text-yellow-600">฿{fmt(total)}</span>
+            </div>
 
-            <div className="text-xs text-slate-800 whitespace-pre-wrap break-all">
+            <hr className="my-4 border-slate-200" />
+
+            <div className="text-xs text-slate-600 whitespace-pre-wrap break-all p-3 bg-slate-50 rounded-xl">
               หมายเหตุ: {note || "-"}
             </div>
 
             {isAdmin ? (
-              <div className="mt-2 text-xs font-semibold text-green-700">
+              <div className="text-xs font-semibold text-green-600 p-2 bg-green-50 rounded-lg">
                 (Admin mode)
               </div>
             ) : null}
 
             {(passengers || promo || ftype || key) && (
-              <div className="mt-2 text-xs text-slate-700 space-y-1 break-all">
+              <div className="text-xs text-slate-600 space-y-1 break-all p-3 bg-slate-50 rounded-xl">
                 {passengers ? <div>ผู้โดยสาร: {passengers}</div> : null}
                 {ftype ? <div>ประเภทรถ: {ftype}</div> : null}
                 {promo ? <div>โค้ดส่วนลด: {promo}</div> : null}

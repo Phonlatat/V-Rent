@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const noImg = "/noimage.jpg"; // ชี้ไปที่ public/noimage.jpg
 
@@ -106,9 +107,8 @@ function pickImage(car) {
  * CarList
  * props:
  *  - query: payload + filters
- *  - onSelect(car)
  */
-export default function CarList({ query, onSelect }) {
+export default function CarList({ query }) {
   const [loading, setLoading] = useState(false);
   const [cars, setCars] = useState([]);
   const [err, setErr] = useState("");
@@ -268,12 +268,22 @@ export default function CarList({ query, onSelect }) {
                     ฿{nthai(takePrice(car))}{" "}
                     <span className="text-sm text-slate-500">/วัน</span>
                   </div>
-                  <button
-                    onClick={() => onSelect?.(car)}
+                  <Link
+                    href={`/car/${encodeURIComponent(car.license_plate || car.vehicle_name || car.name || 'unknown')}?${new URLSearchParams({
+                      key: car.license_plate || car.vehicle_name || car.name || '',
+                      pickup_at: query?.pickup_at || '',
+                      return_at: query?.return_at || '',
+                      passengers: query?.passengers || 1,
+                      promo: query?.promo || '',
+                      ftype: query?.ftype || '',
+                      pickupLocation: query?.pickupLocation || '',
+                      dropoffLocation: query?.dropoffLocation || '',
+                      returnSame: query?.returnSame || 'true'
+                    }).toString()}`}
                     className="mt-2 inline-flex items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-white hover:bg-amber-600"
                   >
                     จองเลย
-                  </button>
+                  </Link>
                 </div>
               </li>
             );

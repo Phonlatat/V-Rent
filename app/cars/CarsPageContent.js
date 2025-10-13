@@ -158,6 +158,9 @@ export default function CarsPageContent() {
       promo: payload.promo,
       ftype: payload.ftype,
       search: flt.search, // ← สำคัญ
+      pickupLocation: payload.pickupLocation,
+      dropoffLocation: payload.dropoffLocation,
+      returnSame: payload.returnSame,
 
       // filters
       seatBucket: flt.seatBucket,
@@ -242,7 +245,6 @@ export default function CarsPageContent() {
           <div className="col-span-4 lg:col-span-3 rounded-2xl border border-slate-200 shadow-sm p-4 bg-white">
             <CarList
               query={listQuery}
-              onSelect={(car) => console.log("select car:", car)}
             />
           </div>
         </div>

@@ -4,7 +4,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Headers from "@/Components/HeaderISO";
-import Footer from "@/Components/Footer";
+import Footer from "@/Components/FooterMinimal";
 import Image from "next/image";
 import Link from "next/link";
 import { getCarById } from "@/data/cars";
@@ -250,9 +250,9 @@ export default function BookingPage() {
   };
 
   const minDateTime = useMemo(() => toLocalDateTimeInputValue(new Date()), []);
-  const labelCls = "text-sm font-semibold text-slate-800";
+  const labelCls = "text-sm font-semibold text-slate-700";
   const inputCls =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black";
+    "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 hover:border-slate-400";
   const cardCls = "bg-white rounded-2xl shadow-lg border border-slate-200";
   const passthroughQS = search.toString();
 
@@ -302,61 +302,77 @@ export default function BookingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex flex-col min-h-screen bg-white text-slate-900">
       <title>BookingPage - V-Rent</title>
       <Headers />
 
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 overflow-x-hidden">
-          {/* Summary */}
-          <div className="lg:col-span-2 -mt-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm flex flex-wrap gap-x-6 gap-y-2">
-              <span>
-                รับ: <b>{pickupDisplay}</b>
-              </span>
-              <span>
-                คืน: <b>{returnDisplay}</b>
-              </span>
-              {passengers ? (
-                <span>
-                  ผู้โดยสาร: <b>{passengers}</b>
-                </span>
-              ) : null}
-              {ftype ? (
-                <span>
-                  ประเภทรถ: <b>{ftype}</b>
-                </span>
-              ) : null}
-              {promo ? (
-                <span>
-                  โค้ดส่วนลด: <b>{promo}</b>
-                </span>
-              ) : null}
-              {key ? (
-                <span>
-                  key: <b>{key}</b>
-                </span>
-              ) : null}
-            </div>
-          </div>
+        <section className="relative">
+          {/* แถบเหลืองครึ่งบนของโซนเนื้อหา */}
+          <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-r from-yellow-400 to-amber-500" />
+
+          {/* เนื้อหาจริง ให้อยู่เหนือแถบเหลือง */}
+          <div className="relative p-4 sm:p-8 lg:p-10">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 overflow-x-hidden">
+              {/* Summary */}
+              <div className="lg:col-span-2 -mt-2">
+                <div className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-sm p-6 text-sm flex flex-wrap gap-x-6 gap-y-3 shadow-lg">
+                  <div className="flex items-center text-slate-600">
+                    <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <span>รับ: <b className="text-slate-800">{pickupDisplay}</b></span>
+                  </div>
+                  <div className="flex items-center text-slate-600">
+                    <svg className="w-4 h-4 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <span>คืน: <b className="text-slate-800">{returnDisplay}</b></span>
+                  </div>
+                  {passengers ? (
+                    <div className="flex items-center text-slate-600">
+                      <svg className="w-4 h-4 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.5 8h-1c-.8 0-1.5.63-1.5 1.5L15.5 16H18v6h2zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9l-1.5-4.5A1.5 1.5 0 0 0 6 9H5c-.8 0-1.5.63-1.5 1.5L4.5 15H7v7h.5z"/>
+                      </svg>
+                      <span>ผู้โดยสาร: <b className="text-slate-800">{passengers}</b></span>
+                    </div>
+                  ) : null}
+                  {ftype ? (
+                    <div className="flex items-center text-slate-600">
+                      <svg className="w-4 h-4 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                      <span>ประเภทรถ: <b className="text-slate-800">{ftype}</b></span>
+                    </div>
+                  ) : null}
+                  {promo ? (
+                    <div className="flex items-center text-slate-600">
+                      <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                      <span>โค้ดส่วนลด: <b className="text-slate-800">{promo}</b></span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
 
           {/* ซ้าย: ฟอร์ม */}
-          <section className={`${cardCls} p-6 md:p-8 min-w-0 overflow-hidden`}>
-            <div className="flex items-start gap-4">
-              <div className="relative w-28 h-20 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+          <section className={`${cardCls} p-6 md:p-8 min-w-0 overflow-hidden transition-all duration-300 hover:shadow-xl`}>
+            <div className="flex items-start gap-6">
+              <div className="relative w-32 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-lg transition-transform duration-300 hover:scale-105">
                 <Image
                   src={car.image || "/noimage.jpg"}
                   alt={car.name}
                   fill
                   className="object-cover"
-                  sizes="112px"
+                  sizes="128px"
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
                   {car.name}
                 </h1>
-                <p className="text-sm md:text-base text-slate-700">
+                <p className="text-sm md:text-base text-slate-600 mt-1">
                   {car.brand} {car.brand && car.type ? "•" : ""} {car.type}
                   {car.year ? ` • ${car.year}` : ""}{" "}
                   {car.transmission ? ` • ${car.transmission}` : ""}
@@ -492,12 +508,12 @@ export default function BookingPage() {
               </div>
 
               {/* ปุ่ม */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
                 <Link
                   href={`/cars/${encodeURIComponent(id)}${
                     passthroughQS ? `?${passthroughQS}` : ""
                   }`}
-                  className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-center"
+                  className="px-6 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-center text-slate-700 hover:text-slate-900 transition-all duration-300 hover:border-slate-400"
                 >
                   กลับไปหน้ารถ
                 </Link>
@@ -505,7 +521,7 @@ export default function BookingPage() {
                 <button
                   type="button"
                   onClick={goToPayment}
-                  className="px-5 py-2.5 rounded-lg bg-black text-white font-semibold hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black text-center"
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white font-semibold hover:from-yellow-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 text-center shadow-lg hover:shadow-yellow-500/30 transition-all duration-300 transform hover:scale-105"
                 >
                   ไปหน้า Choose payment →
                 </button>
@@ -514,38 +530,47 @@ export default function BookingPage() {
           </section>
 
           {/* ขวา: สรุป */}
-          <aside className={`${cardCls} p-6 md:p-8 h-fit`}>
-            <h3 className="text-lg font-bold">สรุปรายการจอง</h3>
-            <div className="mt-4 text-sm space-y-2">
-              <div className="flex justify-between">
-                <span>รถ</span>
-                <span className="font-medium">{car.name}</span>
+          <aside className={`${cardCls} p-6 md:p-8 h-fit transition-all duration-300 hover:shadow-xl`}>
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
               </div>
-              <div className="flex justify-between">
-                <span>ระยะเวลา</span>
-                <span className="font-medium">{dayCount} วัน</span>
+              สรุปรายการจอง
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <span className="text-slate-600">รถ</span>
+                <span className="font-semibold text-slate-800">{car.name}</span>
               </div>
-              <div className="flex justify-between">
-                <span>ราคา/วัน</span>
-                <span>฿{Number(car.pricePerDay || 0).toLocaleString()}</span>
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <span className="text-slate-600">ระยะเวลา</span>
+                <span className="font-semibold text-slate-800">{dayCount} วัน</span>
               </div>
-              <div className="flex justify-between">
-                <span>ราคามัดจำ</span>
-                <span>฿500</span>
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <span className="text-slate-600">ราคา/วัน</span>
+                <span className="text-slate-700">฿{Number(car.pricePerDay || 0).toLocaleString()}</span>
               </div>
-              <hr className="my-3 border-slate-200" />
-              <div className="flex justify-between">
-                <span>ราคารถ (x{dayCount})</span>
-                <span>฿{Number(basePrice).toLocaleString()}</span>
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <span className="text-slate-600">ราคามัดจำ</span>
+                <span className="text-slate-700">฿500</span>
+              </div>
+              <hr className="my-4 border-slate-200" />
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <span className="text-slate-600">ราคารถ (x{dayCount})</span>
+                <span className="text-slate-700">฿{Number(basePrice).toLocaleString()}</span>
               </div>
 
-              <div className="flex justify-between text-lg font-extrabold mt-2">
-                <span>ยอดรวมทั้งหมด</span>
-                <span>฿{Number(total).toLocaleString()}</span>
+              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 hover:border-yellow-300 transition-all duration-200">
+                <span className="text-lg font-bold text-slate-800">ยอดรวมทั้งหมด</span>
+                <span className="text-xl font-bold text-yellow-600">฿{Number(total).toLocaleString()}</span>
               </div>
             </div>
           </aside>
-        </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
@@ -558,21 +583,26 @@ export default function BookingPage() {
           className="fixed inset-0 z-50 flex items-center justify-center"
         >
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowNoteLimit(false)}
           />
           <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
               ข้อความยาวเกินกำหนด
             </h3>
-            <p className="mt-1 text-sm text-slate-700">
+            <p className="mt-1 text-sm text-slate-600">
               หมายเหตุสามารถใส่ได้ไม่เกิน {NOTE_MAX} ตัวอักษร
               ระบบได้ตัดให้พอดีแล้วค่ะ
             </p>
-            <div className="mt-5 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-black"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-white font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-300 transform hover:scale-105"
                 onClick={() => setShowNoteLimit(false)}
               >
                 เข้าใจแล้ว

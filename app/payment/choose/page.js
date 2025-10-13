@@ -11,13 +11,21 @@ export default function ChoosePaymentPage() {
     <div className="flex flex-col min-h-screen bg-white text-slate-900">
       <title>PaymentPage - V-Rent</title>
       <Headers />
-      <main className="flex-grow overflow-x-hidden">
-        <div className="max-w-6xl mx-auto p-4 md:p-8">
-          {/* ห่อหุ้ม Client Component ด้วย Suspense */}
-          <Suspense fallback={<div>กำลังโหลดข้อมูลการจอง...</div>}>
-            <ChoosePaymentClient />
-          </Suspense>
-        </div>
+      <main className="flex-grow">
+        <section className="relative">
+          {/* แถบเหลืองครึ่งบนของโซนเนื้อหา */}
+          <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-r from-yellow-400 to-amber-500" />
+
+          {/* เนื้อหาจริง ให้อยู่เหนือแถบเหลือง */}
+          <div className="relative p-4 sm:p-8 lg:p-10">
+            <div className="max-w-6xl mx-auto">
+              {/* ห่อหุ้ม Client Component ด้วย Suspense */}
+              <Suspense fallback={<div>กำลังโหลดข้อมูลการจอง...</div>}>
+                <ChoosePaymentClient />
+              </Suspense>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

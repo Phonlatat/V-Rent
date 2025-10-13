@@ -49,37 +49,21 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        "http://203.150.243.195/api/method/erpnext.api.sign_up",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            email: form.email,
-            full_name: form.name,
-            password: form.password,
-            phone: form.phone,
-          }),
-          redirect: "follow",
-        }
-      );
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          name: form.name,
+          password: form.password,
+          phone: form.phone,
+        }),
+      });
 
-      const raw = await res.text();
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = { raw };
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        const msg =
-          data?.message ||
-          data?.exc ||
-          data?.raw ||
-          "Sign up failed. Please try again.";
-        throw new Error(typeof msg === "string" ? msg : "Sign up failed");
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
       }
 
       setOkMsg("สมัครสมาชิกสำเร็จ! กำลังพาไปหน้า Login...");

@@ -32,32 +32,19 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://203.150.243.195/api/method/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
-          usr: form.email,
-          pwd: form.password,
+          email: form.email,
+          password: form.password,
         }),
-        redirect: "follow",
       });
 
-      const raw = await res.text();
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = { raw };
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        const msg =
-          data?.message ||
-          data?.exc ||
-          data?.raw ||
-          "Login failed. Please check your credentials.";
-        throw new Error(typeof msg === "string" ? msg : "Login failed");
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
 
       // เก็บข้อมูลผู้ใช้ใน localStorage

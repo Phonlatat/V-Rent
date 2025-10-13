@@ -34,7 +34,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://demo.erpeazy.com/api/method/login", {
+      const res = await fetch("http://203.150.243.195/api/method/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -67,7 +67,7 @@ const isCarAvailable = (car) => {
 
 /* ====== image helpers ====== */
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195"
 ).replace(/\/+$/, "");
 
 /** รวม path เป็น URL พร้อมใช้

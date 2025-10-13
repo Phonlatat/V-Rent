@@ -7,12 +7,11 @@ import { useEffect, useState } from "react";
 import BookingBox from "@/Components/bookingbox";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195"
 ).replace(/\/+$/, "");
 
 export default function Headnsearch({
   bgSrc = "/images/View2.jpg",
-  onSearch,
   pickupLocation,
   setPickupLocation,
 }) {
@@ -53,7 +52,6 @@ export default function Headnsearch({
         <div className="px-4 sm:px-6">
           <div className="mx-auto w-full max-w-6xl">
             <BookingBox
-              onSearch={onSearch}
               pickupLocation={pickupLocation}
               setPickupLocation={setPickupLocation}
               pushToCars={true}

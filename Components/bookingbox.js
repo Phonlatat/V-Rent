@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { carTypes } from "@/data/carTypes";
 
 /* map ประเภทรถ -> ftype ของ ERP */
@@ -28,6 +28,53 @@ function clampTime(t = "") {
   return t < "01:00" ? "01:00" : t > "23:59" ? "23:59" : t;
 }
 
+// แปลงข้อมูลจาก URL parameters กลับเป็นรูปแบบฟอร์ม
+function fromURLParams(searchParams) {
+  const pickupAt = searchParams.get("pickupAt") || searchParams.get("pickup_at");
+  const returnAt = searchParams.get("dropoffAt") || searchParams.get("return_at");
+  
+  // แปลง ISO string เป็น date และ time
+  const parseDateTime = (isoString) => {
+    if (!isoString) return { date: "", time: "01:00" };
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return { date: "", time: "01:00" };
+      
+      const pad = (n) => String(n).padStart(2, "0");
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return { date, time };
+    } catch {
+      return { date: "", time: "01:00" };
+    }
+  };
+
+  const pickupDateTime = parseDateTime(pickupAt);
+  const returnDateTime = parseDateTime(returnAt);
+
+  // แปลง ftype กลับเป็น carType
+  const ftypeToCarType = {
+    "ECO": "eco",
+    "SEDAN": "sedan", 
+    "SUV": "suv",
+    "PICKUP": "pickup",
+    "VAN": "van"
+  };
+
+  return {
+    pickupLocation: searchParams.get("pickupLocation") || searchParams.get("pickup_location") || "",
+    dropoffLocation: searchParams.get("dropoffLocation") || searchParams.get("dropoff_location") || "",
+    returnSame: searchParams.get("returnSame") !== "false" && searchParams.get("return_same") !== "false",
+    pickupDate: pickupDateTime.date,
+    pickupTime: pickupDateTime.time,
+    returnDate: returnDateTime.date,
+    returnTime: returnDateTime.time,
+    carType: ftypeToCarType[searchParams.get("ftype")] || "any",
+    passengers: Number(searchParams.get("passengers")) || 1,
+    promo: searchParams.get("promo") || "",
+  };
+}
+
 /**
  * BookingBox (Reusable)
  * props:
@@ -45,18 +92,22 @@ export default function BookingBox({
   defaultShowMore = false,
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  // ดึงข้อมูลจาก URL parameters มาใส่ในฟอร์ม
+  const urlData = fromURLParams(searchParams);
+  
   const [form, setForm] = useState({
-    pickupLocation: pickupLocation || "",
-    returnSame: true,
-    dropoffLocation: "",
-    pickupDate: "",
-    pickupTime: "01:00",
-    returnDate: "",
-    returnTime: "23:59",
-    carType: "any",
-    passengers: 1,
-    promo: "",
+    pickupLocation: pickupLocation || urlData.pickupLocation,
+    returnSame: urlData.returnSame,
+    dropoffLocation: urlData.dropoffLocation,
+    pickupDate: urlData.pickupDate,
+    pickupTime: urlData.pickupTime,
+    returnDate: urlData.returnDate,
+    returnTime: urlData.returnTime,
+    carType: urlData.carType,
+    passengers: urlData.passengers,
+    promo: urlData.promo,
   });
 
   // ✅ sync ค่า pickupLocation จาก prop แบบถูกต้อง (เลี่ยง setState ระหว่าง render)
@@ -67,6 +118,24 @@ export default function BookingBox({
         : { ...prev, pickupLocation: pickupLocation || "" }
     );
   }, [pickupLocation]);
+
+  // ✅ อัปเดตฟอร์มเมื่อ URL parameters เปลี่ยน
+  useEffect(() => {
+    const newUrlData = fromURLParams(searchParams);
+    setForm((prev) => ({
+      ...prev,
+      pickupLocation: pickupLocation || newUrlData.pickupLocation,
+      returnSame: newUrlData.returnSame,
+      dropoffLocation: newUrlData.dropoffLocation,
+      pickupDate: newUrlData.pickupDate,
+      pickupTime: newUrlData.pickupTime,
+      returnDate: newUrlData.returnDate,
+      returnTime: newUrlData.returnTime,
+      carType: newUrlData.carType,
+      passengers: newUrlData.passengers,
+      promo: newUrlData.promo,
+    }));
+  }, [searchParams, pickupLocation]);
 
   // ✅ state สำหรับเปิด–ปิด "ตัวเลือกเพิ่มเติม"
   const [showMore, setShowMore] = useState(!!defaultShowMore);

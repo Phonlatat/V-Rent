@@ -39,7 +39,7 @@ export default function Header() {
     setSigningOut(true);
     try {
       // ลบ session cookie ที่ ERPNext
-      await fetch("https://demo.erpeazy.com/api/method/logout", {
+      await fetch("http://203.150.243.195/api/method/logout", {
         method: "GET",
         credentials: "include",
       });

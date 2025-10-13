@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 
 // ชี้ฐานโดเมน ERP (ปรับได้ผ่าน env)
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const ERP_AUTH = process.env.NEXT_PUBLIC_ERP_AUTH || ""; // ถ้ามี token ใส่ env นี้
 
 // ───────── Vehicle Stage mapping (UI → API) ─────────
@@ -1520,7 +1520,7 @@ export default function BookingsTable({
         try {
           await apiEditRentalStatus(b.bookingCode, "Cancelled");
           const res2 = await fetch(
-            "https://demo.erpeazy.com/api/method/erpnext.api.delete_rental",
+            "http://203.150.243.195/api/method/erpnext.api.delete_rental",
             {
               method: "DELETE",
               headers,

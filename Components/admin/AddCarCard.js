@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { carTypes } from "@/data/carTypes";
 
 const ERP_CREATE_URL =
-  "https://demo.erpeazy.com/api/method/erpnext.api.create_vehicle";
+  "http://203.150.243.195/api/method/erpnext.api.create_vehicle";
 // const ERP_AUTH = "token xxx:yyy";
 
 /* ---------------- helpers ---------------- */

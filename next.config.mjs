@@ -4,7 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "demo.erpeazy.com",
+        hostname: "203.150.243.195",
         pathname: "/**",
       },
       {
@@ -19,7 +19,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "http", hostname: "203.150.243.195", pathname: "**" },
       // ถ้าใช้ ERP อื่น ๆ ด้วย
-      { protocol: "https", hostname: "demo.erpeazy.com", pathname: "**" },
+      { protocol: "http", hostname: "203.150.243.195", pathname: "**" },
     ],
   },
 };

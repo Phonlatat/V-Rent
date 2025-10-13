@@ -323,7 +323,7 @@ function AdminDeliveryContent() {
       setQueueErr("");
       try {
         const res = await fetch(
-          "https://demo.erpeazy.com/api/method/erpnext.api.get_rentals",
+          "http://203.150.243.195/api/method/erpnext.api.get_rentals",
           {
             method: "GET",
             headers: new globalThis.Headers(),
@@ -402,7 +402,7 @@ function AdminDeliveryContent() {
     headers.append("Content-Type", "application/json");
 
     const res = await fetch(
-      "https://demo.erpeazy.com/api/method/erpnext.api.edit_rentals_status",
+      "http://203.150.243.195/api/method/erpnext.api.edit_rentals_status",
       {
         method: "POST",
         headers,
@@ -491,7 +491,7 @@ function AdminDeliveryContent() {
     try {
       // 1) บันทึกส่งมอบ
       const res = await fetch(
-        "https://demo.erpeazy.com/api/method/erpnext.api.create_dlv",
+        "http://203.150.243.195/api/method/erpnext.api.create_dlv",
         {
           method: "POST",
           body: fd,

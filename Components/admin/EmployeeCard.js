@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 
 /** ================== ERP CONFIG ================== */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const RENTAL_ENDPOINTS = [
   "/api/method/erpnext.api.get_rentals_today",
   "/api/method/erpnext.api.get_rentals_overall",

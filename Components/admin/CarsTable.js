@@ -10,13 +10,13 @@ const MAX_FILE_MB = 3;
 
 /** ───────── ERP CONFIG (ปรับได้) ───────── */
 const ERP_DELETE_URL =
-  "https://demo.erpeazy.com/api/method/erpnext.api.delete_vehicle";
+  "http://203.150.243.195/api/method/erpnext.api.delete_vehicle";
 const ERP_EDIT_URL =
-  "https://demo.erpeazy.com/api/method/erpnext.api.edit_vehicles";
+  "http://203.150.243.195/api/method/erpnext.api.edit_vehicles";
 // const ERP_AUTH = "token xxx:yyy";
 
 /** ✅ Base URL และตัวช่วยแปลง URL รูป */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 function normalizeImage(u) {
   if (!u) return "";
   const s0 = String(u).trim();
@@ -125,7 +125,7 @@ export default function CarsTable({
     return "ว่าง";
   },
 
-  apiUrl = "https://demo.erpeazy.com/api/method/erpnext.api.get_vehicles_admin",
+  apiUrl = "http://203.150.243.195/api/method/erpnext.api.get_vehicles_admin",
   autoFetchIfEmpty = true,
 }) {
   const [rows, setRows] = useState(cars);

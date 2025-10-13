@@ -47,7 +47,7 @@ export default function Signup() {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://demo.erpeazy.com/api/method/erpnext.api.sign_up",
+        "http://203.150.243.195/api/method/erpnext.api.sign_up",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

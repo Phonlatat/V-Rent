@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195"
 ).replace(/\/+$/, "");
 
 async function getJSON(url, cookie) {

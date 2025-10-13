@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fmtDateTimeLocal } from "./utils";
 
 /* ===== Helpers ===== */
-const IMG_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const IMG_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const normalizeImage = (u) => {
   if (!u) return "";
   let s = String(u).trim();
@@ -72,7 +72,7 @@ export default function DeliveriesTable() {
         headers.append("Content-Type", "application/json");
 
         const res = await fetch(
-          "https://demo.erpeazy.com/api/method/erpnext.api.get_dlv",
+          "http://203.150.243.195/api/method/erpnext.api.get_dlv",
           {
             method: "GET",
             headers,
@@ -309,7 +309,7 @@ export default function DeliveriesTable() {
       headers.append("Content-Type", "application/json");
 
       const res = await fetch(
-        "https://demo.erpeazy.com/api/method/erpnext.api.delete_dlv",
+        "http://203.150.243.195/api/method/erpnext.api.delete_dlv",
         {
           method: "DELETE",
           headers,

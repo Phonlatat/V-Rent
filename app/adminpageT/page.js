@@ -9,12 +9,10 @@ import Link from "next/link";
 
 import EmployeeCard from "@/Components/admin/EmployeeCard";
 import AddCarCard from "@/Components/admin/AddCarCard";
-import CarsTable from "@/Components/admin/CarsTable";
-import BookingsTable from "@/Components/admin/BookingsTable";
-import DeliveriesTable from "@/Components/admin/DeliveriesTable";
+import AdminSlideModal from "@/Components/admin/AdminSlideModal";
 
 /** ================== ERP CONFIG ================== */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 // endpoint แนะนำให้ใช้ตัวนี้เพื่อดู role ผู้ใช้
 const GET_USER_INFO_EP = "/api/method/erpnext.api.get_user_information";
 
@@ -331,58 +329,85 @@ export default function AdminPage() {
     return <AccessDeniedCard onBack={() => router.push("/")} />;
   }
 
-  // ===== Allowed UI (ของเดิม) =====
+  // ===== Allowed UI (เวอร์ชันใหม่) =====
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       <title>AdminPage - V-Rent</title>
       <Headers />
-      {/* ลด margin ซ้ายขวาเล็กน้อย */}
-      <main className="flex-1 px-2 md:px-4 py-6">
-        {/* เพิ่มความกว้างรวม + ลดช่องว่างภายใน */}
-        <div className="mx-auto max-w-screen-2xl grid grid-cols-12 gap-4 md:gap-5 lg:gap-6 px-0 sm:px-2">
-          {/* การ์ดพนักงาน */}
-          <section className="col-span-12 lg:col-span-4 xl:col-span-3">
-            <EmployeeCard userId={userId} />
-          </section>
+      
+      {/* Main Content */}
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative">
+          {/* แถบเหลืองครึ่งบนของโซนเนื้อหา */}
+          <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-r from-yellow-400 to-amber-500" />
+          
+          {/* เนื้อหาจริง ให้อยู่เหนือแถบเหลือง */}
+          <div className="relative p-4 sm:p-8 lg:p-10">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+                  <span className="text-slate-900">Admin</span>
+                  <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                    Dashboard
+                  </span>
+                </h1>
+                <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                  จัดการระบบ V-Rent อย่างครบวงจร พร้อมติดตามข้อมูลการจองและการส่งมอบ
+                </p>
+              </div>
 
-          {/* ฟอร์มเพิ่มรถ */}
-          <section className="col-span-12 lg:col-span-8 xl:col-span-9">
-            <AddCarCard
-              form={carForm}
-              setForm={setCarForm}
-              onAddCar={onAddCar}
-              onImageChange={onImageChange}
-            />
-          </section>
+              {/* กล่องเนื้อหาหลัก */}
+              <div className="rounded-3xl bg-white shadow-xl ring-1 ring-black/5 min-h-[70vh] p-6 sm:p-8">
+                {/* การ์ดพนักงานและฟอร์มเพิ่มรถ */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                  {/* การ์ดพนักงาน */}
+                  <div className="lg:col-span-4">
+                    <EmployeeCard userId={userId} />
+                  </div>
 
-          <section className="col-span-12">
-            <CarsTable
-              cars={cars}
-              bookings={bookings}
-              now={now}
-              nextBookingMap={nextBookingMap}
-              onEdit={() => {}}
-              onDelete={() => {}}
-              getCarRowStatus={getCarRowStatus}
-            />
-          </section>
+                  {/* ฟอร์มเพิ่มรถ */}
+                  <div className="lg:col-span-8">
+                    <AddCarCard
+                      form={carForm}
+                      setForm={setCarForm}
+                      onAddCar={onAddCar}
+                      onImageChange={onImageChange}
+                    />
+                  </div>
+                </div>
 
-          <section className="col-span-12">
-            <BookingsTable
-              bookings={bookings}
-              carMapById={carMapById}
-              carMapByKey={carMapByKey}
-              onOpenDetail={() => {}}
-              onConfirmPickup={handleConfirmPickup}
-              onComplete={handleComplete}
-            />
-          </section>
-
-          <section className="col-span-12">
-            <DeliveriesTable />
-          </section>
-        </div>
+                {/* ตารางข้อมูล (Slide Modal) */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                    จัดการข้อมูลระบบ
+                  </h2>
+                  <p className="text-slate-600 mb-6">
+                    คลิกที่การ์ดด้านล่างเพื่อเปิดดูและจัดการข้อมูลในแต่ละหมวด
+                  </p>
+                  
+                  <AdminSlideModal
+                    cars={cars}
+                    bookings={bookings}
+                    deliveries={deliveries}
+                    carMapById={carMapById}
+                    carMapByKey={carMapByKey}
+                    nextBookingMap={nextBookingMap}
+                    now={now}
+                    onEditCar={() => {}}
+                    onDeleteCar={() => {}}
+                    onConfirmPickup={handleConfirmPickup}
+                    onComplete={handleComplete}
+                    getCarRowStatus={getCarRowStatus}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
+      
       <Footer />
     </div>
   );

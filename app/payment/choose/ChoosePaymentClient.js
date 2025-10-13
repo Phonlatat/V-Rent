@@ -57,7 +57,7 @@ function fileToDataURL(file) {
   });
 }
 
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const DEPOSIT_AMOUNT = 500; // ยอดมัดจำ
 
 export default function ChoosePaymentClient() {
@@ -325,7 +325,7 @@ export default function ChoosePaymentClient() {
       if (slip) fd.append("receipt", slip, slip.name || "receipt.jpg");
 
       const res = await fetch(
-        "https://demo.erpeazy.com/api/method/erpnext.api.create_rental",
+        "http://203.150.243.195/api/method/erpnext.api.create_rental",
         { method: "POST", body: fd, credentials: "include", redirect: "follow" }
       );
 

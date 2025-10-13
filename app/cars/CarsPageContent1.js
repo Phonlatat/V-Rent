@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-const IMG_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const IMG_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const PLACEHOLDER = "/noimage.jpg";
 
 function normalizeImage(u) {

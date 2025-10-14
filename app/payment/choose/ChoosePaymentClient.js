@@ -219,11 +219,48 @@ export default function ChoosePaymentClient() {
   });
   const [slip, setSlip] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [customerData, setCustomerData] = useState({
+    name: "",
+    phone: "",
+    email: ""
+  });
 
   const tailQS = useMemo(() => {
     const qs = sp.toString();
     return qs ? `?${qs}` : "";
   }, [sp]);
+
+  // ดึงข้อมูลลูกค้าจาก ERP system
+  useEffect(() => {
+    if (userId) {
+      (async () => {
+        try {
+          const response = await fetch(
+            `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ user_id: userId }),
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const userInfo = data?.message || {};
+            
+            setCustomerData({
+              name: userInfo.full_name || userInfo.name || "",
+              phone: userInfo.phone || userInfo.mobile_no || "",
+              email: userInfo.email || userInfo.user_id || ""
+            });
+          }
+        } catch (error) {
+          console.warn("Failed to fetch customer data:", error);
+        }
+      })();
+    }
+  }, [userId]);
 
   async function handlePay() {
     if (submitting) return;
@@ -291,10 +328,10 @@ export default function ChoosePaymentClient() {
       const fd = new FormData();
       const confirmationDoc = key || `WEB-${Date.now()}`;
       fd.append("confirmation_document", confirmationDoc);
-      // ✅ ส่ง “ข้อมูลผู้เช่าจริง” ตามที่กรอกในฟอร์ม
-      fd.append("customer_name", name || "");
-      fd.append("customer_phone", phone || "");
-      fd.append("customer_email", (email || "").trim());
+      // ✅ ส่ง "ข้อมูลผู้เช่าจริง" ตามที่กรอกในฟอร์ม
+      fd.append("customer_name", customerData.name || "");
+      fd.append("customer_phone", customerData.phone || "");
+      fd.append("customer_email", (customerData.email || "").trim());
 
       // ✅ ส่งผู้ที่ทำรายการ (บัญชีที่ล็อกอิน) แยกต่างหาก เพื่อให้ ERP บันทึกว่าใครเป็นคนจอง
       fd.append("booked_by_user", userId || "");
@@ -325,7 +362,7 @@ export default function ChoosePaymentClient() {
       if (slip) fd.append("receipt", slip, slip.name || "receipt.jpg");
 
       const res = await fetch(
-        "http://203.150.243.195/api/method/erpnext.api.create_rental",
+        "http://203.150.243.195/api/method/frappe.api.api.create_rental",
         { method: "POST", body: fd, credentials: "include", redirect: "follow" }
       );
 
@@ -367,9 +404,9 @@ export default function ChoosePaymentClient() {
         has_slip: slip ? "1" : "0",
 
         // ข้อมูลผู้จอง
-        name: name || "",
-        phone: phone || "",
-        email: (email || "").trim(),
+        name: customerData.name || "",
+        phone: customerData.phone || "",
+        email: (customerData.email || "").trim(),
         note: (note || "").slice(0, 140),
 
         // สถานที่/เวลา
@@ -485,6 +522,51 @@ export default function ChoosePaymentClient() {
           <p className="text-slate-600 mt-1">
             โปรดเลือกวิธีชำระเงินเพื่อดำเนินการจองให้เสร็จสมบูรณ์
           </p>
+
+          {/* ฟอร์มข้อมูลลูกค้า */}
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
+            <h3 className="font-bold text-lg text-slate-800 mb-4">
+              ข้อมูลผู้จอง
+            </h3>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">
+                  ชื่อ-นามสกุล
+                </label>
+                <input
+                  type="text"
+                  placeholder="กรอกชื่อ-นามสกุล"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  value={customerData.name}
+                  onChange={(e) => setCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">
+                  เบอร์โทรศัพท์
+                </label>
+                <input
+                  type="tel"
+                  placeholder="กรอกเบอร์โทรศัพท์"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  value={customerData.phone}
+                  onChange={(e) => setCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">
+                  อีเมล
+                </label>
+                <input
+                  type="email"
+                  placeholder="กรอกอีเมล"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  value={customerData.email}
+                  onChange={(e) => setCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <button
@@ -734,16 +816,16 @@ export default function ChoosePaymentClient() {
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
               <span className="text-slate-600">ชื่อผู้จอง</span>
               <span className="font-medium text-slate-800 text-right max-w-[65%] break-all">
-                {name || "-"}
+                {customerData.name || "-"}
               </span>
             </div>
 
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
               <span className="text-slate-600">ติดต่อ</span>
               <span className="text-slate-800 text-right max-w-[65%] break-all">
-                {phone || "-"}
+                {customerData.phone || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">{email || "-"}</span>
+                <span className="text-slate-600 text-xs">{customerData.email || "-"}</span>
               </span>
             </div>
 

@@ -183,21 +183,23 @@ export default function BookingPage() {
     (async () => {
       try {
         const r = await fetch(
-          `/erpnext.api.get_user_information?user_id=${encodeURIComponent(
-            uid
-          )}`,
-          { method: "GET", cache: "no-store", credentials: "include" }
+          `http://203.150.243.195/api/method/frappe.api.api.get_user_information`,
+          { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ user_id: uid })
+          }
         );
         if (!r.ok) return;
         const j = await r.json();
-        const msg = Array.isArray(j?.message) ? j.message : null;
-        if (!msg) return;
-        const fullName = msg[0] || "";
-        const phone = msg[1] || "";
+        const userInfo = j?.message || {};
+        
         setForm((prev) => ({
           ...prev,
-          name: fullName || prev.name,
-          phone: phone || prev.phone,
+          name: userInfo.full_name || userInfo.name || prev.name,
+          phone: userInfo.phone || userInfo.mobile_no || prev.phone,
+          email: userInfo.email || userInfo.user_id || prev.email,
         }));
       } catch {}
     })();

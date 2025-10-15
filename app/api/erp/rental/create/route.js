@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160"
 ).replace(/\/+$/, "");
 
 async function postERP(url, cookie, data) {

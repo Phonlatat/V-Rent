@@ -98,13 +98,13 @@ export default function PaymentSummaryPage() {
                       </div>
                       ผู้จอง
                     </h3>
-                    <div className="space-y-1 text-slate-300">
+                    <div className="space-y-2 text-slate-300">
                       <div>
                         ชื่อ:{" "}
                         <span className="font-medium text-white">{name}</span>
                       </div>
                       <div>
-                        โทร:{" "}
+                        เบอร์โทร:{" "}
                         <span className="font-medium text-white">{phone}</span>
                       </div>
                       <div>

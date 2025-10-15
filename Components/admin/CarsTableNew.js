@@ -10,12 +10,12 @@ const MAX_FILE_MB = 3;
 
 /** ───────── ERP CONFIG (ปรับได้) ───────── */
 const ERP_DELETE_URL =
-  "http://203.150.243.195/api/method/frappe.api.api.delete_vehicle";
+  "http://203.154.83.160/api/method/frappe.api.api.delete_vehicle";
 const ERP_EDIT_URL =
-  "http://203.150.243.195/api/method/frappe.api.api.edit_vehicle";
+  "http://203.154.83.160/api/method/frappe.api.api.edit_vehicle";
 
 /** ✅ Base URL และตัวช่วยแปลง URL รูป */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 function normalizeImage(u) {
   if (!u) return "";
   const s0 = String(u).trim();
@@ -120,7 +120,7 @@ export default function CarsTableNew({
 
     return "ว่าง";
   },
-  apiUrl = "http://203.150.243.195/api/method/frappe.api.api.get_vehicles",
+  apiUrl = "http://203.154.83.160/api/method/frappe.api.api.get_vehicles",
   autoFetchIfEmpty = true,
 }) {
   const [loading, setLoading] = useState(false);

@@ -3,8 +3,13 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: "http",
+        hostname: "203.154.83.160",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
-        hostname: "203.150.243.195",
+        hostname: "203.154.83.160",
         pathname: "/**",
       },
       {
@@ -14,13 +19,6 @@ const nextConfig = {
       },
     ],
     unoptimized: true,
-  },
-  images: {
-    remotePatterns: [
-      { protocol: "http", hostname: "203.150.243.195", pathname: "**" },
-      // ถ้าใช้ ERP อื่น ๆ ด้วย
-      { protocol: "http", hostname: "203.150.243.195", pathname: "**" },
-    ],
   },
 };
 

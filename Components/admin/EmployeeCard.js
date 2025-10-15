@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 
 /** ================== ERP CONFIG ================== */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const RENTAL_ENDPOINTS = [
   "/api/method/frappe.api.api.get_rentals_today",
   "/api/method/frappe.api.api.get_rentals_overall",

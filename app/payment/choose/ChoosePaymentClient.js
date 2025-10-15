@@ -57,7 +57,7 @@ function fileToDataURL(file) {
   });
 }
 
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const DEPOSIT_AMOUNT = 500; // ยอดมัดจำ
 
 export default function ChoosePaymentClient() {
@@ -225,6 +225,15 @@ export default function ChoosePaymentClient() {
     email: "",
   });
 
+  // อัปเดต customerData จาก URL parameters
+  useEffect(() => {
+    setCustomerData({
+      name: name || "",
+      phone: phone || "",
+      email: email || "",
+    });
+  }, [name, phone, email]);
+
   const tailQS = useMemo(() => {
     const qs = sp.toString();
     return qs ? `?${qs}` : "";
@@ -362,7 +371,7 @@ export default function ChoosePaymentClient() {
       if (slip) fd.append("receipt", slip, slip.name || "receipt.jpg");
 
       const res = await fetch(
-        "http://203.150.243.195/api/method/frappe.api.api.create_rental",
+        "http://203.154.83.160/api/method/frappe.api.api.create_rental",
         { method: "POST", body: fd, credentials: "include", redirect: "follow" }
       );
 
@@ -800,13 +809,16 @@ export default function ChoosePaymentClient() {
             </div>
 
             <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
-              <span className="text-slate-300">ติดต่อ</span>
+              <span className="text-slate-300">เบอร์โทร</span>
               <span className="text-white text-right max-w-[65%] break-all">
                 {customerData.phone || "-"}
-                <br className="hidden sm:block" />
-                <span className="text-slate-300 text-xs">
-                  {customerData.email || "-"}
-                </span>
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">อีเมล</span>
+              <span className="text-white text-right max-w-[65%] break-all">
+                {customerData.email || "-"}
               </span>
             </div>
 

@@ -392,7 +392,7 @@ function AdminDeliveryContent() {
     headers.append("Content-Type", "application/json");
 
     const res = await fetch(
-      "http://203.150.243.195/api/method/frappe.api.api.edit_rentals_status",
+      "http://203.154.83.160/api/method/frappe.api.api.edit_rentals_status",
       {
         method: "POST",
         headers,
@@ -481,7 +481,7 @@ function AdminDeliveryContent() {
     try {
       // 1) บันทึกส่งมอบ
       const res = await fetch(
-        "http://203.150.243.195/api/method/frappe.api.api.create_dlv",
+        "http://203.154.83.160/api/method/frappe.api.api.create_dlv",
         {
           method: "POST",
           body: fd,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const ERP_SIGNUP_URL = `${ERP_BASE}/api/method/frappe.api.api.sign_up`;
 
 export async function POST(req) {

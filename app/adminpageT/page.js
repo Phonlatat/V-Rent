@@ -12,7 +12,7 @@ import AddCarCard from "@/Components/admin/AddCarCard";
 import AdminSlideModal from "@/Components/admin/AdminSlideModal";
 
 /** ================== ERP CONFIG ================== */
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 // endpoint แนะนำให้ใช้ตัวนี้เพื่อดู role ผู้ใช้
 const GET_USER_INFO_EP = "/api/method/frappe.api.api.get_user_information";
 
@@ -101,7 +101,7 @@ export default function AdminPage() {
     try {
       setCarsLoading(true);
       const response = await fetch(
-        "http://203.150.243.195/api/method/frappe.api.api.get_vehicles",
+        "http://203.154.83.160/api/method/frappe.api.api.get_vehicles",
         {
           method: "GET",
           credentials: "include",
@@ -140,7 +140,7 @@ export default function AdminPage() {
     try {
       setBookingsLoading(true);
       const response = await fetch(
-        "http://203.150.243.195/api/method/frappe.api.api.get_bookings",
+        "http://203.154.83.160/api/method/frappe.api.api.get_bookings",
         {
           method: "GET",
           credentials: "include",
@@ -179,7 +179,7 @@ export default function AdminPage() {
     try {
       setDeliveriesLoading(true);
       const response = await fetch(
-        "http://203.150.243.195/api/method/frappe.api.api.get_deliveries",
+        "http://203.154.83.160/api/method/frappe.api.api.get_deliveries",
         {
           method: "GET",
           credentials: "include",

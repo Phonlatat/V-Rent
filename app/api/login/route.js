@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const ERP_LOGIN_URL = `${ERP_BASE}/api/method/login`;
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    
+
     // เรียก API ของ ERP system
     const response = await fetch(ERP_LOGIN_URL, {
       method: "POST",
@@ -21,7 +21,7 @@ export async function POST(req) {
 
     const raw = await response.text();
     let data;
-    
+
     try {
       data = JSON.parse(raw);
     } catch {
@@ -41,9 +41,8 @@ export async function POST(req) {
       success: true,
       full_name: data.full_name,
       is_admin: data.is_admin || false,
-      message: data.message || "Login successful"
+      message: data.message || "Login successful",
     });
-
   } catch (error) {
     console.error("Login API error:", error);
     return NextResponse.json(

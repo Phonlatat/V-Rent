@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { carTypes } from "@/data/carTypes";
 
 const ERP_CREATE_URL =
-  "http://203.150.243.195/api/method/frappe.api.api.create_vehicle";
+  "http://203.154.83.160/api/method/frappe.api.api.create_vehicle";
 // const ERP_AUTH = "token xxx:yyy";
 
 /* ---------------- helpers ---------------- */

@@ -186,7 +186,7 @@ export default function BookingPage() {
     (async () => {
       try {
         const r = await fetch(
-          `http://203.150.243.195/api/method/frappe.api.api.get_user_information`,
+          `http://203.154.83.160/api/method/frappe.api.api.get_user_information`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

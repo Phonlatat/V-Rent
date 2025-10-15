@@ -31,10 +31,10 @@ export default function FilterDrawer({
 
   return (
     <>
-      {/* Overlay */}
+      {/* Enhanced Overlay with backdrop blur */}
       <div
         className={[
-          "fixed inset-0 z-40 bg-black/40 transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity lg:hidden",
           open
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none",
@@ -43,29 +43,33 @@ export default function FilterDrawer({
         aria-hidden="true"
       />
 
-      {/* Drawer (สไลด์จากซ้าย) */}
+      {/* Enhanced Drawer with dark theme */}
       <aside
         role="dialog"
         aria-modal="true"
         className={[
-          "fixed inset-y-0 left-0 z-50 w-[86%] max-w-sm bg-white shadow-2xl",
+          "fixed inset-y-0 left-0 z-50 w-[86%] max-w-sm bg-gradient-to-br from-slate-900 via-black to-slate-800 shadow-2xl border-r border-white/20",
           "transition-transform duration-300 ease-out lg:hidden",
           open ? "translate-x-0" : "-translate-x-full",
-          "flex flex-col",
+          "flex flex-col backdrop-blur-md",
         ].join(" ")}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-base font-semibold">{title}</h2>
+        {/* Enhanced Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 bg-white/5 backdrop-blur-sm">
+          <h2 className="text-base font-semibold text-white">{title}</h2>
           <button
             onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-300"
             aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
+        {/* Enhanced Content Area */}
+        <div className="min-h-0 flex-1 overflow-auto p-4 bg-gradient-to-br from-slate-900/50 to-black/50">
+          {children}
+        </div>
       </aside>
     </>
   );

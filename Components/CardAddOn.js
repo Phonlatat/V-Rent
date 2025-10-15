@@ -47,9 +47,10 @@ export default function CardAddOn({ className = "" }) {
           <article
             key={i}
             className="
-              group h-full rounded-2xl bg-white/95 backdrop-blur
-              shadow-sm hover:shadow-md transition-all duration-300
-              p-5 hover:-translate-y-1
+              group h-full rounded-2xl 
+              bg-white/10 backdrop-blur-md border border-white/20
+              shadow-lg hover:shadow-xl transition-all duration-300
+              p-5 hover:-translate-y-1 hover:bg-white/15 hover:border-yellow-400/30
             "
           >
             <div className="flex items-start gap-3">
@@ -57,7 +58,9 @@ export default function CardAddOn({ className = "" }) {
                 className="
                   inline-flex items-center justify-center
                   w-9 h-9 rounded-xl
-                  bg-yellow-400/15 text-yellow-500
+                  bg-yellow-400/20 text-yellow-400
+                  group-hover:bg-yellow-400/30 group-hover:scale-110
+                  transition-all duration-300
                 "
                 aria-hidden
               >
@@ -65,10 +68,12 @@ export default function CardAddOn({ className = "" }) {
               </span>
 
               <div className="space-y-1">
-                <h3 className="font-semibold text-slate-900 tracking-tight">
+                <h3 className="font-semibold text-white tracking-tight group-hover:text-yellow-400 transition-colors duration-300">
                   {it.title}
                 </h3>
-                <p className="text-sm leading-6 text-slate-600">{it.desc}</p>
+                <p className="text-sm leading-6 text-slate-300 group-hover:text-slate-200 transition-colors duration-300">
+                  {it.desc}
+                </p>
               </div>
             </div>
           </article>

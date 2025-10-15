@@ -132,6 +132,7 @@ export default function CarsPageContent() {
     payload.passengers,
     payload.promo,
     payload.ftype,
+    flt.search,
   ]);
 
   /* ------ สำหรับ Drawer บนมือถือ ------ */
@@ -176,26 +177,26 @@ export default function CarsPageContent() {
   return (
     <div className="w-full min-h-[1px]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* การ์ด BookingBox (กรอบอยู่ฝั่งหน้าครอบไว้) */}
-        <div className="rounded-2xl border border-slate-300 shadow-lg p-3 sm:p-4 bg-white">
+        {/* การ์ด BookingBox with dark theme */}
+        <div className="rounded-2xl border border-white/20 shadow-2xl p-3 sm:p-4 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:border-yellow-400/30 transition-all duration-300">
           <BookingBox />
         </div>
 
         {/* แถบปุ่มสำหรับมือถือ เปิด Drawer */}
         <div className="flex items-center justify-between lg:hidden">
-          <div className="text-sm text-slate-600">
+          <div className="text-sm text-slate-300">
             {filtered ? "มีการใช้ตัวกรอง" : "ตัวกรองทั้งหมด"}
           </div>
           <button
             onClick={() => setMobileFilterOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 backdrop-blur-md px-3 py-2 text-sm text-white hover:bg-white/15 hover:border-yellow-400/30 transition-all duration-300"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
               <path d="M3 5h18v2H3V5Zm4 6h10v2H7v-2Zm3 6h4v2h-4v-2Z" />
             </svg>
             ตัวกรอง
             {filtered && (
-              <span className="ml-1 h-2 w-2 rounded-full bg-amber-500" />
+              <span className="ml-1 h-2 w-2 rounded-full bg-yellow-400" />
             )}
           </button>
         </div>
@@ -215,13 +216,13 @@ export default function CarsPageContent() {
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => setMobileFilterOpen(false)}
-              className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-white font-medium hover:bg-amber-600"
+              className="flex-1 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 text-black font-medium hover:from-amber-500 hover:to-yellow-400 transition-all duration-300"
             >
               ดูผลลัพธ์
             </button>
             <button
               onClick={resetFilter}
-              className="rounded-lg px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50"
+              className="rounded-lg px-4 py-2 border border-white/20 bg-white/10 backdrop-blur-md text-white hover:bg-white/15 hover:border-yellow-400/30 transition-all duration-300"
             >
               ล้าง
             </button>
@@ -242,10 +243,8 @@ export default function CarsPageContent() {
           </div>
 
           {/* ขวา: รายการรถ */}
-          <div className="col-span-4 lg:col-span-3 rounded-2xl border border-slate-200 shadow-sm p-4 bg-white">
-            <CarList
-              query={listQuery}
-            />
+          <div className="col-span-4 lg:col-span-3 rounded-2xl border border-white/20 shadow-2xl p-4 bg-white/10 backdrop-blur-md hover:bg-white/15 hover:border-yellow-400/30 transition-all duration-300">
+            <CarList query={listQuery} />
           </div>
         </div>
       </div>

@@ -30,18 +30,22 @@ function clampTime(t = "") {
 
 // แปลงข้อมูลจาก URL parameters กลับเป็นรูปแบบฟอร์ม
 function fromURLParams(searchParams) {
-  const pickupAt = searchParams.get("pickupAt") || searchParams.get("pickup_at");
-  const returnAt = searchParams.get("dropoffAt") || searchParams.get("return_at");
-  
+  const pickupAt =
+    searchParams.get("pickupAt") || searchParams.get("pickup_at");
+  const returnAt =
+    searchParams.get("dropoffAt") || searchParams.get("return_at");
+
   // แปลง ISO string เป็น date และ time
   const parseDateTime = (isoString) => {
     if (!isoString) return { date: "", time: "01:00" };
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return { date: "", time: "01:00" };
-      
+
       const pad = (n) => String(n).padStart(2, "0");
-      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+        d.getDate()
+      )}`;
       const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
       return { date, time };
     } catch {
@@ -54,17 +58,25 @@ function fromURLParams(searchParams) {
 
   // แปลง ftype กลับเป็น carType
   const ftypeToCarType = {
-    "ECO": "eco",
-    "SEDAN": "sedan", 
-    "SUV": "suv",
-    "PICKUP": "pickup",
-    "VAN": "van"
+    ECO: "eco",
+    SEDAN: "sedan",
+    SUV: "suv",
+    PICKUP: "pickup",
+    VAN: "van",
   };
 
   return {
-    pickupLocation: searchParams.get("pickupLocation") || searchParams.get("pickup_location") || "",
-    dropoffLocation: searchParams.get("dropoffLocation") || searchParams.get("dropoff_location") || "",
-    returnSame: searchParams.get("returnSame") !== "false" && searchParams.get("return_same") !== "false",
+    pickupLocation:
+      searchParams.get("pickupLocation") ||
+      searchParams.get("pickup_location") ||
+      "",
+    dropoffLocation:
+      searchParams.get("dropoffLocation") ||
+      searchParams.get("dropoff_location") ||
+      "",
+    returnSame:
+      searchParams.get("returnSame") !== "false" &&
+      searchParams.get("return_same") !== "false",
     pickupDate: pickupDateTime.date,
     pickupTime: pickupDateTime.time,
     returnDate: returnDateTime.date,
@@ -96,7 +108,7 @@ export default function BookingBox({
 
   // ดึงข้อมูลจาก URL parameters มาใส่ในฟอร์ม
   const urlData = fromURLParams(searchParams);
-  
+
   const [form, setForm] = useState({
     pickupLocation: pickupLocation || urlData.pickupLocation,
     returnSame: urlData.returnSame,
@@ -222,16 +234,16 @@ export default function BookingBox({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl bg-white/95 shadow-xl/30 shadow-black/5 border border-white/40 backdrop-blur px-3 sm:px-4 py-2 text-slate-900"
+      className="rounded-2xl bg-white/10 backdrop-blur-md shadow-2xl border border-white/20 px-3 sm:px-4 py-2 text-white"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 items-stretch">
         {/* สถานที่ */}
         <div className="lg:col-span-5">
           <label className="sr-only">สถานที่รับรถ</label>
-          <div className="h-14 w-full rounded-xl border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500/40 bg-white px-3 sm:px-4 flex items-center gap-3">
+          <div className="h-14 w-full rounded-xl border border-white/30 focus-within:ring-2 focus-within:ring-yellow-400/40 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
             <svg
               viewBox="0 0 24 24"
-              className="w-5 h-5 text-slate-600"
+              className="w-5 h-5 text-yellow-400"
               fill="currentColor"
             >
               <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5Z" />
@@ -239,7 +251,7 @@ export default function BookingBox({
             <input
               type="text"
               placeholder="สถานที่รับรถ (เช่น สนามบินเชียงใหม่)"
-              className="w-full bg-transparent outline-none placeholder:text-slate-500"
+              className="w-full bg-transparent outline-none placeholder:text-slate-300 text-white"
               name="pickupLocation"
               value={form.pickupLocation}
               onChange={handleChange}
@@ -255,9 +267,9 @@ export default function BookingBox({
                 name="returnSame"
                 checked={form.returnSame}
                 onChange={handleChange}
-                className="rounded border-slate-400 text-black focus:ring-black"
+                className="rounded border-white/40 text-yellow-400 focus:ring-yellow-400 bg-white/10"
               />
-              <span className="text-sm text-slate-800">คืนรถจุดเดิม</span>
+              <span className="text-sm text-slate-200">คืนรถจุดเดิม</span>
             </label>
 
             <div
@@ -276,7 +288,7 @@ export default function BookingBox({
                   placeholder="จุดคืนรถ"
                   value={form.dropoffLocation}
                   onChange={handleChange}
-                  className="mt-2 sm:mt-0 w-full sm:min-w-[220px] rounded-lg border border-slate-300 px-3 py-1.5 text-sm bg-white"
+                  className="mt-2 sm:mt-0 w-full sm:min-w-[220px] rounded-lg border border-white/30 px-3 py-1.5 text-sm bg-white/10 backdrop-blur-sm text-white placeholder:text-slate-300 hover:bg-white/15 transition-all duration-300"
                 />
               </div>
             </div>
@@ -285,21 +297,21 @@ export default function BookingBox({
 
         {/* รับรถ (วัน/เวลา) */}
         <div className="lg:col-span-3">
-          <div className="h-14 w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 flex items-center">
+          <div className="h-14 w-full rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center hover:bg-white/15 transition-all duration-300">
             <div className="w-full grid grid-cols-2 gap-3">
               <div className="flex flex-col">
-                <span className="text-xs text-slate-700">วันรับรถ</span>
+                <span className="text-xs text-slate-300">วันรับรถ</span>
                 <input
                   type="date"
                   name="pickupDate"
                   value={form.pickupDate}
                   onChange={handleChange}
-                  className="outline-none bg-transparent text-[15px]"
+                  className="outline-none bg-transparent text-[15px] text-white"
                   required
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-slate-700">เวลา</span>
+                <span className="text-xs text-slate-300">เวลา</span>
                 <input
                   type="time"
                   name="pickupTime"
@@ -310,7 +322,7 @@ export default function BookingBox({
                   max="23:59"
                   lang="en-GB"
                   inputMode="numeric"
-                  className="outline-none bg-transparent text-[15px]"
+                  className="outline-none bg-transparent text-[15px] text-white"
                   required
                 />
               </div>
@@ -320,21 +332,21 @@ export default function BookingBox({
 
         {/* คืนรถ (วัน/เวลา) */}
         <div className="lg:col-span-3">
-          <div className="h-14 w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 flex items-center">
+          <div className="h-14 w-full rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center hover:bg-white/15 transition-all duration-300">
             <div className="w-full grid grid-cols-2 gap-3">
               <div className="flex flex-col">
-                <span className="text-xs text-slate-700">วันคืนรถ</span>
+                <span className="text-xs text-slate-300">วันคืนรถ</span>
                 <input
                   type="date"
                   name="returnDate"
                   value={form.returnDate}
                   onChange={handleChange}
-                  className="outline-none bg-transparent text-[15px]"
+                  className="outline-none bg-transparent text-[15px] text-white"
                   required
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-slate-700">เวลา</span>
+                <span className="text-xs text-slate-300">เวลา</span>
                 <input
                   type="time"
                   name="returnTime"
@@ -345,7 +357,7 @@ export default function BookingBox({
                   max="23:59"
                   lang="en-GB"
                   inputMode="numeric"
-                  className="outline-none bg-transparent text-[15px]"
+                  className="outline-none bg-transparent text-[15px] text-white"
                   required
                 />
               </div>
@@ -358,7 +370,7 @@ export default function BookingBox({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full h-14 rounded-xl font-semibold bg-[#000000] text-white hover:bg-[#494949] disabled:bg-slate-300 inline-flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:from-amber-500 hover:to-yellow-400 disabled:bg-slate-600 disabled:text-slate-400 inline-flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 disabled:scale-100"
             title={!canSubmit ? "กรอกข้อมูลที่จำเป็นให้ครบก่อน" : ""}
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
@@ -375,7 +387,7 @@ export default function BookingBox({
           type="button"
           onClick={() => setShowMore((s) => !s)}
           aria-expanded={showMore}
-          className="text-sm text-slate-800 hover:text-slate-900 inline-flex items-center gap-1"
+          className="text-sm text-slate-200 hover:text-yellow-400 inline-flex items-center gap-1 transition-colors duration-300"
         >
           ตัวเลือกเพิ่มเติม
           <svg
@@ -387,7 +399,7 @@ export default function BookingBox({
           </svg>
         </button>
 
-        <div className="text-xs text-slate-700">
+        <div className="text-xs text-slate-300">
           * โปรดเลือกวัน-เวลาให้ครบเพื่อค้นหารถว่าง
         </div>
       </div>

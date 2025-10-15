@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import HeaderAd from "@/Components/HeaderAd";
-import Footer from "@/Components/Footer";
+import Footer from "@/Components/FooterMinimal";
 import Link from "next/link";
 import AccessDeniedCard from "@/Components/AccessDeniedCard";
 import LoadingCard from "@/Components/LoadingCard";
@@ -545,13 +545,13 @@ function AdminDeliveryContent() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8">
+    <div className="max-w-6xl mx-auto p-3 sm:p-4 md:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-4 sm:gap-6 lg:gap-8">
       {/* ซ้าย: ฟอร์ม */}
-      <section className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 group hover:bg-white/15 transition-all duration-300">
-        <div className="flex items-center mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-4">
+      <section className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 p-4 sm:p-6 md:p-8 group hover:bg-white/15 transition-all duration-300">
+        <div className="flex items-center mb-4 sm:mb-6">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3 sm:mr-4">
             <svg
-              className="w-6 h-6 text-black"
+              className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-black"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -565,21 +565,27 @@ function AdminDeliveryContent() {
             </svg>
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white group-hover:text-yellow-400 transition-colors duration-300">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-white group-hover:text-yellow-400 transition-colors duration-300">
               Delivery Staff
             </h1>
-            <span className="inline-block px-3 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold mt-1">
+            <span className="inline-block px-2 sm:px-3 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold mt-1">
               Admin Panel
             </span>
           </div>
         </div>
-        <p className="text-slate-300 group-hover:text-white transition-colors duration-300 mb-6">
-          บันทึกข้อมูลการส่งมอบรถให้ลูกค้า พร้อมถ่ายหลักฐาน/เอกสารยืนยันตัวตน
+        <p className="text-sm sm:text-base text-slate-300 group-hover:text-white transition-colors duration-300 mb-4 sm:mb-6">
+          บันทึกข้อมูลการส่งมอบรถให้ลูกค้า
+          <br className="sm:hidden" />
+          <span className="hidden sm:inline"> • </span>
+          พร้อมถ่ายหลักฐาน/เอกสารยืนยันตัวตน
         </p>
 
-        <form className="mt-6 grid gap-6" onSubmit={handleSubmit}>
+        <form
+          className="mt-4 sm:mt-6 grid gap-4 sm:gap-6"
+          onSubmit={handleSubmit}
+        >
           {/* booking / car */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className={labelCls}>รหัสการจอง *</label>
               <input
@@ -601,7 +607,7 @@ function AdminDeliveryContent() {
                 placeholder="1กก-1234"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2 md:col-span-1">
               <label className={labelCls}>รุ่นรถ</label>
               <input
                 name="carName"
@@ -614,7 +620,7 @@ function AdminDeliveryContent() {
           </div>
 
           {/* customer */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className={labelCls}>ชื่อลูกค้า *</label>
               <input
@@ -637,7 +643,7 @@ function AdminDeliveryContent() {
                 placeholder="080-000-0000"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2 md:col-span-1">
               <label className={labelCls}>เลขประจำตัว/เอกสาร</label>
               <input
                 name="customerId"
@@ -650,7 +656,7 @@ function AdminDeliveryContent() {
           </div>
 
           {/* pickup / return */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className={labelCls}>สถานที่ส่งมอบ</label>
               <input
@@ -673,7 +679,7 @@ function AdminDeliveryContent() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className={labelCls}>สถานที่นัดคืนรถ</label>
               <input
@@ -898,7 +904,7 @@ function AdminDeliveryContent() {
           </div>
 
           {/* action buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               type="button"
               onClick={() => {
@@ -924,14 +930,14 @@ function AdminDeliveryContent() {
                 setIdProofs([]);
                 setCarProofs([]);
               }}
-              className="px-6 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/15 hover:border-white/30 transition-all duration-300"
+              className="px-4 sm:px-6 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/15 hover:border-white/30 transition-all duration-300 text-sm sm:text-base"
             >
               ล้างฟอร์ม
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+              className="px-6 sm:px-8 py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
             >
               {submitting ? "กำลังบันทึก..." : "บันทึกข้อมูลส่งมอบ"}
             </button>
@@ -1475,15 +1481,7 @@ export default function DeliveryStaffPage() {
         </main>
 
         {/* Footer */}
-        <div className="bg-black/20 backdrop-blur-md border-t border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">
-                © 2025 V-Rent Delivery Staff. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );

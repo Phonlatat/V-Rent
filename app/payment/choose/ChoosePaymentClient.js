@@ -478,28 +478,28 @@ export default function ChoosePaymentClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* backdrop */}
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowLoginModal(false)}
           />
           {/* dialog */}
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">
+          <div className="relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white">
               กรุณาเข้าสู่ระบบ
             </h3>
-            <p className="mt-1 text-sm text-slate-700">
+            <p className="mt-1 text-sm text-slate-300">
               คุณต้องล็อกอินก่อนจึงจะดำเนินการชำระเงินได้
             </p>
             <div className="mt-5 flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50"
+                className="px-4 py-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/40 transition-all duration-300"
                 onClick={() => setShowLoginModal(false)}
               >
                 ปิด
               </button>
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-black"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 transform hover:scale-105"
                 onClick={() => {
                   const next = encodeURIComponent(
                     location.pathname + location.search
@@ -514,92 +514,34 @@ export default function ChoosePaymentClient() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-[2fr_1fr] gap-6 items-start min-w-0">
-        <section className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8 transition-all duration-300 hover:shadow-xl">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-2 sm:gap-3 md:gap-4 lg:gap-6 items-start w-full">
+        <section className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl border border-white/20 p-3 sm:p-4 md:p-6 lg:p-8 transition-all duration-300 hover:shadow-xl group hover:bg-white/15">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight group-hover:text-yellow-400 transition-colors duration-300">
             เลือกวิธีการชำระเงิน
           </h1>
-          <p className="text-slate-600 mt-1">
+          <p className="text-sm sm:text-base text-slate-300 mt-1 group-hover:text-white transition-colors duration-300">
             โปรดเลือกวิธีชำระเงินเพื่อดำเนินการจองให้เสร็จสมบูรณ์
           </p>
 
-          {/* ฟอร์มข้อมูลลูกค้า */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
-            <h3 className="font-bold text-lg text-slate-800 mb-4">
-              ข้อมูลผู้จอง
-            </h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  ชื่อ-นามสกุล
-                </label>
-                <input
-                  type="text"
-                  placeholder="กรอกชื่อ-นามสกุล"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
-                  value={customerData.name}
-                  onChange={(e) =>
-                    setCustomerData((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  เบอร์โทรศัพท์
-                </label>
-                <input
-                  type="tel"
-                  placeholder="กรอกเบอร์โทรศัพท์"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
-                  value={customerData.phone}
-                  onChange={(e) =>
-                    setCustomerData((prev) => ({
-                      ...prev,
-                      phone: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  อีเมล
-                </label>
-                <input
-                  type="email"
-                  placeholder="กรอกอีเมล"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
-                  value={customerData.email}
-                  onChange={(e) =>
-                    setCustomerData((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-3 sm:mt-4 md:mt-6 grid gap-2 sm:gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 w-full">
             <button
               type="button"
               onClick={() => setMethod("promptpay")}
-              className={`text-left rounded-xl border p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+              className={`text-left rounded-xl border p-2.5 sm:p-3 md:p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
                 method === "promptpay"
-                  ? "border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50"
-                  : "border-slate-300 hover:border-slate-400"
+                  ? "border-yellow-400 ring-2 ring-yellow-400 bg-yellow-400/20 backdrop-blur-sm"
+                  : "border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/40"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-white font-bold">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-bold text-sm sm:text-base">
                   ฿
                 </span>
                 <div>
-                  <div className="font-semibold text-slate-800">PromptPay</div>
-                  <div className="text-sm text-slate-600">
+                  <div className="font-semibold text-white text-sm sm:text-base">
+                    PromptPay
+                  </div>
+                  <div className="text-xs sm:text-sm text-slate-300">
                     โอนผ่าน QR พร้อมเพย์ (อัปโหลดสลิป)
                   </div>
                 </div>
@@ -611,19 +553,19 @@ export default function ChoosePaymentClient() {
               onClick={() => setMethod("visa")}
               className={`text-left rounded-xl border p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 ${
                 method === "visa"
-                  ? "border-yellow-500 ring-2 ring-yellow-500 bg-yellow-50"
-                  : "border-slate-300 hover:border-slate-400"
+                  ? "border-yellow-400 ring-2 ring-yellow-400 bg-yellow-400/20 backdrop-blur-sm"
+                  : "border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/40"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-400 font-bold text-slate-700">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/40 font-bold text-white">
                   VISA
                 </span>
                 <div>
-                  <div className="font-semibold text-slate-800">
+                  <div className="font-semibold text-white">
                     บัตรเครดิต / เดบิต
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-slate-300">
                     รองรับ Visa / Mastercard
                   </div>
                 </div>
@@ -633,34 +575,44 @@ export default function ChoosePaymentClient() {
 
           <div className="mt-8">
             {method === "promptpay" ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-                <h3 className="font-bold text-lg text-slate-800 mb-2">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-6">
+                <h3 className="font-bold text-lg text-white mb-2">
                   ชำระเงินด้วย PromptPay
                 </h3>
-                <p className="text-sm text-slate-600 mb-4">
+                <p className="text-sm text-slate-300 mb-4">
                   สแกน QR เพื่อชำระยอดมัดจำ จากนั้นอัปโหลดสลิปเพื่อยืนยัน
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="h-44 w-44 rounded-xl border border-slate-200 grid place-items-center overflow-hidden bg-white shadow-sm">
-                    <img
-                      src="https://commons.wikimedia.org/wiki/Special:FilePath/Rickrolling_QR_code.png"
-                      alt="PromptPay QR"
-                      className="h-44 w-44 object-contain"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
+                  <div className="h-44 w-44 rounded-xl border border-white/20 grid place-items-center overflow-hidden bg-white/10 backdrop-blur-sm shadow-lg">
+                    <div className="h-44 w-44 bg-white rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-32 h-32 bg-black rounded-lg grid grid-cols-8 gap-1 p-2">
+                          {Array.from({ length: 64 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`w-full h-full rounded-sm ${
+                                Math.random() > 0.5 ? "bg-white" : "bg-black"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2 font-mono">
+                          QR Code
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex-1 w-full">
-                    <div className="text-sm text-slate-600 mb-2">
+                    <div className="text-sm text-slate-300 mb-2">
                       ยอดมัดจำที่ต้องชำระ
                     </div>
-                    <div className="text-4xl font-bold text-slate-800 mb-4">
+                    <div className="text-4xl font-bold text-white mb-4">
                       ฿500
                     </div>
 
                     <div>
-                      <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 cursor-pointer text-slate-700 transition-all duration-300 hover:border-slate-400">
+                      <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm hover:bg-white/20 cursor-pointer text-white transition-all duration-300 hover:border-white/40">
                         <input
                           type="file"
                           accept="image/*"
@@ -679,7 +631,7 @@ export default function ChoosePaymentClient() {
                         </svg>
                         <span>อัปโหลดสลิป</span>
                       </label>
-                      <p className="text-xs text-slate-500 mt-2">
+                      <p className="text-xs text-slate-400 mt-2">
                         รองรับ .jpg, .png (สูงสุด ~5MB)
                         {slip ? ` • ไฟล์: ${slip.name}` : ""}
                       </p>
@@ -688,24 +640,24 @@ export default function ChoosePaymentClient() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-                <h3 className="font-bold text-lg text-slate-800 mb-2">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-6">
+                <h3 className="font-bold text-lg text-white mb-2">
                   ชำระเงินด้วยบัตร
                 </h3>
-                <p className="text-sm text-slate-600 mb-4">
+                <p className="text-sm text-slate-300 mb-4">
                   กรอกข้อมูลบัตรเครดิต/เดบิตของคุณให้ครบถ้วน
                 </p>
 
                 <div className="grid gap-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-white">
                         เลขที่บัตร
                       </label>
                       <input
                         inputMode="numeric"
                         placeholder="4242 4242 4242 4242"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                        className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-white placeholder-slate-200 hover:bg-white/20"
                         value={card.number}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, number: e.target.value }))
@@ -713,12 +665,12 @@ export default function ChoosePaymentClient() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-white">
                         ชื่อบนบัตร
                       </label>
                       <input
                         placeholder="NAME SURNAME"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                        className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-white placeholder-slate-200 hover:bg-white/20"
                         value={card.nameOnCard}
                         onChange={(e) =>
                           setCard((c) => ({
@@ -732,12 +684,12 @@ export default function ChoosePaymentClient() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-white">
                         วันหมดอายุ (MM/YY)
                       </label>
                       <input
                         placeholder="12/27"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                        className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-white placeholder-slate-200 hover:bg-white/20"
                         value={card.exp}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, exp: e.target.value }))
@@ -745,13 +697,13 @@ export default function ChoosePaymentClient() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">
+                      <label className="text-sm font-semibold text-white">
                         CVC
                       </label>
                       <input
                         inputMode="numeric"
                         placeholder="123"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                        className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-white placeholder-slate-200 hover:bg-white/20"
                         value={card.cvc}
                         onChange={(e) =>
                           setCard((c) => ({ ...c, cvc: e.target.value }))
@@ -763,10 +715,10 @@ export default function ChoosePaymentClient() {
               </div>
             )}
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="mt-4 sm:mt-5 md:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
               <Link
                 href={`/booking/${encodeURIComponent(carId || "")}${tailQS}`}
-                className="px-6 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-center text-slate-700 hover:text-slate-900 transition-all duration-300 hover:border-slate-400"
+                className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-center text-white hover:bg-white/20 hover:border-white/40 transition-all duration-300 text-sm sm:text-base flex-1 sm:flex-none"
               >
                 กลับไปแก้ไขข้อมูลการจอง
               </Link>
@@ -774,10 +726,10 @@ export default function ChoosePaymentClient() {
                 type="button"
                 onClick={handlePay}
                 disabled={submitting}
-                className={`px-8 py-3 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-105 ${
+                className={`px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-xl text-black font-semibold transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none ${
                   submitting
                     ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 hover:from-yellow-600 hover:to-amber-600 shadow-lg hover:shadow-yellow-500/30"
+                    : "bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-400 shadow-lg hover:shadow-yellow-400/30"
                 }`}
               >
                 {submitting ? "กำลังบันทึก..." : "ดำเนินการชำระเงิน"}
@@ -797,11 +749,11 @@ export default function ChoosePaymentClient() {
         </section>
 
         {/* สรุปรายการจอง */}
-        <aside className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8 h-fit md:sticky md:top-4 min-w-0 transition-all duration-300 hover:shadow-xl">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-            <div className="w-6 h-6 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
+        <aside className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-6 md:p-8 h-fit md:sticky md:top-4 min-w-0 transition-all duration-300 hover:shadow-xl group hover:bg-white/15">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center group-hover:text-yellow-400 transition-colors duration-300">
+            <div className="w-6 h-6 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
               <svg
-                className="w-4 h-4 text-white"
+                className="w-4 h-4 text-black"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
@@ -811,96 +763,92 @@ export default function ChoosePaymentClient() {
             สรุปรายการจอง
           </h3>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">รถ</span>
-              <span className="font-medium text-slate-800 text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">รถ</span>
+              <span className="font-medium text-white text-right max-w-[65%] break-all">
                 {car?.name || "-"}
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">รับรถ</span>
-              <span className="text-slate-800 text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">รับรถ</span>
+              <span className="text-white text-right max-w-[65%] break-all">
                 {pickupLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">
+                <span className="text-slate-300 text-xs">
                   {displayPick || "-"}
                 </span>
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">คืนรถ</span>
-              <span className="text-slate-800 text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">คืนรถ</span>
+              <span className="text-white text-right max-w-[65%] break-all">
                 {dropoffLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">
+                <span className="text-slate-300 text-xs">
                   {displayDrop || "-"}
                 </span>
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">ชื่อผู้จอง</span>
-              <span className="font-medium text-slate-800 text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">ชื่อผู้จอง</span>
+              <span className="font-medium text-white text-right max-w-[65%] break-all">
                 {customerData.name || "-"}
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">ติดต่อ</span>
-              <span className="text-slate-800 text-right max-w-[65%] break-all">
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">ติดต่อ</span>
+              <span className="text-white text-right max-w-[65%] break-all">
                 {customerData.phone || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">
+                <span className="text-slate-300 text-xs">
                   {customerData.email || "-"}
                 </span>
               </span>
             </div>
 
-            <hr className="my-4 border-slate-200" />
+            <hr className="my-4 border-white/20" />
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">ราคาต่อวัน</span>
-              <span className="font-medium text-slate-800">
-                ฿{fmt(unitPrice)}
-              </span>
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">ราคาต่อวัน</span>
+              <span className="font-medium text-white">฿{fmt(unitPrice)}</span>
             </div>
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">ราคารถรวม (x{dayCount})</span>
-              <span className="font-medium text-slate-800">
-                ฿{fmt(baseTotal)}
-              </span>
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">ราคารถรวม (x{dayCount})</span>
+              <span className="font-medium text-white">฿{fmt(baseTotal)}</span>
             </div>
 
-            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-              <span className="text-slate-600">ราคามัดจำ</span>
-              <span className="font-medium text-slate-800">฿500</span>
+            <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
+              <span className="text-slate-300">ราคามัดจำ</span>
+              <span className="font-medium text-white">฿500</span>
             </div>
 
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200">
-              <span className="text-lg font-bold text-slate-800">
+            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-400/20 to-amber-500/20 backdrop-blur-sm rounded-xl border border-yellow-400/30 hover:border-yellow-400/50 transition-all duration-200">
+              <span className="text-lg font-bold text-white">
                 ยอดรวมทั้งหมด
               </span>
-              <span className="text-xl font-bold text-yellow-600">
+              <span className="text-xl font-bold text-yellow-400">
                 ฿{fmt(total)}
               </span>
             </div>
 
-            <hr className="my-4 border-slate-200" />
+            <hr className="my-4 border-white/20" />
 
-            <div className="text-xs text-slate-600 whitespace-pre-wrap break-all p-3 bg-slate-50 rounded-xl">
+            <div className="text-xs text-slate-300 whitespace-pre-wrap break-all p-3 bg-white/5 backdrop-blur-sm rounded-xl">
               หมายเหตุ: {note || "-"}
             </div>
 
             {isAdmin ? (
-              <div className="text-xs font-semibold text-green-600 p-2 bg-green-50 rounded-lg">
+              <div className="text-xs font-semibold text-green-400 p-2 bg-green-400/20 backdrop-blur-sm rounded-lg">
                 (Admin mode)
               </div>
             ) : null}
 
             {(passengers || promo || ftype || key) && (
-              <div className="text-xs text-slate-600 space-y-1 break-all p-3 bg-slate-50 rounded-xl">
+              <div className="text-xs text-slate-300 space-y-1 break-all p-3 bg-white/5 backdrop-blur-sm rounded-xl">
                 {passengers ? <div>ผู้โดยสาร: {passengers}</div> : null}
                 {ftype ? <div>ประเภทรถ: {ftype}</div> : null}
                 {promo ? <div>โค้ดส่วนลด: {promo}</div> : null}

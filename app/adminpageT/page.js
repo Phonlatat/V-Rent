@@ -4,7 +4,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Headers from "@/Components/HeaderAd";
-import Footer from "@/Components/Footer";
+import Footer from "@/Components/FooterMinimal";
 import Link from "next/link";
 
 import EmployeeCard from "@/Components/admin/EmployeeCard";
@@ -485,21 +485,25 @@ export default function AdminPage() {
         {/* Header */}
         <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-14 sm:h-16">
               <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-white">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
                   <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
                     Admin Dashboard
                   </span>
                 </h1>
-                <span className="ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
+                <span className="ml-2 sm:ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
                   Admin
                 </span>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-slate-300">ยินดีต้อนรับ</span>
-                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-black font-semibold text-sm">AD</span>
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <span className="text-xs sm:text-sm text-slate-300">
+                  ยินดีต้อนรับ
+                </span>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-black font-semibold text-xs sm:text-sm">
+                    AD
+                  </span>
                 </div>
               </div>
             </div>
@@ -511,26 +515,28 @@ export default function AdminPage() {
           {/* Hero Section */}
           <section className="relative">
             {/* เนื้อหาจริง */}
-            <div className="relative p-4 sm:p-8 lg:p-10">
-              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="relative p-3 sm:p-6 lg:p-8">
+              <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6">
                 {/* Header */}
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+                <div className="text-center mb-6 sm:mb-8">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-4">
                     <span className="text-white">Admin</span>
                     <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
                       Dashboard
                     </span>
                   </h1>
-                  <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+                  <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto px-4">
                     จัดการระบบ V-Rent อย่างครบวงจร
+                    <br className="sm:hidden" />
+                    <span className="hidden sm:inline"> • </span>
                     พร้อมติดตามข้อมูลการจองและการส่งมอบ
                   </p>
                 </div>
 
                 {/* กล่องเนื้อหาหลัก */}
-                <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 min-h-[70vh] p-6 sm:p-8 group hover:bg-white/15 transition-all duration-300">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 min-h-[60vh] sm:min-h-[70vh] p-4 sm:p-6 lg:p-8 group hover:bg-white/15 transition-all duration-300">
                   {/* การ์ดพนักงานและฟอร์มเพิ่มรถ */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     {/* การ์ดพนักงาน */}
                     <div className="lg:col-span-4">
                       <EmployeeCard userId={userId} />
@@ -548,11 +554,11 @@ export default function AdminPage() {
                   </div>
 
                   {/* ตารางข้อมูล (Slide Modal) */}
-                  <div className="mb-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+                  <div className="mb-4 sm:mb-6">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-2 sm:mr-3">
                         <svg
-                          className="w-4 h-4 text-black"
+                          className="w-3 h-3 sm:w-4 sm:h-4 text-black"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -565,11 +571,11 @@ export default function AdminPage() {
                           />
                         </svg>
                       </div>
-                      <h2 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+                      <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
                         จัดการข้อมูลระบบ
                       </h2>
                     </div>
-                    <p className="text-slate-300 group-hover:text-white transition-colors duration-300 mb-6">
+                    <p className="text-sm sm:text-base text-slate-300 group-hover:text-white transition-colors duration-300 mb-4 sm:mb-6 px-2 sm:px-0">
                       คลิกที่การ์ดด้านล่างเพื่อเปิดดูและจัดการข้อมูลในแต่ละหมวด
                     </p>
 
@@ -598,15 +604,7 @@ export default function AdminPage() {
         </main>
 
         {/* Footer */}
-        <div className="bg-black/20 backdrop-blur-md border-t border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">
-                © 2025 V-Rent Admin Dashboard. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );

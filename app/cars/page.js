@@ -1,7 +1,7 @@
 // app/cars/page.js
 import { Suspense } from "react";
 import Headers from "@/Components/HeaderISO";
-import Footer from "@/Components/Footer";
+import Footer from "@/Components/FooterMinimal";
 import CarsPageContent from "./CarsPageContent";
 
 export default function CarsPage() {

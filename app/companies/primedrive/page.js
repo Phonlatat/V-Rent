@@ -1,41 +1,113 @@
+import Image from "next/image";
+import Footer from "@/Components/FooterMinimal";
+
 export default function PartnerIntroPrimeDrive() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white overflow-hidden">
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-20px) rotate(180deg);
+          }
+        }
+      `}</style>
+
+      {/* Enhanced Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div
+          className="absolute w-96 h-96 rounded-full bg-gradient-to-r from-yellow-400/20 to-amber-500/20 blur-3xl transition-all duration-1000"
+          style={{
+            left: "10%",
+            top: "20%",
+            animation: "float 6s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute w-80 h-80 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-400/20 blur-3xl transition-all duration-1000"
+          style={{
+            right: "10%",
+            bottom: "20%",
+            animation: "float 8s ease-in-out infinite reverse",
+          }}
+        />
+      </div>
+
+      {/* Floating Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-yellow-400/30 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+              animationDuration: `${3 + Math.random() * 3}s`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/60 border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-fuchsia-400 to-cyan-400 shadow-lg grid place-items-center font-black text-zinc-900">
+      <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/20 border-b border-white/10">
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-gradient-to-tr from-yellow-400 to-amber-500 shadow-lg grid place-items-center font-black text-black">
               V
             </div>
             <div>
-              <p className="font-semibold tracking-wide">V‑Rent</p>
-              <p className="text-xs text-zinc-400">Partner Ecosystem</p>
+              <p className="font-semibold tracking-wide text-sm sm:text-base">
+                V‑Rent
+              </p>
+              <p className="text-xs text-slate-400">Partner Ecosystem</p>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-zinc-300">
-            <a href="#overview" className="hover:text-white">
+          <nav className="hidden md:flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-slate-300">
+            <a
+              href="#overview"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               ภาพรวมพาร์ทเนอร์
             </a>
-            <a href="#scope" className="hover:text-white">
+            <a
+              href="#scope"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               ขอบเขตความร่วมมือ
             </a>
-            <a href="#benefits" className="hover:text-white">
+            <a
+              href="#benefits"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               ประโยชน์
             </a>
-            <a href="#fleet" className="hover:text-white">
+            <a
+              href="#fleet"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               ฟลีทรถ
             </a>
-            <a href="#sla" className="hover:text-white">
+            <a
+              href="#sla"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               SLA & Coverage
             </a>
-            <a href="#contact" className="hover:text-white">
+            <a
+              href="#contact"
+              className="hover:text-yellow-400 transition-colors duration-300"
+            >
               ติดต่อ
             </a>
           </nav>
           <a
             href="#enable"
-            className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium hover:bg-zinc-200 transition"
+            className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-medium hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 text-xs sm:text-sm"
           >
             เปิดใช้งานพาร์ทเนอร์
           </a>
@@ -43,56 +115,59 @@ export default function PartnerIntroPrimeDrive() {
       </header>
 
       {/* Partner Hero: V‑Rent x PrimeDrive */}
-      <section id="overview" className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 opacity-25 bg-[radial-gradient(70%_50%_at_50%_0%,rgba(217,70,239,0.35),transparent_60%)]" />
-        <div className="mx-auto max-w-7xl px-4 py-16 grid md:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
+      <section id="overview" className="relative overflow-hidden z-10">
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 py-12 sm:py-16 grid md:grid-cols-[1.2fr_0.8fr] gap-6 sm:gap-10 items-center">
           <div>
-            <p className="text-xs uppercase tracking-widest text-zinc-400">
+            <p className="text-xs uppercase tracking-widest text-slate-400">
               New Partner
             </p>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight">
               แนะนำพาร์ทเนอร์ใหม่:{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-cyan-400">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-amber-500">
                 PrimeDrive
               </span>
             </h1>
-            <p className="mt-4 text-zinc-300 md:text-lg">
+            <p className="mt-4 text-slate-300 text-sm sm:text-base md:text-lg">
               PrimeDrive เข้าร่วมเครือข่าย V‑Rent
               เพื่อยกระดับการให้บริการรถเช่ามาตรฐานองค์กร ครอบคลุมทั้ง{" "}
-              <span className="font-semibold">ฟลีทมากกว่า 500 คัน</span>{" "}
+              <span className="font-semibold text-yellow-400">
+                ฟลีทมากกว่า 500 คัน
+              </span>{" "}
               บริการซัพพอร์ต 24/7
               และระบบดิจิทัลที่เชื่อมต่อกับแพลตฟอร์มของเราแบบไร้รอยต่อ
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-2">
-                <span className="text-xs text-zinc-400">สถานะ</span>
-                <span className="text-xs rounded-lg bg-emerald-400/20 text-emerald-300 px-2 py-1">
+            <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/20 px-3 sm:px-4 py-2 bg-white/5 backdrop-blur-sm">
+                <span className="text-xs text-slate-400">สถานะ</span>
+                <span className="text-xs rounded-lg bg-green-500/20 text-green-300 px-2 py-1 border border-green-400/30">
                   Active
                 </span>
               </div>
-              <div className="text-sm text-zinc-400">
+              <div className="text-xs sm:text-sm text-slate-400">
                 เข้าร่วมเมื่อ • Sep 2025
               </div>
             </div>
           </div>
           <div className="relative">
-            <div className="rounded-3xl border border-white/10 p-6 backdrop-blur bg-white/5">
-              <div className="flex items-center justify-between gap-6">
+            <div className="rounded-2xl sm:rounded-3xl border border-white/20 p-4 sm:p-6 backdrop-blur-md bg-white/10 shadow-2xl">
+              <div className="flex items-center justify-between gap-4 sm:gap-6">
                 <div className="flex-1 text-center">
-                  <div className="mx-auto h-12 w-12 rounded-xl bg-white text-zinc-900 grid place-items-center font-black">
+                  <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black grid place-items-center font-black">
                     V
                   </div>
-                  <p className="mt-2 text-xs text-zinc-400">V‑Rent</p>
+                  <p className="mt-2 text-xs text-slate-400">V‑Rent</p>
                 </div>
-                <div className="text-3xl font-black text-zinc-400">×</div>
+                <div className="text-2xl sm:text-3xl font-black text-yellow-400">
+                  ×
+                </div>
                 <div className="flex-1 text-center">
-                  <div className="mx-auto h-12 w-12 rounded-xl bg-gradient-to-tr from-emerald-400 to-cyan-400 text-zinc-900 grid place-items-center font-black">
+                  <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-tr from-emerald-400 to-cyan-400 text-black grid place-items-center font-black">
                     P
                   </div>
-                  <p className="mt-2 text-xs text-zinc-400">PrimeDrive</p>
+                  <p className="mt-2 text-xs text-slate-400">PrimeDrive</p>
                 </div>
               </div>
-              <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+              <div className="mt-4 sm:mt-6 grid grid-cols-3 gap-2 sm:gap-3 text-center">
                 {[
                   { k: "ฟลีทรถ", v: "500+ คัน" },
                   { k: "ประเภทรถ", v: "Sedan / SUV / Pickup" },
@@ -100,10 +175,12 @@ export default function PartnerIntroPrimeDrive() {
                 ].map((i, idx) => (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-white/10 p-4"
+                    className="rounded-lg sm:rounded-xl border border-white/20 p-2 sm:p-3 bg-white/5 backdrop-blur-sm"
                   >
-                    <p className="text-xs text-zinc-400">{i.k}</p>
-                    <p className="text-lg font-semibold">{i.v}</p>
+                    <p className="text-xs text-slate-400">{i.k}</p>
+                    <p className="text-sm sm:text-base font-semibold text-white">
+                      {i.v}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -168,10 +245,12 @@ export default function PartnerIntroPrimeDrive() {
               )}
             </div>
           </div>
-          <div className="rounded-3xl overflow-hidden border border-white/10">
-            <img
+          <div className="rounded-3xl overflow-hidden border border-white/20">
+            <Image
               src="https://picsum.photos/1200/800?random=31"
               alt="benefits"
+              width={1200}
+              height={800}
               className="w-full h-72 object-cover"
             />
           </div>
@@ -208,16 +287,18 @@ export default function PartnerIntroPrimeDrive() {
           ].map((car, i) => (
             <div
               key={i}
-              className="rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 transition"
+              className="rounded-2xl overflow-hidden border border-white/20 hover:border-white/30 transition"
             >
-              <img
+              <Image
                 src={car.img}
                 alt={car.name}
+                width={800}
+                height={500}
                 className="h-44 w-full object-cover"
               />
               <div className="p-4">
-                <p className="font-semibold">{car.name}</p>
-                <p className="text-xs text-zinc-400 mt-1">{car.tag}</p>
+                <p className="font-semibold text-white">{car.name}</p>
+                <p className="text-xs text-slate-400 mt-1">{car.tag}</p>
               </div>
             </div>
           ))}
@@ -293,6 +374,8 @@ export default function PartnerIntroPrimeDrive() {
           © {new Date().getFullYear()} V‑Rent. All rights reserved.
         </p>
       </section>
+
+      <Footer />
     </div>
   );
 }

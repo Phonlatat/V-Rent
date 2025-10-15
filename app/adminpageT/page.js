@@ -61,37 +61,9 @@ const mapStatusToThai = (en) => {
   return "ว่าง";
 };
 
-// …อยู่เหนือ export default หรือวางในไฟล์เดียวกันก็ได้
-function AccessDeniedCard({ onBack }) {
-  return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <Headers />
-      <main className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm">
-          <div className="text-2xl font-semibold text-black mb-1">
-            เข้าถึงไม่ได้
-          </div>
-          <p className="text-gray-600">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <Link
-              href="/Login"
-              className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
-            >
-              เข้าสู่ระบบ
-            </Link>
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50"
-            >
-              กลับหน้าหลัก
-            </Link>
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-}
+// Import the new AccessDeniedCard and LoadingCard components
+import AccessDeniedCard from "@/Components/AccessDeniedCard";
+import LoadingCard from "@/Components/LoadingCard";
 
 /* สร้าง key เทียบรถจาก name/plate */
 const carMatchKey = (name, plate) =>
@@ -150,8 +122,12 @@ export default function AdminPage() {
             : "");
 
         if (!uid) {
-          setAuthError("ไม่พบผู้ใช้ (กรุณาเข้าสู่ระบบ)");
-          setAllowed(false);
+          // หน่วงเวลาให้แสดง LoadingCard สักพัก
+          setTimeout(() => {
+            setAuthError("ไม่พบผู้ใช้ (กรุณาเข้าสู่ระบบ)");
+            setAllowed(false);
+            setAuthLoading(false);
+          }, 2000); // หน่วงเวลา 2 วินาที
           return;
         }
 
@@ -214,15 +190,21 @@ export default function AdminPage() {
           idIsAdministrator ||
           rolesLC.some((r) => ADMIN_ROLES_LC.has(r));
 
-        setAllowed(hasAdminRole);
-        if (!hasAdminRole) {
-          setAuthError("บัญชีของคุณไม่มีสิทธิ์เข้าถึงหน้าแอดมิน");
-        }
+        // หน่วงเวลาให้แสดง LoadingCard สักพัก
+        setTimeout(() => {
+          setAllowed(hasAdminRole);
+          if (!hasAdminRole) {
+            setAuthError("บัญชีของคุณไม่มีสิทธิ์เข้าถึงหน้าแอดมิน");
+          }
+          if (!abort) setAuthLoading(false);
+        }, 2000); // หน่วงเวลา 2 วินาที
       } catch (e) {
-        setAuthError(e?.message || "เกิดข้อผิดพลาดในการตรวจสิทธิ์");
-        setAllowed(false);
-      } finally {
-        if (!abort) setAuthLoading(false);
+        // หน่วงเวลาให้แสดง LoadingCard สักพัก
+        setTimeout(() => {
+          setAuthError(e?.message || "เกิดข้อผิดพลาดในการตรวจสิทธิ์");
+          setAllowed(false);
+          if (!abort) setAuthLoading(false);
+        }, 2000); // หน่วงเวลา 2 วินาที
       }
     };
 
@@ -316,17 +298,21 @@ export default function AdminPage() {
   // ===== UI: Gate states =====
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="rounded-xl border bg-white px-6 py-5 shadow-sm">
-          <p className="text-sm text-gray-700">กำลังตรวจสอบสิทธิ์เข้าถึง…</p>
-        </div>
-      </div>
+      <LoadingCard
+        title="กำลังตรวจสอบสิทธิ์เข้าถึง..."
+        subtitle="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน"
+      />
     );
   }
 
   // แทนที่บล็อกเดิมทั้งก้อน if (!allowed) { ... }
   if (!allowed) {
-    return <AccessDeniedCard onBack={() => router.push("/")} />;
+    return (
+      <AccessDeniedCard
+        title="เข้าถึงไม่ได้ - Admin Dashboard"
+        subtitle="คุณไม่มีสิทธิ์เข้าถึงหน้าแอดมิน กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ"
+      />
+    );
   }
 
   // ===== Allowed UI (เวอร์ชันใหม่) =====
@@ -334,14 +320,14 @@ export default function AdminPage() {
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       <title>AdminPage - V-Rent</title>
       <Headers />
-      
+
       {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative">
           {/* แถบเหลืองครึ่งบนของโซนเนื้อหา */}
           <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-r from-yellow-400 to-amber-500" />
-          
+
           {/* เนื้อหาจริง ให้อยู่เหนือแถบเหลือง */}
           <div className="relative p-4 sm:p-8 lg:p-10">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -354,7 +340,8 @@ export default function AdminPage() {
                   </span>
                 </h1>
                 <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                  จัดการระบบ V-Rent อย่างครบวงจร พร้อมติดตามข้อมูลการจองและการส่งมอบ
+                  จัดการระบบ V-Rent อย่างครบวงจร
+                  พร้อมติดตามข้อมูลการจองและการส่งมอบ
                 </p>
               </div>
 
@@ -386,7 +373,7 @@ export default function AdminPage() {
                   <p className="text-slate-600 mb-6">
                     คลิกที่การ์ดด้านล่างเพื่อเปิดดูและจัดการข้อมูลในแต่ละหมวด
                   </p>
-                  
+
                   <AdminSlideModal
                     cars={cars}
                     bookings={bookings}
@@ -407,7 +394,7 @@ export default function AdminPage() {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

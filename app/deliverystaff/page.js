@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import HeaderAd from "@/Components/HeaderAd";
 import Footer from "@/Components/Footer";
 import Link from "next/link";
+import AccessDeniedCard from "@/Components/AccessDeniedCard";
+import LoadingCard from "@/Components/LoadingCard";
 
 /* ---------- UI helpers ---------- */
 const cx = (...a) => a.filter(Boolean).join(" ");
@@ -1294,37 +1296,62 @@ export default function DeliveryStaffPage() {
       <HeaderAd />
       <main className="flex-grow">
         {auth.loading ? (
-          <div className="max-w-3xl mx-auto p-8">
-            <div className={cx(cardCls, "p-8 text-center")}>
-              <p className="text-lg font-semibold">กำลังตรวจสอบสิทธิ์...</p>
-              <p className="text-slate-600 mt-1 text-sm">
-                กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน
-              </p>
-            </div>
-          </div>
+          <LoadingCard
+            title="กำลังตรวจสอบสิทธิ์..."
+            subtitle="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน"
+          />
         ) : !auth.isAdmin ? (
-          <div className="max-w-3xl mx-auto p-8">
-            <div className={cx(cardCls, "p-8 text-center")}>
-              <h1 className="text-2xl font-extrabold tracking-tight">
-                ไม่สามารถเข้าถึงได้
-              </h1>
-              <p className="text-slate-700 mt-2">
-                หน้านี้สำหรับผู้ดูแลระบบเท่านั้น
-              </p>
-              <div className="mt-5">
-                <Link href="/">
-                  <div className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 inline-block">
-                    กลับหน้าแรก
-                  </div>
+          <AccessDeniedCard
+            title="เข้าถึงไม่ได้ - Delivery Staff"
+            subtitle="หน้านี้สำหรับผู้ดูแลระบบเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ"
+            customActions={
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/Login"
+                  className="group relative px-8 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-lg font-semibold rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 hover:from-amber-500 hover:to-yellow-400"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    เข้าสู่ระบบ
+                  </span>
+                </Link>
+
+                <Link
+                  href="/"
+                  className="group relative px-8 py-3 bg-white/10 backdrop-blur-md text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                    กลับหน้าหลัก
+                  </span>
                 </Link>
               </div>
-              {(auth.email || auth.name) && (
-                <p className="text-xs text-slate-500 mt-3">
-                  ผู้ใช้ปัจจุบัน: {auth.name || "-"} ({auth.email || "-"})
-                </p>
-              )}
-            </div>
-          </div>
+            }
+          />
         ) : (
           <AdminDeliveryContent />
         )}

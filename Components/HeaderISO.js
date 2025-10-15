@@ -44,7 +44,7 @@ export default function Header() {
 
       // 2) เรียก get_user_information พร้อม query user_id
       const u = new URL(
-        `${ERP_BASE}/api/method/erpnext.api.get_user_information`
+        `${ERP_BASE}/api/method/frappe.api.api.get_user_information`
       );
       u.searchParams.set("user_id", uid);
       const r = await fetch(u.toString(), {

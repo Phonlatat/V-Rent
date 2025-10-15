@@ -10,10 +10,11 @@ import LoadingCard from "@/Components/LoadingCard";
 
 /* ---------- UI helpers ---------- */
 const cx = (...a) => a.filter(Boolean).join(" ");
-const labelCls = "text-sm font-semibold text-slate-800";
+const labelCls = "text-sm font-semibold text-white";
 const inputCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black";
-const cardCls = "bg-white rounded-2xl shadow-lg border border-slate-200";
+  "w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20";
+const cardCls =
+  "bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20";
 
 /* ---------- statuses ---------- */
 const STATUS = {
@@ -310,8 +311,55 @@ function AdminDeliveryContent() {
   const [carProofs, setCarProofs] = useState([]);
   const [slipProofs, setSlipProofs] = useState([]); // ✅ สำหรับรูปสลิปโอนยอดเต็ม
 
-  const [queue, setQueue] = useState([]);
-  const [queueLoading, setQueueLoading] = useState(true);
+  // 🚧 TEMPORARY: Mock data สำหรับทดสอบ UX/UI
+  const [queue, setQueue] = useState([
+    {
+      bookingCode: "VR-2025-000123",
+      customerName: "สมชาย ใจดี",
+      customerPhone: "080-123-4567",
+      carName: "Toyota Corolla Cross",
+      carPlate: "1กก-1234",
+      pickupPlace: "สนามบินสุวรรณภูมิ (BKK)",
+      returnPlace: "สาขาสีลม",
+      pickupLocation: "สนามบินสุวรรณภูมิ (BKK)",
+      returnLocation: "สาขาสีลม",
+      pickupTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 ชั่วโมงจากนี้
+      returnTime: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(), // 26 ชั่วโมงจากนี้
+      rawStatus: "waiting pickup",
+      uiStatus: "waiting pickup",
+    },
+    {
+      bookingCode: "VR-2025-000124",
+      customerName: "สมหญิง รักดี",
+      customerPhone: "081-234-5678",
+      carName: "Honda Civic",
+      carPlate: "2ขข-5678",
+      pickupPlace: "สาขาเซ็นทรัลเวิลด์",
+      returnPlace: "สาขาเซ็นทรัลเวิลด์",
+      pickupLocation: "สาขาเซ็นทรัลเวิลด์",
+      returnLocation: "สาขาเซ็นทรัลเวิลด์",
+      pickupTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 ชั่วโมงที่แล้ว (overdue)
+      returnTime: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(), // 23 ชั่วโมงจากนี้
+      rawStatus: "waiting pickup",
+      uiStatus: "pickup overdue",
+    },
+    {
+      bookingCode: "VR-2025-000125",
+      customerName: "นายทดสอบ ระบบ",
+      customerPhone: "082-345-6789",
+      carName: "Nissan GT-R R32",
+      carPlate: "3คค-9012",
+      pickupPlace: "สาขาไอคอนสยาม",
+      returnPlace: "สาขาไอคอนสยาม",
+      pickupLocation: "สาขาไอคอนสยาม",
+      returnLocation: "สาขาไอคอนสยาม",
+      pickupTime: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4 ชั่วโมงจากนี้
+      returnTime: new Date(Date.now() + 28 * 60 * 60 * 1000).toISOString(), // 28 ชั่วโมงจากนี้
+      rawStatus: "waiting pickup",
+      uiStatus: "waiting pickup",
+    },
+  ]);
+  const [queueLoading, setQueueLoading] = useState(false); // ไม่ loading แล้วเพราะมี mock data
   const [queueErr, setQueueErr] = useState("");
 
   // 🔒 ล็อกปุ่มระหว่างส่ง
@@ -319,70 +367,10 @@ function AdminDeliveryContent() {
   const [success, setSuccess] = useState({ open: false, warn: "" });
 
   /* ---- fetch rentals ---- */
+  // 🚧 TEMPORARY: ปิดการเรียก API เพื่อใช้ mock data
   useEffect(() => {
-    (async () => {
-      setQueueLoading(true);
-      setQueueErr("");
-      try {
-        const res = await fetch(
-          "http://203.150.243.195/api/method/erpnext.api.get_rentals",
-          {
-            method: "GET",
-            headers: new globalThis.Headers(),
-            redirect: "follow",
-          }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { message = [] } = JSON.parse(await res.text());
-
-        const mapped = message.map((row) => {
-          const pickupISO = row?.pickup_date
-            ? new Date(row.pickup_date.replace(" ", "T")).toISOString()
-            : "";
-          const raw = String(row?.status || "")
-            .toLowerCase()
-            .trim();
-          // แปลงเป็นกลุ่มสถานะที่ UI ใช้กรอง
-          const uiStatus = raw.includes("cancel")
-            ? "cancelled"
-            : raw.includes("complete") ||
-              raw.includes("done") ||
-              raw.includes("return")
-            ? "completed"
-            : raw.includes("in use")
-            ? "in use"
-            : // waiting / confirmed -> ถือเป็นรอรับ
-            raw.includes("waiting") || raw.includes("confirm")
-            ? "waiting pickup"
-            : raw || "waiting pickup";
-
-          return {
-            bookingCode: row?.name || "",
-            customerName: row?.customer_name || "",
-            customerPhone: row?.customer_phone || "",
-            carName: row?.vehicle || "",
-            carPlate: (row?.license_plate || "").trim(),
-            pickupPlace: row?.pickup_place || "",
-            returnPlace: row?.return_place || "",
-            pickupLocation: row?.pickup_place || row?.pickup_location || "",
-            returnLocation: row?.return_place || row?.return_location || "",
-            pickupTime: pickupISO,
-            returnTime: row?.return_date
-              ? new Date(row.return_date.replace(" ", "T")).toISOString()
-              : "",
-            rawStatus: raw,
-            uiStatus,
-          };
-        });
-
-        setQueue(mapped);
-      } catch (e) {
-        console.error(e);
-        setQueueErr(e?.message || "โหลดคิวไม่สำเร็จ");
-      } finally {
-        setQueueLoading(false);
-      }
-    })();
+    // ไม่ต้องเรียก API เพราะใช้ mock data แล้ว
+    console.log("🚧 TEMPORARY: ใช้ mock data แทนการเรียก API");
   }, []);
 
   const onField = (e) => {
@@ -404,7 +392,7 @@ function AdminDeliveryContent() {
     headers.append("Content-Type", "application/json");
 
     const res = await fetch(
-      "http://203.150.243.195/api/method/erpnext.api.edit_rentals_status",
+      "http://203.150.243.195/api/method/frappe.api.api.edit_rentals_status",
       {
         method: "POST",
         headers,
@@ -493,7 +481,7 @@ function AdminDeliveryContent() {
     try {
       // 1) บันทึกส่งมอบ
       const res = await fetch(
-        "http://203.150.243.195/api/method/erpnext.api.create_dlv",
+        "http://203.150.243.195/api/method/frappe.api.api.create_dlv",
         {
           method: "POST",
           body: fd,
@@ -559,14 +547,33 @@ function AdminDeliveryContent() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8">
       {/* ซ้าย: ฟอร์ม */}
-      <section className={cx(cardCls, "p-6 md:p-8")}>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-          Delivery Staff{" "}
-          <span className="text-xs ml-2 align-middle rounded bg-green-100 text-green-700 px-2 py-0.5">
-            Admin
-          </span>
-        </h1>
-        <p className="text-slate-700 mt-1">
+      <section className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 group hover:bg-white/15 transition-all duration-300">
+        <div className="flex items-center mb-6">
+          <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-4">
+            <svg
+              className="w-6 h-6 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-white group-hover:text-yellow-400 transition-colors duration-300">
+              Delivery Staff
+            </h1>
+            <span className="inline-block px-3 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold mt-1">
+              Admin Panel
+            </span>
+          </div>
+        </div>
+        <p className="text-slate-300 group-hover:text-white transition-colors duration-300 mb-6">
           บันทึกข้อมูลการส่งมอบรถให้ลูกค้า พร้อมถ่ายหลักฐาน/เอกสารยืนยันตัวตน
         </p>
 
@@ -891,7 +898,7 @@ function AdminDeliveryContent() {
           </div>
 
           {/* action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
               type="button"
               onClick={() => {
@@ -917,14 +924,14 @@ function AdminDeliveryContent() {
                 setIdProofs([]);
                 setCarProofs([]);
               }}
-              className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50"
+              className="px-6 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/15 hover:border-white/30 transition-all duration-300"
             >
               ล้างฟอร์ม
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-lg bg-black text-white font-semibold hover:bg-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
             >
               {submitting ? "กำลังบันทึก..." : "บันทึกข้อมูลส่งมอบ"}
             </button>
@@ -968,33 +975,56 @@ function AdminDeliveryContent() {
       </section>
 
       {/* ขวา: สรุปโดยย่อ */}
-      <aside className={cx(cardCls, "p-6 md:p-8 h-fit")}>
-        <h3 className="text-lg font-bold">สรุปโดยย่อ</h3>
-        <div className="mt-4 text-sm space-y-2">
-          <div className="flex justify-between">
-            <span>รหัสการจอง</span>
-            <span className="font-medium">{form.bookingCode || "-"}</span>
+      <aside className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 h-fit group hover:bg-white/15 transition-all duration-300">
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+            <svg
+              className="w-4 h-4 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
           </div>
+          <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+            สรุปโดยย่อ
+          </h3>
+        </div>
+        <div className="mt-4 text-sm space-y-3">
           <div className="flex justify-between">
-            <span>ลูกค้า</span>
-            <span className="font-medium">{form.customerName || "-"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>โทร</span>
-            <span>{form.customerPhone || "-"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>ส่งมอบ</span>
-            <span className="text-right">
-              {form.pickupLocation || "-"}
-              <br className="hidden sm:block" />
-              <span className="text-slate-700">{form.pickupTime || "-"}</span>
+            <span className="text-slate-300">รหัสการจอง</span>
+            <span className="font-medium text-white">
+              {form.bookingCode || "-"}
             </span>
           </div>
-          <hr className="my-3 border-slate-200" />
           <div className="flex justify-between">
-            <span>ประเภทเอกสาร</span>
-            <span>
+            <span className="text-slate-300">ลูกค้า</span>
+            <span className="font-medium text-white">
+              {form.customerName || "-"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-300">โทร</span>
+            <span className="text-white">{form.customerPhone || "-"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-300">ส่งมอบ</span>
+            <span className="text-right text-white">
+              {form.pickupLocation || "-"}
+              <br className="hidden sm:block" />
+              <span className="text-slate-300">{form.pickupTime || "-"}</span>
+            </span>
+          </div>
+          <hr className="my-3 border-white/20" />
+          <div className="flex justify-between">
+            <span className="text-slate-300">ประเภทเอกสาร</span>
+            <span className="text-white">
               {
                 {
                   citizen_id: "บัตรประชาชน",
@@ -1005,34 +1035,57 @@ function AdminDeliveryContent() {
             </span>
           </div>
           <div className="flex justify-between">
-            <span>รูปที่แนบทั้งหมด</span>
-            <span>
+            <span className="text-slate-300">รูปที่แนบทั้งหมด</span>
+            <span className="text-white">
               {idProofs.length + carProofs.length + slipProofs.length} รูป
             </span>
           </div>
           <div className="flex justify-between">
-            <span>สลิปโอนยอดเต็ม</span>
-            <span>{slipProofs.length ? "แนบแล้ว" : "-"}</span>
+            <span className="text-slate-300">สลิปโอนยอดเต็ม</span>
+            <span className="text-white">
+              {slipProofs.length ? "แนบแล้ว" : "-"}
+            </span>
           </div>
 
           <div className="flex justify-between">
-            <span>น้ำมัน</span>
-            <span>{form.fuelLevel}</span>
+            <span className="text-slate-300">น้ำมัน</span>
+            <span className="text-white">{form.fuelLevel}</span>
           </div>
 
           <div className="flex justify-between">
-            <span>เงินมัดจำ</span>
-            <span>รับแล้ว</span>
+            <span className="text-slate-300">เงินมัดจำ</span>
+            <span className="text-white">รับแล้ว</span>
           </div>
         </div>
       </aside>
 
       {/* ขวา: คิววันนี้ */}
-      <aside className={cx(cardCls, "p-6 md:p-8 h-fit")}>
-        <h3 className="text-lg font-bold">คิววันนี้ (Today)</h3>
-        <p className="text-slate-600 text-sm mt-1">
-          แสดงเฉพาะงานรับรถที่นัดหมาย “วันนี้”
-        </p>
+      <aside className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 h-fit group hover:bg-white/15 transition-all duration-300">
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+            <svg
+              className="w-4 h-4 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+              คิววันนี้ (Today)
+            </h3>
+            <p className="text-slate-300 text-sm mt-1">
+              แสดงเฉพาะงานรับรถที่นัดหมาย &quot;วันนี้&quot;
+            </p>
+          </div>
+        </div>
         <TodayQueue queue={queue} onPick={loadToForm} />
       </aside>
     </div>
@@ -1090,14 +1143,14 @@ function TodayQueue({ queue, onPick }) {
 
   return (
     <div className="mt-3">
-      <div className="mb-2 text-[11px] sm:text-xs text-slate-600">
+      <div className="mb-2 text-[11px] sm:text-xs text-slate-300">
         ทั้งหมด {todayQueue.length} งานในวันนี้
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm">
         <table className="w-full text-[10px] sm:text-xs leading-tight">
-          <thead className="bg-slate-50 sticky top-0 z-10">
-            <tr className="text-slate-600">
+          <thead className="bg-white/10 backdrop-blur-sm sticky top-0 z-10">
+            <tr className="text-slate-300">
               <th className="px-1.5 py-1 sm:px-2 sm:py-2 text-left w-14">
                 เวลา
               </th>
@@ -1122,43 +1175,48 @@ function TodayQueue({ queue, onPick }) {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-white/10">
             {todayQueue
               .slice()
               .sort((a, b) => new Date(a.pickupTime) - new Date(b.pickupTime))
               .map((j) => {
                 const stat = STATUS[j.uiStatus] ?? STATUS["waiting pickup"];
                 return (
-                  <tr key={j.bookingCode} className="hover:bg-slate-50">
-                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 whitespace-nowrap font-mono">
+                  <tr
+                    key={j.bookingCode}
+                    className="hover:bg-white/10 transition-colors duration-200"
+                  >
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 whitespace-nowrap font-mono text-white">
                       {fmtTime(j.pickupTime)}
                     </td>
 
-                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 font-medium whitespace-nowrap truncate max-w-[88px]">
+                    <td className="px-1.5 py-1 sm:px-2 sm:py-2 font-medium whitespace-nowrap truncate max-w-[88px] text-white">
                       {j.bookingCode}
                     </td>
 
                     <td className="px-1.5 py-1 sm:px-2 sm:py-2">
-                      <div className="font-medium truncate max-w-[120px] sm:max-w-none">
+                      <div className="font-medium truncate max-w-[120px] sm:max-w-none text-white">
                         {j.carName || "-"}
                       </div>
-                      <div className="text-[10px] sm:text-[11px] text-slate-600 truncate">
+                      <div className="text-[10px] sm:text-[11px] text-slate-300 truncate">
                         {j.carPlate || "-"}
                       </div>
                     </td>
 
                     <td className="px-1.5 py-1 sm:px-2 sm:py-2 hidden sm:table-cell">
-                      <div className="truncate">{j.customerName || "-"}</div>
-                      <div className="text-[11px] text-slate-600 truncate">
+                      <div className="truncate text-white">
+                        {j.customerName || "-"}
+                      </div>
+                      <div className="text-[11px] text-slate-300 truncate">
                         {j.customerPhone || "-"}
                       </div>
                     </td>
 
                     <td className="px-1.5 py-1 sm:px-2 sm:py-2 hidden md:table-cell">
-                      <div className="truncate">
+                      <div className="truncate text-white">
                         {j.pickupPlace || j.pickupLocation || "-"}
                       </div>
-                      <div className="text-[11px] text-slate-600 truncate">
+                      <div className="text-[11px] text-slate-300 truncate">
                         คืน: {j.returnPlace || j.returnLocation || "-"}
                       </div>
                     </td>
@@ -1167,7 +1225,11 @@ function TodayQueue({ queue, onPick }) {
                       <span
                         className={cx(
                           "inline-flex items-center rounded-full px-1.5 py-[2px] text-[10px] sm:text-[11px] font-medium",
-                          stat.badge
+                          j.uiStatus === "pickup overdue"
+                            ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                            : j.uiStatus === "waiting pickup"
+                            ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                            : "bg-slate-500/20 text-slate-300 border border-slate-500/30"
                         )}
                       >
                         {stat.label}
@@ -1178,7 +1240,7 @@ function TodayQueue({ queue, onPick }) {
                       <button
                         type="button"
                         onClick={() => onPick(j)}
-                        className="h-6 sm:h-7 px-2 rounded-md border border-slate-300 hover:bg-slate-100 "
+                        className="h-6 sm:h-7 px-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white hover:bg-white/15 hover:border-white/30 transition-all duration-200"
                         title="เปิดฟอร์มด้วยข้อมูลนี้"
                       >
                         เปิดฟอร์ม
@@ -1192,7 +1254,7 @@ function TodayQueue({ queue, onPick }) {
               <tr>
                 <td
                   colSpan={7}
-                  className="px-3 py-5 text-center text-slate-500"
+                  className="px-3 py-5 text-center text-slate-400"
                 >
                   วันนี้ยังไม่มีคิวรับรถ
                 </td>
@@ -1291,72 +1353,138 @@ export default function DeliveryStaffPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-slate-900">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
       <title>Delivery Staff - V-Rent</title>
-      <HeaderAd />
-      <main className="flex-grow">
-        {auth.loading ? (
-          <LoadingCard
-            title="กำลังตรวจสอบสิทธิ์..."
-            subtitle="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน"
-          />
-        ) : !auth.isAdmin ? (
-          <AccessDeniedCard
-            title="เข้าถึงไม่ได้ - Delivery Staff"
-            subtitle="หน้านี้สำหรับผู้ดูแลระบบเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ"
-            customActions={
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/Login"
-                  className="group relative px-8 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-lg font-semibold rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 hover:from-amber-500 hover:to-yellow-400"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    เข้าสู่ระบบ
-                  </span>
-                </Link>
 
-                <Link
-                  href="/"
-                  className="group relative px-8 py-3 bg-white/10 backdrop-blur-md text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                      />
-                    </svg>
-                    กลับหน้าหลัก
-                  </span>
-                </Link>
-              </div>
-            }
+      {/* Enhanced Background Pattern - ตามธีมของเว็บไซต์ */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-amber-500/20 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        />
+      </div>
+
+      {/* Floating Elements - ตามธีมของเว็บไซต์ */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-yellow-400/20 rounded-full animate-pulse"
+            style={{
+              width: `${1 + Math.random() * 3}px`,
+              height: `${1 + Math.random() * 3}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+              animationDuration: `${3 + Math.random() * 3}s`,
+            }}
           />
-        ) : (
-          <AdminDeliveryContent />
-        )}
-      </main>
-      <Footer />
+        ))}
+      </div>
+
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-white">
+                  <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                    Delivery Staff
+                  </span>
+                </h1>
+                <span className="ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
+                  Admin
+                </span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-slate-300">ยินดีต้อนรับ</span>
+                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-black font-semibold text-sm">DS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-grow">
+          {/* 🚧 TEMPORARY: ข้ามหน้า Loading และ Access Denied เพื่อแก้ไข UX/UI */}
+          {false ? ( // auth.loading
+            <LoadingCard
+              title="กำลังตรวจสอบสิทธิ์..."
+              subtitle="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน"
+            />
+          ) : false ? ( // !auth.isAdmin
+            <AccessDeniedCard
+              title="เข้าถึงไม่ได้ - Delivery Staff"
+              subtitle="หน้านี้สำหรับผู้ดูแลระบบเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ"
+              customActions={
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link
+                    href="/Login"
+                    className="group relative px-8 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-lg font-semibold rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25 hover:from-amber-500 hover:to-yellow-400"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      เข้าสู่ระบบ
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/"
+                    className="group relative px-8 py-3 bg-white/10 backdrop-blur-md text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        />
+                      </svg>
+                      กลับหน้าหลัก
+                    </span>
+                  </Link>
+                </div>
+              }
+            />
+          ) : (
+            <AdminDeliveryContent />
+          )}
+        </main>
+
+        {/* Footer */}
+        <div className="bg-black/20 backdrop-blur-md border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <p className="text-slate-400 text-sm">
+                © 2025 V-Rent Delivery Staff. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

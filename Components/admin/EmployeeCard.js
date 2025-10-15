@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 const RENTAL_ENDPOINTS = [
-  "/api/method/erpnext.api.get_rentals_today",
-  "/api/method/erpnext.api.get_rentals_overall",
-  "/api/method/erpnext.api.get_rentals",
+  "/api/method/frappe.api.api.get_rentals_today",
+  "/api/method/frappe.api.api.get_rentals_overall",
+  "/api/method/frappe.api.api.get_rentals",
 ];
 
 export default function EmployeeCard({ userId = "" }) {
@@ -58,7 +58,7 @@ export default function EmployeeCard({ userId = "" }) {
         }
 
         /** 1) ข้อมูลพนักงาน */
-        const u = new URL(`${ERP_BASE}/api/method/erpnext.api.get_admin`);
+        const u = new URL(`${ERP_BASE}/api/method/frappe.api.api.get_admin`);
         u.searchParams.set("user_id", effectiveUserId);
 
         const resEmp = await fetch(u.toString(), {
@@ -243,9 +243,9 @@ export default function EmployeeCard({ userId = "" }) {
     employee.image && employee.image !== "-" ? employee.image : "/noimage.jpg"; // 🔁 เปลี่ยนเป็น placeholder ถ้าไม่มีรูป
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden group hover:bg-white/15 transition-all duration-300">
       {/* ======= Banner รูปพนักงาน ======= */}
-      <div className="relative w-full h-40 sm:h-48 lg:h-56 bg-gray-100 flex items-center justify-center">
+      <div className="relative w-full h-40 sm:h-48 lg:h-56 bg-white/5 backdrop-blur-sm flex items-center justify-center">
         <img
           src={bannerImage}
           alt="Employee"
@@ -255,14 +255,33 @@ export default function EmployeeCard({ userId = "" }) {
       </div>
 
       <div className="p-5">
-        <h2 className="text-lg font-bold text-black">ข้อมูลพนักงาน</h2>
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+            <svg
+              className="w-4 h-4 text-black"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+            ข้อมูลพนักงาน
+          </h2>
+        </div>
 
         {loading && (
-          <p className="mt-3 text-sm text-gray-500">กำลังโหลดข้อมูล...</p>
+          <p className="mt-3 text-sm text-slate-300">กำลังโหลดข้อมูล...</p>
         )}
 
         {!!error && !loading && (
-          <p className="mt-3 text-sm text-red-600">
+          <p className="mt-3 text-sm text-red-300">
             โหลดข้อมูลไม่สำเร็จ: {error}
           </p>
         )}
@@ -271,12 +290,12 @@ export default function EmployeeCard({ userId = "" }) {
           <>
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-base font-semibold text-black">
+                <div className="text-base font-semibold text-white">
                   {employee.name}
                 </div>
               </div>
 
-              <div className="grid gap-y-1.5 text-sm text-gray-800 mt-3">
+              <div className="grid gap-y-1.5 text-sm text-slate-300 mt-3">
                 <div>สาขา: {employee.branch}</div>
                 <div>กะทำงาน: {employee.shift}</div>
                 <div>เริ่มงาน: {employee.creationDate}</div>
@@ -288,38 +307,38 @@ export default function EmployeeCard({ userId = "" }) {
 
             {/* สรุปวันนี้ */}
             <div className="mt-5 grid grid-cols-4 gap-3">
-              <div className="rounded-xl border bg-gray-50 p-4 sm:p-5 h-24 flex flex-col items-center justify-center">
-                <div className="text-xs text-gray-500 leading-tight whitespace-pre-line text-center">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-4 sm:p-5 h-24 flex flex-col items-center justify-center group hover:bg-white/10 transition-all duration-300">
+                <div className="text-xs text-slate-300 leading-tight whitespace-pre-line text-center">
                   {"นำส่ง\nวันนี้"}
                 </div>
-                <div className="text-2xl font-bold leading-none py-2">
+                <div className="text-2xl font-bold leading-none py-2 text-white">
                   {todaySummary.pickups}
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-gray-50 p-4 sm:p-5 h-24 flex flex-col items-center justify-center">
-                <div className="text-xs text-gray-500 whitespace-nowrap text-center">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-4 sm:p-5 h-24 flex flex-col items-center justify-center group hover:bg-white/10 transition-all duration-300">
+                <div className="text-xs text-slate-300 whitespace-nowrap text-center">
                   นำส่งแล้ว
                 </div>
-                <div className="text-2xl font-bold leading-none py-2">
+                <div className="text-2xl font-bold leading-none py-2 text-white">
                   {todaySummary.pickupsDone}
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-gray-50 p-4 sm:p-5 h-24 flex flex-col items-center justify-center">
-                <div className="text-xs text-gray-500 leading-tight whitespace-pre-line text-center">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-4 sm:p-5 h-24 flex flex-col items-center justify-center group hover:bg-white/10 transition-all duration-300">
+                <div className="text-xs text-slate-300 leading-tight whitespace-pre-line text-center">
                   {"รับคืน\nวันนี้"}
                 </div>
-                <div className="text-2xl font-bold leading-none py-2">
+                <div className="text-2xl font-bold leading-none py-2 text-white">
                   {todaySummary.returns}
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-gray-50 p-4 sm:p-5 h-24 flex flex-col items-center justify-center">
-                <div className="text-xs text-gray-500 whitespace-nowrap text-center">
+              <div className="rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm p-4 sm:p-5 h-24 flex flex-col items-center justify-center group hover:bg-white/10 transition-all duration-300">
+                <div className="text-xs text-slate-300 whitespace-nowrap text-center">
                   ส่งคืนแล้ว
                 </div>
-                <div className="text-2xl font-bold leading-none py-2">
+                <div className="text-2xl font-bold leading-none py-2 text-white">
                   {todaySummary.returnsDone}
                 </div>
               </div>

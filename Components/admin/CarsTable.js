@@ -10,9 +10,9 @@ const MAX_FILE_MB = 3;
 
 /** ───────── ERP CONFIG (ปรับได้) ───────── */
 const ERP_DELETE_URL =
-  "http://203.150.243.195/api/method/erpnext.api.delete_vehicle";
+  "http://203.150.243.195/api/method/frappe.api.api.delete_vehicle";
 const ERP_EDIT_URL =
-  "http://203.150.243.195/api/method/erpnext.api.edit_vehicles";
+  "http://203.150.243.195/api/method/frappe.api.api.edit_vehicles";
 // const ERP_AUTH = "token xxx:yyy";
 
 /** ✅ Base URL และตัวช่วยแปลง URL รูป */
@@ -125,7 +125,7 @@ export default function CarsTable({
     return "ว่าง";
   },
 
-  apiUrl = "http://203.150.243.195/api/method/erpnext.api.get_vehicles_admin",
+  apiUrl = "http://203.150.243.195/api/method/frappe.api.api.get_vehicles_admin",
   autoFetchIfEmpty = true,
 }) {
   const [rows, setRows] = useState(cars);

@@ -72,7 +72,7 @@ export default function DeliveriesTable() {
         headers.append("Content-Type", "application/json");
 
         const res = await fetch(
-          "http://203.150.243.195/api/method/erpnext.api.get_dlv",
+          "http://203.150.243.195/api/method/frappe.api.api.get_dlv",
           {
             method: "GET",
             headers,
@@ -309,7 +309,7 @@ export default function DeliveriesTable() {
       headers.append("Content-Type", "application/json");
 
       const res = await fetch(
-        "http://203.150.243.195/api/method/erpnext.api.delete_dlv",
+        "http://203.150.243.195/api/method/frappe.api.api.delete_dlv",
         {
           method: "DELETE",
           headers,

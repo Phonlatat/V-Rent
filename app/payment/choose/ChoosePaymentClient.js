@@ -222,7 +222,7 @@ export default function ChoosePaymentClient() {
   const [customerData, setCustomerData] = useState({
     name: "",
     phone: "",
-    email: ""
+    email: "",
   });
 
   const tailQS = useMemo(() => {
@@ -244,15 +244,15 @@ export default function ChoosePaymentClient() {
               body: JSON.stringify({ user_id: userId }),
             }
           );
-          
+
           if (response.ok) {
             const data = await response.json();
             const userInfo = data?.message || {};
-            
+
             setCustomerData({
               name: userInfo.full_name || userInfo.name || "",
               phone: userInfo.phone || userInfo.mobile_no || "",
-              email: userInfo.email || userInfo.user_id || ""
+              email: userInfo.email || userInfo.user_id || "",
             });
           }
         } catch (error) {
@@ -538,7 +538,12 @@ export default function ChoosePaymentClient() {
                   placeholder="กรอกชื่อ-นามสกุล"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                   value={customerData.name}
-                  onChange={(e) => setCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -550,7 +555,12 @@ export default function ChoosePaymentClient() {
                   placeholder="กรอกเบอร์โทรศัพท์"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                   value={customerData.phone}
-                  onChange={(e) => setCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) =>
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -562,7 +572,12 @@ export default function ChoosePaymentClient() {
                   placeholder="กรอกอีเมล"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
                   value={customerData.email}
-                  onChange={(e) => setCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -655,7 +670,11 @@ export default function ChoosePaymentClient() {
                             setSlip(f);
                           }}
                         />
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <svg
+                          className="w-5 h-5"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
                           <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                         </svg>
                         <span>อัปโหลดสลิป</span>
@@ -781,8 +800,12 @@ export default function ChoosePaymentClient() {
         <aside className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8 h-fit md:sticky md:top-4 min-w-0 transition-all duration-300 hover:shadow-xl">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
             <div className="w-6 h-6 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg mr-3 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <svg
+                className="w-4 h-4 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
             </div>
             สรุปรายการจอง
@@ -800,7 +823,9 @@ export default function ChoosePaymentClient() {
               <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {pickupLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">{displayPick || "-"}</span>
+                <span className="text-slate-600 text-xs">
+                  {displayPick || "-"}
+                </span>
               </span>
             </div>
 
@@ -809,7 +834,9 @@ export default function ChoosePaymentClient() {
               <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {dropoffLocation || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">{displayDrop || "-"}</span>
+                <span className="text-slate-600 text-xs">
+                  {displayDrop || "-"}
+                </span>
               </span>
             </div>
 
@@ -825,7 +852,9 @@ export default function ChoosePaymentClient() {
               <span className="text-slate-800 text-right max-w-[65%] break-all">
                 {customerData.phone || "-"}
                 <br className="hidden sm:block" />
-                <span className="text-slate-600 text-xs">{customerData.email || "-"}</span>
+                <span className="text-slate-600 text-xs">
+                  {customerData.email || "-"}
+                </span>
               </span>
             </div>
 
@@ -833,11 +862,15 @@ export default function ChoosePaymentClient() {
 
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
               <span className="text-slate-600">ราคาต่อวัน</span>
-              <span className="font-medium text-slate-800">฿{fmt(unitPrice)}</span>
+              <span className="font-medium text-slate-800">
+                ฿{fmt(unitPrice)}
+              </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
               <span className="text-slate-600">ราคารถรวม (x{dayCount})</span>
-              <span className="font-medium text-slate-800">฿{fmt(baseTotal)}</span>
+              <span className="font-medium text-slate-800">
+                ฿{fmt(baseTotal)}
+              </span>
             </div>
 
             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
@@ -846,8 +879,12 @@ export default function ChoosePaymentClient() {
             </div>
 
             <div className="flex justify-between items-center p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200">
-              <span className="text-lg font-bold text-slate-800">ยอดรวมทั้งหมด</span>
-              <span className="text-xl font-bold text-yellow-600">฿{fmt(total)}</span>
+              <span className="text-lg font-bold text-slate-800">
+                ยอดรวมทั้งหมด
+              </span>
+              <span className="text-xl font-bold text-yellow-600">
+                ฿{fmt(total)}
+              </span>
             </div>
 
             <hr className="my-4 border-slate-200" />

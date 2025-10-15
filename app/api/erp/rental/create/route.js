@@ -48,7 +48,7 @@ export async function POST(req) {
     };
 
     const out = await postERP(
-      `${ERP_BASE}/api/method/erpnext.api.create_rental`,
+      `${ERP_BASE}/api/method/frappe.api.api.create_rental`,
       cookie,
       payload
     );

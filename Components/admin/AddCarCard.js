@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { carTypes } from "@/data/carTypes";
 
 const ERP_CREATE_URL =
-  "http://203.150.243.195/api/method/erpnext.api.create_vehicle";
+  "http://203.150.243.195/api/method/frappe.api.api.create_vehicle";
 // const ERP_AUTH = "token xxx:yyy";
 
 /* ---------------- helpers ---------------- */
@@ -147,8 +147,27 @@ export default function AddCarCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-      <h2 className="text-lg font-bold text-black">เพิ่มรถเพื่อเช่า</h2>
+    <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-5 group hover:bg-white/15 transition-all duration-300">
+      <div className="flex items-center mb-4">
+        <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+          <svg
+            className="w-4 h-4 text-black"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+          เพิ่มรถเพื่อเช่า
+        </h2>
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -156,7 +175,7 @@ export default function AddCarCard({
       >
         {/* ชื่อรถ / ยี่ห้อ / ประเภท */}
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ชื่อรถ *
           </label>
           <input
@@ -166,11 +185,11 @@ export default function AddCarCard({
             onChange={handleLocalChange}
             placeholder="เช่น Toyota Corolla Cross"
             required
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ยี่ห้อ *
           </label>
           <input
@@ -180,21 +199,25 @@ export default function AddCarCard({
             onChange={handleLocalChange}
             placeholder="เช่น Toyota"
             required
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ประเภทรถ
           </label>
           <select
             name="type"
             value={localForm.type}
             onChange={handleLocalChange}
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           >
             {carTypes.map((c) => (
-              <option key={c.value} value={c.value}>
+              <option
+                key={c.value}
+                value={c.value}
+                className="bg-slate-800 text-white"
+              >
                 {c.label}
               </option>
             ))}
@@ -203,21 +226,25 @@ export default function AddCarCard({
 
         {/* เกียร์ / ป้ายทะเบียน / จำนวนที่นั่ง */}
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ระบบเกียร์
           </label>
           <select
             name="transmission"
             value={localForm.transmission}
             onChange={handleLocalChange}
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           >
-            <option value="อัตโนมัติ">อัตโนมัติ (Auto)</option>
-            <option value="ธรรมดา">ธรรมดา (Manual)</option>
+            <option value="อัตโนมัติ" className="bg-slate-800 text-white">
+              อัตโนมัติ (Auto)
+            </option>
+            <option value="ธรรมดา" className="bg-slate-800 text-white">
+              ธรรมดา (Manual)
+            </option>
           </select>
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ป้ายทะเบียน
           </label>
           <input
@@ -226,11 +253,11 @@ export default function AddCarCard({
             value={localForm.licensePlate}
             onChange={handleLocalChange}
             placeholder="เช่น 1กข 1234 กรุงเทพฯ"
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             จำนวนที่นั่ง
           </label>
           <input
@@ -240,31 +267,31 @@ export default function AddCarCard({
             value={String(localForm.seats ?? "")}
             onChange={handleLocalChange}
             placeholder="เช่น 5"
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
 
         {/* เชื้อเพลิง / ปีรถ / ราคา/วัน */}
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ประเภทเชื้อเพลิง
           </label>
           <select
             name="fuel"
             value={localForm.fuel}
             onChange={handleLocalChange}
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           >
-            <option>เบนซิน</option>
-            <option>ดีเซล</option>
-            <option>ไฮบริด</option>
-            <option>ไฟฟ้า (EV)</option>
-            <option>LPG</option>
-            <option>NGV</option>
+            <option className="bg-slate-800 text-white">เบนซิน</option>
+            <option className="bg-slate-800 text-white">ดีเซล</option>
+            <option className="bg-slate-800 text-white">ไฮบริด</option>
+            <option className="bg-slate-800 text-white">ไฟฟ้า (EV)</option>
+            <option className="bg-slate-800 text-white">LPG</option>
+            <option className="bg-slate-800 text-white">NGV</option>
           </select>
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ปีของรถ
           </label>
           <input
@@ -275,11 +302,11 @@ export default function AddCarCard({
             value={String(localForm.year ?? "")}
             onChange={handleLocalChange}
             placeholder="เช่น 2021"
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             ราคา/วัน (บาท) *
           </label>
           <input
@@ -290,28 +317,34 @@ export default function AddCarCard({
             onChange={handleLocalChange}
             placeholder="เช่น 1500"
             required
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
 
         {/* สถานะ / รูป */}
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             สถานะ
           </label>
           <select
             name="status"
             value={localForm.status}
             onChange={handleLocalChange}
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           >
-            <option value="Available">ว่าง</option>
-            <option value="In Use">ถูกยืมอยู่</option>
-            <option value="Maintenance">ซ่อมแซม</option>
+            <option value="Available" className="bg-slate-800 text-white">
+              ว่าง
+            </option>
+            <option value="In Use" className="bg-slate-800 text-white">
+              ถูกยืมอยู่
+            </option>
+            <option value="Maintenance" className="bg-slate-800 text-white">
+              ซ่อมแซม
+            </option>
           </select>
         </div>
         <div className="xl:col-span-2">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             รูปรถ (อัปโหลด)
           </label>
           <input
@@ -319,14 +352,14 @@ export default function AddCarCard({
             type="file"
             accept="image/*"
             onChange={handleLocalImageChange}
-            className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-gray-800 hover:file:bg-gray-50"
+            className="block w-full text-sm text-slate-300 file:mr-3 file:rounded-xl file:border file:border-white/20 file:bg-white/10 file:px-3 file:py-2 file:text-white hover:file:bg-white/20"
           />
           {localForm.imageData ? (
             <div className="mt-2">
               <img
                 src={localForm.imageData}
                 alt="ตัวอย่างรูปรถ"
-                className="h-24 w-full max-w-[180px] rounded-lg border object-cover"
+                className="h-24 w-full max-w-[180px] rounded-xl border border-white/20 object-cover"
               />
               <button
                 type="button"
@@ -334,13 +367,13 @@ export default function AddCarCard({
                   handleLocalChange({ name: "imageData", value: "" });
                   clearImageInput();
                 }}
-                className="mt-2 text-xs text-gray-600 underline"
+                className="mt-2 text-xs text-slate-300 underline hover:text-white transition-colors duration-200"
               >
                 ลบรูป
               </button>
             </div>
           ) : (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-slate-400">
               รองรับไฟล์ .jpg, .png, .webp (≤ 4MB)
             </p>
           )}
@@ -348,7 +381,7 @@ export default function AddCarCard({
 
         {/* คำอธิบาย */}
         <div className="xl:col-span-4">
-          <label className="block text-xs font-semibold text-black mb-1">
+          <label className="block text-xs font-semibold text-white mb-1">
             คำอธิบายเพิ่มเติม
           </label>
           <textarea
@@ -357,13 +390,13 @@ export default function AddCarCard({
             value={localForm.description}
             onChange={handleLocalChange}
             placeholder="รายละเอียด อุปกรณ์เสริม เงื่อนไขการเช่า ฯลฯ"
-            className="w-full rounded-lg border border-gray-400 px-3 py-2 focus:border-black focus:ring-black text-black placeholder:text-gray-400"
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 hover:bg-white/20"
           />
         </div>
 
         {error && (
           <div className="xl:col-span-6">
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 backdrop-blur-sm px-3 py-2 text-sm text-red-300">
               {error}
             </div>
           </div>
@@ -373,7 +406,7 @@ export default function AddCarCard({
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2.5 rounded-lg bg-black text-white font-semibold hover:bg-gray-800 transition disabled:opacity-60"
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
           >
             {saving ? "กำลังบันทึก..." : "เพิ่มรถ"}
           </button>

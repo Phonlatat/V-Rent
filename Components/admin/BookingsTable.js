@@ -333,7 +333,7 @@ const API_TO_UI_STATUS = Object.fromEntries(
 // เปลี่ยนสถานะการเช่าของใบจอง
 async function apiEditRentalStatus(vid, status) {
   const res = await fetch(
-    `${ERP_BASE}/api/method/erpnext.api.edit_rentals_status`,
+    `${ERP_BASE}/api/method/frappe.api.api.edit_rentals_status`,
     {
       method: "POST",
       headers: {
@@ -356,7 +356,7 @@ async function apiUpdateStatus({ rid, status, payment }) {
   fd.append("rid", rid);
   if (status) fd.append("status", status); // "Completed" | "Cancelled" | ...
   if (typeof payment !== "undefined") fd.append("payment_status", payment); // "Paid" | ""
-  const res = await fetch(`${ERP_BASE}/api/method/erpnext.api.edit_rental`, {
+  const res = await fetch(`${ERP_BASE}/api/method/frappe.api.api.edit_rental`, {
     method: "POST",
     body: fd,
     credentials: "include",
@@ -376,7 +376,7 @@ async function apiEditVehicleStatus({ vid, status }) {
   if (ERP_AUTH) headers.append("Authorization", ERP_AUTH);
 
   const res = await fetch(
-    `${ERP_BASE}/api/method/erpnext.api.edit_vehicle_status`,
+    `${ERP_BASE}/api/method/frappe.api.api.edit_vehicle_status`,
     {
       method: "POST",
       headers,
@@ -670,7 +670,7 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
       );
 
       const res = await fetch(
-        `${ERP_BASE}/api/method/erpnext.api.edit_rental`,
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rental`,
         {
           method: "POST",
           body: fd,
@@ -1181,7 +1181,7 @@ export default function BookingsTable({
         setLoading(true);
         setErr("");
         const res = await fetch(
-          `${ERP_BASE}/api/method/erpnext.api.get_rentals_overall`,
+          `${ERP_BASE}/api/method/frappe.api.api.get_rentals_overall`,
           {
             method: "GET",
             credentials: "include",
@@ -1504,7 +1504,7 @@ export default function BookingsTable({
       if (ERP_AUTH) headers.append("Authorization", ERP_AUTH);
 
       const res = await fetch(
-        `${ERP_BASE}/api/method/erpnext.api.delete_rental`,
+        `${ERP_BASE}/api/method/frappe.api.api.delete_rental`,
         {
           method: "DELETE",
           headers,
@@ -1520,7 +1520,7 @@ export default function BookingsTable({
         try {
           await apiEditRentalStatus(b.bookingCode, "Cancelled");
           const res2 = await fetch(
-            "http://203.150.243.195/api/method/erpnext.api.delete_rental",
+            "http://203.150.243.195/api/method/frappe.api.api.delete_rental",
             {
               method: "DELETE",
               headers,

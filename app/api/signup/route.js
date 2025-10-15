@@ -6,7 +6,7 @@ const ERP_SIGNUP_URL = `${ERP_BASE}/api/method/frappe.api.api.sign_up`;
 export async function POST(req) {
   try {
     const body = await req.json();
-    
+
     // เรียก API ของ ERP system
     const response = await fetch(ERP_SIGNUP_URL, {
       method: "POST",
@@ -23,7 +23,7 @@ export async function POST(req) {
 
     const raw = await response.text();
     let data;
-    
+
     try {
       data = JSON.parse(raw);
     } catch {
@@ -41,9 +41,8 @@ export async function POST(req) {
     // ส่งข้อมูลกลับไปยัง frontend
     return NextResponse.json({
       success: true,
-      message: data.message || "สมัครสมาชิกสำเร็จ"
+      message: data.message || "สมัครสมาชิกสำเร็จ",
     });
-
   } catch (error) {
     console.error("Signup API error:", error);
     return NextResponse.json(

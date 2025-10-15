@@ -86,7 +86,7 @@ export async function GET(req) {
     req.headers.get("x-user-id") || url.searchParams.get("user_id") || "";
 
   const info = await getJSON(
-    `${ERP_BASE}/api/method/erpnext.api.get_user_information`,
+    `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
     cookie
   );
   const msg = info?.message ?? info ?? {};
@@ -150,7 +150,7 @@ export async function GET(req) {
 
   if (!fullName && email) fullName = email.split("@")[0];
   const res = await fetch(
-    `${ERP_BASE}/api/method/erpnext.api.get_user_information`,
+    `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

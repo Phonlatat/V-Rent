@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CarsTable from "./CarsTable";
-import BookingsTable from "./BookingsTable";
-import DeliveriesTable from "./DeliveriesTable";
+import CarsTableNew from "./CarsTableNew";
+import BookingsTableNew from "./BookingsTableNew";
+import DeliveriesTableNew from "./DeliveriesTableNew";
 
 export default function AdminSlideModal({
   cars = [],
@@ -18,6 +18,9 @@ export default function AdminSlideModal({
   onDeleteCar,
   onConfirmPickup,
   onComplete,
+  onFetchCars,
+  onFetchBookings, // เพิ่มใหม่
+  onFetchDeliveries, // เพิ่มใหม่
   getCarRowStatus,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,38 +54,74 @@ export default function AdminSlideModal({
     switch (activeTable) {
       case "cars":
         return (
-          <CarsTable
+          <CarsTableNew
             cars={cars}
             bookings={bookings}
             now={now}
             nextBookingMap={nextBookingMap}
             onEdit={onEditCar}
             onDelete={onDeleteCar}
+            onAddCar={() => {
+              // Close modal and scroll to AddCarCard
+              setIsOpen(false);
+              setTimeout(() => {
+                const addCarElement = document.querySelector(
+                  "[data-add-car-card]"
+                );
+                if (addCarElement) {
+                  addCarElement.scrollIntoView({ behavior: "smooth" });
+                }
+              }, 300);
+            }}
+            onRefresh={onFetchCars}
+            onFetchCars={onFetchCars}
             getCarRowStatus={getCarRowStatus}
           />
         );
       case "bookings":
         return (
-          <BookingsTable
+          <BookingsTableNew
             bookings={bookings}
             carMapById={carMapById}
             carMapByKey={carMapByKey}
             onOpenDetail={() => {}}
-            onConfirmPickup={onConfirmPickup}
-            onComplete={onComplete}
+            onConfirmPickup={async (booking) => {
+              await onConfirmPickup(booking);
+              if (onFetchBookings) await onFetchBookings();
+            }}
+            onComplete={async (booking) => {
+              await onComplete(booking);
+              if (onFetchBookings) await onFetchBookings();
+            }}
+            onFetchBookings={onFetchBookings}
           />
         );
       case "deliveries":
-        return <DeliveriesTable />;
+        return (
+          <DeliveriesTableNew
+            deliveries={deliveries}
+            onUpdateStatus={async (delivery, newStatus) => {
+              // Call API to update status
+              // Then refresh
+              if (onFetchDeliveries) await onFetchDeliveries();
+            }}
+            onFetchDeliveries={onFetchDeliveries}
+          />
+        );
       default:
         return null;
     }
   };
 
-  // Lock scroll when modal is open
+  // Lock scroll when modal is open and auto scroll to top
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      // Smooth scroll to top when modal opens
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } else {
       document.body.style.overflow = "unset";
     }
@@ -102,10 +141,23 @@ export default function AdminSlideModal({
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen]);
 
+  // Smooth scroll to top when switching tables
+  useEffect(() => {
+    if (isOpen) {
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }, 100);
+    }
+  }, [activeTable, isOpen]);
+
   return (
     <>
-      {/* Trigger Button */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Trigger Cards - ปรับให้เข้ากับธีม Dark */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {tables.map((table) => (
           <button
             key={table.id}
@@ -113,28 +165,28 @@ export default function AdminSlideModal({
               setActiveTable(table.id);
               setIsOpen(true);
             }}
-            className="group relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 p-6 text-left hover:border-slate-300"
+            className="group relative bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl hover:bg-white/15 hover:border-white/30 transition-all duration-300 p-6 text-left hover:-translate-y-1 hover:shadow-2xl"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center text-2xl">
+              <div className="w-14 h-14 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {table.icon}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 group-hover:text-slate-700">
+                <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
                   {table.title}
                 </h3>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-sm text-slate-300 mt-1 group-hover:text-white transition-colors duration-300">
                   {table.description}
                 </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400/20 to-amber-500/20 text-yellow-300 border border-yellow-400/30">
                     {table.count} รายการ
                   </span>
                 </div>
               </div>
-              <div className="text-slate-400 group-hover:text-slate-600">
+              <div className="text-slate-400 group-hover:text-yellow-400 transition-colors duration-300">
                 <svg
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -152,45 +204,63 @@ export default function AdminSlideModal({
         ))}
       </div>
 
-      {/* Slide Modal */}
+      {/* Slide Modal - ปรับให้เข้ากับธีม Dark */}
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
+          {/* Enhanced Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
             onClick={() => setIsOpen(false)}
           />
 
+          {/* Floating Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute bg-yellow-400/10 rounded-full animate-pulse"
+                style={{
+                  width: `${2 + Math.random() * 4}px`,
+                  height: `${2 + Math.random() * 4}px`,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`,
+                }}
+              />
+            ))}
+          </div>
+
           {/* Modal Container */}
-          <div className="absolute inset-y-0 right-0 w-full max-w-7xl bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4">
+          <div className="absolute inset-y-0 right-0 w-full max-w-7xl bg-gradient-to-br from-slate-900 via-black to-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out">
+            {/* Enhanced Header */}
+            <div className="sticky top-0 z-10 bg-black/20 backdrop-blur-md border-b border-white/10 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center text-xl">
-                    {tables.find(t => t.id === activeTable)?.icon}
+                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-xl shadow-lg">
+                    {tables.find((t) => t.id === activeTable)?.icon}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900">
-                      {tables.find(t => t.id === activeTable)?.title}
+                    <h2 className="text-xl font-bold text-white">
+                      {tables.find((t) => t.id === activeTable)?.title}
                     </h2>
-                    <p className="text-sm text-slate-600">
-                      {tables.find(t => t.id === activeTable)?.description}
+                    <p className="text-sm text-slate-300">
+                      {tables.find((t) => t.id === activeTable)?.description}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                  {/* Table Switcher */}
-                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                  {/* Enhanced Table Switcher */}
+                  <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-1 border border-white/20">
                     {tables.map((table) => (
                       <button
                         key={table.id}
                         onClick={() => setActiveTable(table.id)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                           activeTable === table.id
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-lg"
+                            : "text-slate-300 hover:text-white hover:bg-white/10"
                         }`}
                       >
                         <span className="mr-2">{table.icon}</span>
@@ -198,24 +268,36 @@ export default function AdminSlideModal({
                       </button>
                     ))}
                   </div>
-                  
-                  {/* Close Button */}
+
+                  {/* Enhanced Close Button */}
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors"
+                    className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/30 flex items-center justify-center text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Content */}
+            {/* Enhanced Content */}
             <div className="h-[calc(100vh-80px)] overflow-y-auto">
               <div className="p-6">
-                {renderTableContent()}
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+                  {renderTableContent()}
+                </div>
               </div>
             </div>
           </div>

@@ -14,7 +14,7 @@ import AdminSlideModal from "@/Components/admin/AdminSlideModal";
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.150.243.195";
 // endpoint แนะนำให้ใช้ตัวนี้เพื่อดู role ผู้ใช้
-const GET_USER_INFO_EP = "/api/method/erpnext.api.get_user_information";
+const GET_USER_INFO_EP = "/api/method/frappe.api.api.get_user_information";
 
 /** กลุ่ม role ที่ถือว่าเป็นแอดมิน */
 const ADMIN_ROLES = new Set([
@@ -78,17 +78,138 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [allowed, setAllowed] = useState(false);
-  const [userId, setUserId] = useState("");
+  // 🚧 TEMPORARY: Mock userId สำหรับทดสอบ UX/UI
+  const [userId, setUserId] = useState("admin@vrent.com");
 
-  // ===== Page state (ของเดิม) =====
+  // ===== Page state =====
   const [cars, setCars] = useState([]);
-  const [bookings] = useState([]);
-  const [deliveries] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [deliveries, setDeliveries] = useState([]);
+
+  // Loading states
+  const [carsLoading, setCarsLoading] = useState(false);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
   const [now] = useState(new Date());
 
   const nextBookingMap = useMemo(() => ({}), []);
   const carMapById = useMemo(() => new Map(), []);
   const carMapByKey = useMemo(() => new Map(), []);
+
+  // ===== API Fetch Functions =====
+  const fetchCars = async () => {
+    try {
+      setCarsLoading(true);
+      const response = await fetch(
+        "http://203.150.243.195/api/method/frappe.api.api.get_vehicles",
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const vehicles = data?.message?.vehicles || data?.message || [];
+
+        // Transform data to match expected format
+        const transformedCars = vehicles.map((v) => ({
+          id: v.name || v.id,
+          name: v.vehicle_name || v.name,
+          brand: v.brand,
+          pricePerDay: v.price_per_day || v.pricePerDay,
+          price_per_day: v.price_per_day,
+          status: v.vehicle_stage || v.status,
+          image: v.image || v.vehicle_image,
+          imageData: v.image || v.vehicle_image,
+          type: v.vehicle_type || v.type,
+          licensePlate: v.license_plate || v.licensePlate,
+          key: v.name || v.id,
+        }));
+
+        setCars(transformedCars);
+      }
+    } catch (error) {
+      console.error("Error fetching cars:", error);
+    } finally {
+      setCarsLoading(false);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      setBookingsLoading(true);
+      const response = await fetch(
+        "http://203.150.243.195/api/method/frappe.api.api.get_bookings",
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const bookingsList = data?.message?.bookings || data?.message || [];
+
+        // Transform data
+        const transformedBookings = bookingsList.map((b) => ({
+          id: b.name || b.id,
+          customerName: b.customer_name || b.customerName,
+          customerPhone: b.customer_phone || b.customerPhone,
+          carId: b.vehicle || b.carId,
+          carKey: b.vehicle_key || b.carKey,
+          carName: b.vehicle_name || b.carName,
+          pickupDate: b.pickup_date || b.pickupDate,
+          returnDate: b.return_date || b.returnDate,
+          totalPrice: b.total_price || b.totalPrice,
+          status: b.booking_status || b.status,
+          paymentStatus: b.payment_status || b.paymentStatus,
+        }));
+
+        setBookings(transformedBookings);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  const fetchDeliveries = async () => {
+    try {
+      setDeliveriesLoading(true);
+      const response = await fetch(
+        "http://203.150.243.195/api/method/frappe.api.api.get_deliveries",
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const deliveriesList = data?.message?.deliveries || data?.message || [];
+
+        // Transform data
+        const transformedDeliveries = deliveriesList.map((d) => ({
+          id: d.dlv_id || d.id,
+          customerName: d.customer_name || d.customerName,
+          customerPhone: d.customer_phone || d.customerPhone,
+          carName: d.vehicle_name || d.carName,
+          carPlate: d.vehicle_plate || d.carPlate,
+          driverName: d.driver_name || d.driverName,
+          deliveryDate: d.delivery_date || d.deliveryDate,
+          status: d.delivery_status || d.status,
+        }));
+
+        setDeliveries(transformedDeliveries);
+      }
+    } catch (error) {
+      console.error("Error fetching deliveries:", error);
+    } finally {
+      setDeliveriesLoading(false);
+    }
+  };
 
   // โหลด user_id จาก localStorage
   const ADMIN_ROLES_LC = useMemo(
@@ -96,6 +217,15 @@ export default function AdminPage() {
       new Set(["administrator", "system manager", "admin", "owner", "manager"]),
     []
   );
+
+  // Fetch data when allowed and userId is available
+  useEffect(() => {
+    if (allowed && userId) {
+      fetchCars();
+      fetchBookings();
+      fetchDeliveries();
+    }
+  }, [allowed, userId]);
 
   useEffect(() => {
     try {
@@ -213,7 +343,7 @@ export default function AdminPage() {
       abort = true;
       controller.abort();
     };
-  }, [userId]);
+  }, [userId, ADMIN_ROLES_LC]);
 
   // ===== ฟอร์มเพิ่มรถ (ของเดิม) =====
   const [carForm, setCarForm] = useState({
@@ -296,7 +426,9 @@ export default function AdminPage() {
     car?.stageLabel || mapStatusToThai(car?.status) || "ว่าง";
 
   // ===== UI: Gate states =====
-  if (authLoading) {
+  // 🚧 TEMPORARY: ข้ามหน้า Loading เพื่อแก้ไข UX/UI
+  if (false) {
+    // authLoading
     return (
       <LoadingCard
         title="กำลังตรวจสอบสิทธิ์เข้าถึง..."
@@ -305,8 +437,9 @@ export default function AdminPage() {
     );
   }
 
-  // แทนที่บล็อกเดิมทั้งก้อน if (!allowed) { ... }
-  if (!allowed) {
+  // 🚧 TEMPORARY: บังคับเข้าไปหน้า Admin Dashboard เพื่อแก้ไข UX/UI
+  if (false) {
+    // !allowed
     return (
       <AccessDeniedCard
         title="เข้าถึงไม่ได้ - Admin Dashboard"
@@ -317,85 +450,164 @@ export default function AdminPage() {
 
   // ===== Allowed UI (เวอร์ชันใหม่) =====
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
       <title>AdminPage - V-Rent</title>
-      <Headers />
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative">
-          {/* แถบเหลืองครึ่งบนของโซนเนื้อหา */}
-          <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-r from-yellow-400 to-amber-500" />
+      {/* Enhanced Background Pattern - ตามธีมของเว็บไซต์ */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-400/20 to-amber-500/20 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        />
+      </div>
 
-          {/* เนื้อหาจริง ให้อยู่เหนือแถบเหลือง */}
-          <div className="relative p-4 sm:p-8 lg:p-10">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
-                  <span className="text-slate-900">Admin</span>
+      {/* Floating Elements - ตามธีมของเว็บไซต์ */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-yellow-400/20 rounded-full animate-pulse"
+            style={{
+              width: `${1 + Math.random() * 3}px`,
+              height: `${1 + Math.random() * 3}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+              animationDuration: `${3 + Math.random() * 3}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-white">
                   <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
-                    Dashboard
+                    Admin Dashboard
                   </span>
                 </h1>
-                <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                  จัดการระบบ V-Rent อย่างครบวงจร
-                  พร้อมติดตามข้อมูลการจองและการส่งมอบ
-                </p>
+                <span className="ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
+                  Admin
+                </span>
               </div>
-
-              {/* กล่องเนื้อหาหลัก */}
-              <div className="rounded-3xl bg-white shadow-xl ring-1 ring-black/5 min-h-[70vh] p-6 sm:p-8">
-                {/* การ์ดพนักงานและฟอร์มเพิ่มรถ */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-                  {/* การ์ดพนักงาน */}
-                  <div className="lg:col-span-4">
-                    <EmployeeCard userId={userId} />
-                  </div>
-
-                  {/* ฟอร์มเพิ่มรถ */}
-                  <div className="lg:col-span-8">
-                    <AddCarCard
-                      form={carForm}
-                      setForm={setCarForm}
-                      onAddCar={onAddCar}
-                      onImageChange={onImageChange}
-                    />
-                  </div>
-                </div>
-
-                {/* ตารางข้อมูล (Slide Modal) */}
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                    จัดการข้อมูลระบบ
-                  </h2>
-                  <p className="text-slate-600 mb-6">
-                    คลิกที่การ์ดด้านล่างเพื่อเปิดดูและจัดการข้อมูลในแต่ละหมวด
-                  </p>
-
-                  <AdminSlideModal
-                    cars={cars}
-                    bookings={bookings}
-                    deliveries={deliveries}
-                    carMapById={carMapById}
-                    carMapByKey={carMapByKey}
-                    nextBookingMap={nextBookingMap}
-                    now={now}
-                    onEditCar={() => {}}
-                    onDeleteCar={() => {}}
-                    onConfirmPickup={handleConfirmPickup}
-                    onComplete={handleComplete}
-                    getCarRowStatus={getCarRowStatus}
-                  />
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-slate-300">ยินดีต้อนรับ</span>
+                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-black font-semibold text-sm">AD</span>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
 
-      <Footer />
+        {/* Main Content */}
+        <main className="flex-1">
+          {/* Hero Section */}
+          <section className="relative">
+            {/* เนื้อหาจริง */}
+            <div className="relative p-4 sm:p-8 lg:p-10">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="text-center mb-8">
+                  <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+                    <span className="text-white">Admin</span>
+                    <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                      Dashboard
+                    </span>
+                  </h1>
+                  <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+                    จัดการระบบ V-Rent อย่างครบวงจร
+                    พร้อมติดตามข้อมูลการจองและการส่งมอบ
+                  </p>
+                </div>
+
+                {/* กล่องเนื้อหาหลัก */}
+                <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 min-h-[70vh] p-6 sm:p-8 group hover:bg-white/15 transition-all duration-300">
+                  {/* การ์ดพนักงานและฟอร์มเพิ่มรถ */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                    {/* การ์ดพนักงาน */}
+                    <div className="lg:col-span-4">
+                      <EmployeeCard userId={userId} />
+                    </div>
+
+                    {/* ฟอร์มเพิ่มรถ */}
+                    <div className="lg:col-span-8" data-add-car-card>
+                      <AddCarCard
+                        form={carForm}
+                        setForm={setCarForm}
+                        onAddCar={onAddCar}
+                        onImageChange={onImageChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ตารางข้อมูล (Slide Modal) */}
+                  <div className="mb-6">
+                    <div className="flex items-center mb-4">
+                      <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+                        <svg
+                          className="w-4 h-4 text-black"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
+                        </svg>
+                      </div>
+                      <h2 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+                        จัดการข้อมูลระบบ
+                      </h2>
+                    </div>
+                    <p className="text-slate-300 group-hover:text-white transition-colors duration-300 mb-6">
+                      คลิกที่การ์ดด้านล่างเพื่อเปิดดูและจัดการข้อมูลในแต่ละหมวด
+                    </p>
+
+                    <AdminSlideModal
+                      cars={cars}
+                      bookings={bookings}
+                      deliveries={deliveries}
+                      carMapById={carMapById}
+                      carMapByKey={carMapByKey}
+                      nextBookingMap={nextBookingMap}
+                      now={now}
+                      onEditCar={() => {}}
+                      onDeleteCar={fetchCars} // Refresh after delete
+                      onConfirmPickup={handleConfirmPickup}
+                      onComplete={handleComplete}
+                      onFetchCars={fetchCars}
+                      onFetchBookings={fetchBookings} // เพิ่มใหม่
+                      onFetchDeliveries={fetchDeliveries} // เพิ่มใหม่
+                      getCarRowStatus={getCarRowStatus}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        {/* Footer */}
+        <div className="bg-black/20 backdrop-blur-md border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <p className="text-slate-400 text-sm">
+                © 2025 V-Rent Admin Dashboard. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

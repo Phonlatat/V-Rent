@@ -98,19 +98,32 @@ function StatusBadge({ status }) {
     const s = String(status || "")
       .toLowerCase()
       .trim();
-    if (s.includes("pending") || s.includes("รอส่ง")) {
-      return "bg-orange-500/20 text-orange-300 border-orange-500/30";
-    }
-    if (s.includes("in progress") || s.includes("กำลังส่ง")) {
-      return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-    }
-    if (s.includes("delivered") || s.includes("ส่งแล้ว")) {
-      return "bg-green-500/20 text-green-300 border-green-500/30";
-    }
+    // ทุกสถานะยกเว้น cancelled ให้เป็นสีเขียว (ส่งรถสำเร็จแล้ว)
     if (s.includes("cancelled") || s.includes("ยกเลิก")) {
       return "bg-red-500/20 text-red-300 border-red-500/30";
     }
-    return "bg-slate-500/20 text-slate-300 border-slate-500/30";
+    // Default เป็นสีเขียวสำหรับ "ส่งรถสำเร็จแล้ว"
+    return "bg-green-500/20 text-green-300 border-green-500/30";
+  };
+
+  // แปลงสถานะเป็นภาษาไทย
+  const getStatusText = (status) => {
+    const s = String(status || "")
+      .toLowerCase()
+      .trim();
+    if (s.includes("pending") || s.includes("รอส่ง")) {
+      return "ส่งรถสำเร็จแล้ว";
+    }
+    if (s.includes("in progress") || s.includes("กำลังส่ง")) {
+      return "ส่งรถสำเร็จแล้ว";
+    }
+    if (s.includes("delivered") || s.includes("ส่งแล้ว")) {
+      return "ส่งรถสำเร็จแล้ว";
+    }
+    if (s.includes("cancelled") || s.includes("ยกเลิก")) {
+      return "ยกเลิก";
+    }
+    return "ส่งรถสำเร็จแล้ว"; // Default เป็นส่งรถสำเร็จแล้ว
   };
 
   return (
@@ -119,7 +132,7 @@ function StatusBadge({ status }) {
         status
       )}`}
     >
-      {status || "—"}
+      {getStatusText(status)}
     </span>
   );
 }
@@ -134,6 +147,12 @@ export default function DeliveriesTableNew({
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Delete states
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
+  const [selectedDeleteName, setSelectedDeleteName] = useState("");
 
   // Smooth scroll to top when component mounts
   useEffect(() => {
@@ -172,6 +191,10 @@ export default function DeliveriesTableNew({
     if (statusFilter !== "all") {
       filtered = filtered.filter((row) => {
         const status = String(row.status || "").toLowerCase();
+        if (statusFilter === "completed") {
+          // ส่งรถสำเร็จแล้ว = ทุกสถานะยกเว้น cancelled
+          return !status.includes("cancelled") && !status.includes("ยกเลิก");
+        }
         return status.includes(statusFilter);
       });
     }
@@ -187,6 +210,64 @@ export default function DeliveriesTableNew({
   const closeDetail = () => {
     setDetailOpen(false);
     setSelectedDelivery(null);
+  };
+
+  // Delete functions
+  const openDelete = (delivery) => {
+    setSelectedDeleteId(delivery.id);
+    setSelectedDeleteName(delivery.customerName || delivery.id);
+    setDeleteOpen(true);
+  };
+
+  const closeDelete = () => {
+    setDeleteOpen(false);
+    setSelectedDeleteId(null);
+    setSelectedDeleteName("");
+  };
+
+  const doDelete = async () => {
+    if (!selectedDeleteId) {
+      alert("ไม่พบ ID ของรายการส่งมอบ");
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+
+      console.log("Sending delete request for delivery ID:", selectedDeleteId);
+
+      const response = await fetch(
+        "http://203.154.83.160/api/method/frappe.api.api.delete_dlv",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dlv_id: selectedDeleteId }),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Delete failed (${response.status})`
+        );
+      }
+
+      // แสดง modal ยืนยันการลบ
+      setDeleteOpen(false);
+      setSelectedDeleteId(null);
+      setSelectedDeleteName("");
+
+      // Refresh data
+      if (onFetchDeliveries) {
+        await onFetchDeliveries();
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert(err?.message || "ลบรายการส่งมอบไม่สำเร็จ");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleUpdateStatus = async (delivery, newStatus) => {
@@ -238,17 +319,8 @@ export default function DeliveriesTableNew({
             <option value="all" className="bg-slate-800 text-white">
               ทุกสถานะ
             </option>
-            <option value="pending" className="bg-slate-800 text-white">
-              รอส่ง
-            </option>
-            <option value="in progress" className="bg-slate-800 text-white">
-              กำลังส่ง
-            </option>
-            <option value="delivered" className="bg-slate-800 text-white">
-              ส่งแล้ว
-            </option>
-            <option value="cancelled" className="bg-slate-800 text-white">
-              ยกเลิก
+            <option value="completed" className="bg-slate-800 text-white">
+              ส่งรถสำเร็จแล้ว
             </option>
           </select>
 
@@ -307,7 +379,7 @@ export default function DeliveriesTableNew({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
           <div className="text-xl md:text-2xl font-bold text-white">
             {rows.length}
@@ -317,40 +389,19 @@ export default function DeliveriesTableNew({
           </div>
         </div>
         <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-orange-400">
-            {
-              rows.filter((r) =>
-                String(r.status || "")
-                  .toLowerCase()
-                  .includes("pending")
-              ).length
-            }
-          </div>
-          <div className="text-xs md:text-sm text-slate-300">รอส่ง</div>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-blue-400">
-            {
-              rows.filter((r) =>
-                String(r.status || "")
-                  .toLowerCase()
-                  .includes("in progress")
-              ).length
-            }
-          </div>
-          <div className="text-xs md:text-sm text-slate-300">กำลังส่ง</div>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
           <div className="text-xl md:text-2xl font-bold text-green-400">
             {
-              rows.filter((r) =>
-                String(r.status || "")
-                  .toLowerCase()
-                  .includes("delivered")
-              ).length
+              rows.filter((r) => {
+                const status = String(r.status || "").toLowerCase();
+                return (
+                  !status.includes("cancelled") && !status.includes("ยกเลิก")
+                );
+              }).length
             }
           </div>
-          <div className="text-xs md:text-sm text-slate-300">ส่งแล้ว</div>
+          <div className="text-xs md:text-sm text-slate-300">
+            ส่งรถสำเร็จแล้ว
+          </div>
         </div>
       </div>
 
@@ -488,54 +539,28 @@ export default function DeliveriesTableNew({
                             />
                           </svg>
                         </button>
-                        {String(row.status || "")
-                          .toLowerCase()
-                          .includes("pending") && (
-                          <button
-                            onClick={() =>
-                              handleUpdateStatus(row, "in progress")
-                            }
-                            className="text-blue-400 hover:text-blue-300 transition-colors duration-200"
-                            title="เริ่มส่ง"
+                        {/* Status Update Buttons - ลบออกเนื่องจากทุกสถานะเป็น ส่งรถสำเร็จแล้ว */}
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => openDelete(row)}
+                          className="text-red-400 hover:text-red-300 transition-colors duration-200"
+                          title="ลบรายการ"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                        {String(row.status || "")
-                          .toLowerCase()
-                          .includes("in progress") && (
-                          <button
-                            onClick={() => handleUpdateStatus(row, "delivered")}
-                            className="text-green-400 hover:text-green-300 transition-colors duration-200"
-                            title="ส่งเสร็จ"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </button>
-                        )}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -638,27 +663,15 @@ export default function DeliveriesTableNew({
                       ดูรายละเอียด
                     </button>
 
-                    {String(row.status || "")
-                      .toLowerCase()
-                      .includes("pending") && (
-                      <button
-                        onClick={() => handleUpdateStatus(row, "in progress")}
-                        className="px-4 py-2 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-all duration-200 text-sm font-medium"
-                      >
-                        เริ่มส่ง
-                      </button>
-                    )}
+                    {/* Status Update Buttons - ลบออกเนื่องจากทุกสถานะเป็น ส่งรถสำเร็จแล้ว */}
 
-                    {String(row.status || "")
-                      .toLowerCase()
-                      .includes("in progress") && (
-                      <button
-                        onClick={() => handleUpdateStatus(row, "delivered")}
-                        className="px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all duration-200 text-sm font-medium"
-                      >
-                        ส่งเสร็จ
-                      </button>
-                    )}
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => openDelete(row)}
+                      className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all duration-200 text-sm font-medium"
+                    >
+                      ลบ
+                    </button>
                   </div>
                 </div>
               ))}
@@ -667,61 +680,646 @@ export default function DeliveriesTableNew({
         </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Enhanced Detail Modal */}
       <Modal open={detailOpen} onClose={closeDetail}>
-        <div className="w-full max-w-2xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white max-h-[90vh] overflow-y-auto border border-white/20">
-          <h3 className="text-xl font-bold mb-4">รายละเอียดการส่งมอบ</h3>
-          {selectedDelivery && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-slate-300">ลูกค้า</label>
-                  <div className="text-white font-medium">
-                    {selectedDelivery.customerName}
-                  </div>
+        <div className="w-full max-w-6xl rounded-3xl bg-gradient-to-br from-slate-900/95 via-black/95 to-slate-800/95 backdrop-blur-xl shadow-2xl text-white border border-white/20 relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-full blur-2xl animate-pulse" />
+            <div
+              className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-cyan-500/20 rounded-full blur-2xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            />
+          </div>
+
+          <div className="relative z-10 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10 p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
+                  </svg>
                 </div>
                 <div>
-                  <label className="text-sm text-slate-300">โทรศัพท์</label>
-                  <div className="text-white">
-                    {selectedDelivery.customerPhone}
-                  </div>
+                  <h3 className="text-2xl font-bold text-white">
+                    รายละเอียดการส่งมอบ
+                  </h3>
+                  <p className="text-slate-300 text-sm">
+                    ข้อมูลการส่งมอบรถยนต์ทั้งหมด
+                  </p>
                 </div>
-                <div>
-                  <label className="text-sm text-slate-300">รถยนต์</label>
-                  <div className="text-white">{selectedDelivery.carName}</div>
-                </div>
-                <div>
-                  <label className="text-sm text-slate-300">ป้ายทะเบียน</label>
-                  <div className="text-white">{selectedDelivery.carPlate}</div>
-                </div>
-                <div>
-                  <label className="text-sm text-slate-300">พนักงานขับ</label>
-                  <div className="text-white">
-                    {selectedDelivery.driverName}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-slate-300">วันที่ส่ง</label>
-                  <div className="text-white">
-                    {fmtDateTimeLocal(selectedDelivery.deliveryDate)}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-slate-300">สถานะ</label>
-                  <div className="mt-1">
-                    <StatusBadge status={selectedDelivery.status} />
-                  </div>
+                <div className="ml-auto">
+                  <StatusBadge status={selectedDelivery?.status} />
                 </div>
               </div>
             </div>
-          )}
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              onClick={closeDetail}
-              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300"
-            >
-              ปิด
-            </button>
+
+            {selectedDelivery && (
+              <div className="p-6">
+                {/* Basic Information */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    ข้อมูลพื้นฐาน
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        ลูกค้า
+                      </label>
+                      <div className="text-white font-semibold text-lg">
+                        {selectedDelivery.customerName || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        เบอร์โทรศัพท์
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.customerPhone || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        หมายเลขรายการ
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.id || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        รถยนต์
+                      </label>
+                      <div className="text-white font-semibold text-lg">
+                        {selectedDelivery.carName || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        ป้ายทะเบียน
+                      </label>
+                      <div className="text-white font-mono font-bold text-lg bg-slate-800/50 rounded-lg px-3 py-2 inline-block">
+                        {selectedDelivery.carPlate || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        พนักงานขับ
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.driverName || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Information */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    ข้อมูลการส่งมอบ
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        วันที่ส่ง
+                      </label>
+                      <div className="text-white font-medium">
+                        {fmtDateTimeLocal(selectedDelivery.deliveryDate)}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        สถานะ
+                      </label>
+                      <div className="mt-1">
+                        <StatusBadge status={selectedDelivery.status} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    ข้อมูลเพิ่มเติม
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* ข้อมูลจาก API ที่อาจมี */}
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        หมายเลขการจอง
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.rental_no ||
+                          selectedDelivery.bookingCode ||
+                          "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        วันที่สร้าง
+                      </label>
+                      <div className="text-white font-medium">
+                        {fmtDateTimeLocal(selectedDelivery.creation) || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        สถานะการชำระเงิน
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.downpayment || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        น้ำมัน
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.fuel || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        ไมล์
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.mile || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        เอกสาร
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.document || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        หมายเหตุ
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.remark || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        สถานที่รับรถ
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.pickup_place || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        สถานที่คืนรถ
+                      </label>
+                      <div className="text-white font-medium">
+                        {selectedDelivery.return_place || "—"}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <label className="text-sm text-slate-400 mb-2 block">
+                        วันที่คืนรถ
+                      </label>
+                      <div className="text-white font-medium">
+                        {fmtDateTimeLocal(selectedDelivery.return_date) || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Images Section */}
+                <div className="mb-8">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-yellow-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    รูปภาพหลักฐาน
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* รูปภาพยืนยันตัวตน */}
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <h5 className="text-white font-medium mb-3 flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 text-blue-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        รูปภาพยืนยันตัวตน
+                      </h5>
+                      <div className="space-y-2">
+                        {selectedDelivery.confirm_proofs &&
+                        selectedDelivery.confirm_proofs !== "—" ? (
+                          <div>
+                            <div className="text-green-400 text-sm font-medium mb-2">
+                              มีรูปภาพ 1 รูป
+                            </div>
+                            {selectedDelivery.confirm_proofs &&
+                              selectedDelivery.confirm_proofs !== "—" && (
+                                <div className="space-y-2">
+                                  <img
+                                    src={`http://203.154.83.160${selectedDelivery.confirm_proofs}`}
+                                    alt="รูปภาพยืนยันตัวตน"
+                                    className="w-full h-32 object-cover rounded-lg border border-white/20"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display =
+                                        "block";
+                                    }}
+                                  />
+                                  <div
+                                    className="text-xs text-slate-300 bg-slate-800/50 rounded p-2 font-mono break-all"
+                                    style={{ display: "none" }}
+                                  >
+                                    {selectedDelivery.confirm_proofs}
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 text-sm">
+                            ไม่มีรูปภาพ
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* รูปภาพรถยนต์ */}
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <h5 className="text-white font-medium mb-3 flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 text-green-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                        รูปภาพรถยนต์
+                      </h5>
+                      <div className="space-y-2">
+                        {selectedDelivery.car_proofs &&
+                        selectedDelivery.car_proofs !== "—" ? (
+                          <div>
+                            <div className="text-green-400 text-sm font-medium mb-2">
+                              มีรูปภาพ 1 รูป
+                            </div>
+                            {selectedDelivery.car_proofs &&
+                              selectedDelivery.car_proofs !== "—" && (
+                                <div className="space-y-2">
+                                  <img
+                                    src={`http://203.154.83.160${selectedDelivery.car_proofs}`}
+                                    alt="รูปภาพรถยนต์"
+                                    className="w-full h-32 object-cover rounded-lg border border-white/20"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display =
+                                        "block";
+                                    }}
+                                  />
+                                  <div
+                                    className="text-xs text-slate-300 bg-slate-800/50 rounded p-2 font-mono break-all"
+                                    style={{ display: "none" }}
+                                  >
+                                    {selectedDelivery.car_proofs}
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 text-sm">
+                            ไม่มีรูปภาพ
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* รูปภาพหลักฐานอื่นๆ */}
+                    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                      <h5 className="text-white font-medium mb-3 flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 text-purple-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        สลิปชำระเงิน
+                      </h5>
+                      <div className="space-y-2">
+                        {selectedDelivery.slip_proofs &&
+                        selectedDelivery.slip_proofs !== "—" ? (
+                          <div>
+                            <div className="text-green-400 text-sm font-medium mb-2">
+                              มีสลิป 1 รูป
+                            </div>
+                            {selectedDelivery.slip_proofs &&
+                              selectedDelivery.slip_proofs !== "—" && (
+                                <div className="space-y-2">
+                                  <img
+                                    src={`http://203.154.83.160${selectedDelivery.slip_proofs}`}
+                                    alt="สลิปชำระเงิน"
+                                    className="w-full h-32 object-cover rounded-lg border border-white/20"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display =
+                                        "block";
+                                    }}
+                                  />
+                                  <div
+                                    className="text-xs text-slate-300 bg-slate-800/50 rounded p-2 font-mono break-all"
+                                    style={{ display: "none" }}
+                                  >
+                                    {selectedDelivery.slip_proofs}
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 text-sm">
+                            ไม่มีสลิป
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-4 pt-6 border-t border-white/10">
+                  <button
+                    onClick={closeDetail}
+                    className="px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 font-medium flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={deleteOpen} onClose={closeDelete}>
+        <div className="w-full max-w-lg rounded-3xl bg-gradient-to-br from-slate-900/95 via-black/95 to-slate-800/95 backdrop-blur-xl p-8 shadow-2xl text-white border border-white/20 relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-red-400/20 to-red-600/20 rounded-full blur-2xl animate-pulse" />
+            <div
+              className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-orange-400/20 to-red-500/20 rounded-full blur-2xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            />
+          </div>
+
+          <div className="relative z-10">
+            {/* Header with Icon */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-2xl mb-4 border border-red-500/30">
+                <svg
+                  className="w-8 h-8 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                ยืนยันการลบรายการส่งมอบ
+              </h3>
+              <p className="text-slate-400 text-sm">
+                การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+
+            {/* Delivery Information Card */}
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-400/20 to-emerald-500/20 rounded-xl flex items-center justify-center border border-green-400/30">
+                  <svg
+                    className="w-6 h-6 text-green-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-white mb-1">
+                    {selectedDeleteName || "รายการส่งมอบ"}
+                  </h4>
+                  {selectedDeleteId && (
+                    <p className="text-slate-300 text-sm">
+                      หมายเลข:{" "}
+                      <span className="font-semibold text-green-400">
+                        {selectedDeleteId}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+                <div>
+                  <h5 className="text-red-400 font-semibold text-sm mb-1">
+                    คำเตือน
+                  </h5>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    การลบรายการส่งมอบจะทำให้ข้อมูลการส่งมอบและประวัติที่เกี่ยวข้องถูกลบออกจากระบบอย่างถาวร
+                    กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={closeDelete}
+                disabled={deleteLoading}
+                className="flex-1 px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                ยกเลิก
+              </button>
+              <button
+                onClick={doDelete}
+                disabled={deleteLoading}
+                className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-red-500/25 flex items-center justify-center gap-2"
+              >
+                {deleteLoading ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    กำลังลบ...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    ลบรายการ
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </Modal>

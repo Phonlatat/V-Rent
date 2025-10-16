@@ -511,6 +511,29 @@ export default function AdminPage() {
   const getCarRowStatus = (car) =>
     car?.stageLabel || mapStatusToThai(car?.status) || "ว่าง";
 
+  // ===== Scroll to Add Car Form Effect =====
+  useEffect(() => {
+    if (!allowed) return; // Only run when user is allowed
+
+    const handleHashChange = () => {
+      if (window.location.hash === "#add-car") {
+        setTimeout(() => {
+          const addCarElement = document.querySelector("[data-add-car-card]");
+          if (addCarElement) {
+            addCarElement.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      }
+    };
+
+    // Check on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [allowed]);
+
   // ===== UI: Gate states =====
   // 🚧 TEMPORARY: ข้ามหน้า Loading เพื่อแก้ไข UX/UI
   if (false) {

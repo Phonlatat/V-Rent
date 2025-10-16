@@ -78,6 +78,12 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [allowed, setAllowed] = useState(false);
+  const [auth, setAuth] = useState({
+    loading: true,
+    isAdmin: false,
+    name: "",
+    email: "",
+  });
   // 🚧 TEMPORARY: Mock userId สำหรับทดสอบ UX/UI
   const [userId, setUserId] = useState("admin@vrent.com");
 
@@ -95,6 +101,83 @@ export default function AdminPage() {
   const nextBookingMap = useMemo(() => ({}), []);
   const carMapById = useMemo(() => new Map(), []);
   const carMapByKey = useMemo(() => new Map(), []);
+
+  // ===== Auth Effect =====
+  useEffect(() => {
+    let ignore = false;
+
+    // preload quick UX
+    try {
+      const isAdminLocal =
+        (localStorage.getItem("vrent_is_admin") || "false").toLowerCase() ===
+        "true";
+      const fullNameLS =
+        localStorage.getItem("vrent_full_name") ||
+        localStorage.getItem("vrent_user_name") ||
+        "";
+      const emailLS =
+        localStorage.getItem("vrent_login_email") ||
+        localStorage.getItem("vrent_user_id") ||
+        "";
+      setAuth((p) =>
+        p.loading
+          ? {
+              loading: true,
+              isAdmin: isAdminLocal,
+              name: fullNameLS,
+              email: emailLS,
+            }
+          : p
+      );
+    } catch {}
+
+    // verify with backend
+    (async () => {
+      try {
+        const userIdLS = (localStorage.getItem("vrent_user_id") || "").trim();
+        const emailLS =
+          (localStorage.getItem("vrent_login_email") || "").trim() ||
+          (localStorage.getItem("vrent_user_id") || "").trim();
+
+        const qp = new URLSearchParams();
+        if (userIdLS) qp.set("user_id", userIdLS);
+        if (emailLS) qp.set("email", emailLS);
+
+        const headers = {};
+        if (userIdLS) headers["x-user-id"] = userIdLS;
+        if (emailLS) headers["x-email"] = emailLS;
+
+        const r = await fetch(`/api/erp/me?${qp.toString()}`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers,
+        });
+        const j = await r.json().catch(() => null);
+        if (ignore) return;
+
+        const u = j?.user || {};
+        setAuth({
+          loading: false,
+          isAdmin: !!u.isAdmin,
+          name: u.fullName || "",
+          email: u.email || "",
+        });
+
+        try {
+          if (u.fullName) localStorage.setItem("vrent_full_name", u.fullName);
+          if (u.email) localStorage.setItem("vrent_login_email", u.email);
+          localStorage.setItem("vrent_is_admin", String(!!u.isAdmin));
+        } catch {}
+      } catch {
+        if (!ignore) setAuth((p) => ({ ...p, loading: false }));
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // ===== API Fetch Functions =====
   const fetchCars = async () => {
@@ -487,27 +570,67 @@ export default function AdminPage() {
       <div className="relative z-10">
         {/* Header */}
         <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
             <div className="flex items-center justify-between h-14 sm:h-16">
-              <div className="flex items-center">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
+              {/* Left: Title */}
+              <div className="flex items-center min-w-0 flex-1">
+                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
                   <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
-                    Admin Dashboard
+                    <span className="hidden xs:inline">Admin Dashboard</span>
+                    <span className="xs:hidden">Admin</span>
                   </span>
                 </h1>
-                <span className="ml-2 sm:ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
+                <span className="ml-1.5 sm:ml-2 lg:ml-3 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold hidden xs:inline-block">
                   Admin
                 </span>
               </div>
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <span className="text-xs sm:text-sm text-slate-300">
-                  ยินดีต้อนรับ
-                </span>
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-black font-semibold text-xs sm:text-sm">
-                    AD
+
+              {/* Right: User Info & Logout */}
+              <div className="flex items-center space-x-1.5 sm:space-x-2 lg:space-x-3 ml-2 sm:ml-3 lg:ml-4">
+                {/* User Info - Hidden on very small screens */}
+                <div className="hidden xs:flex items-center space-x-1.5 sm:space-x-2 lg:space-x-3">
+                  <div className="text-right min-w-0">
+                    <div className="text-xs sm:text-sm text-slate-300 truncate">
+                      ยินดีต้อนรับ
+                    </div>
+                    <div className="text-xs sm:text-sm font-semibold text-white truncate max-w-[80px] sm:max-w-[100px] lg:max-w-[120px]">
+                      {auth?.name || userId || "Admin User"}
+                    </div>
+                  </div>
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-black font-semibold text-xs sm:text-sm">
+                      {(auth?.name || userId || "AD").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Avatar only for very small screens */}
+                <div className="xs:hidden w-6 h-6 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-black font-semibold text-xs">
+                    {(auth?.name || userId || "AD").charAt(0).toUpperCase()}
                   </span>
                 </div>
+
+                {/* Logout Button */}
+                <button
+                  onClick={() => {
+                    // ล้างข้อมูล localStorage
+                    try {
+                      localStorage.removeItem("vrent_user_id");
+                      localStorage.removeItem("vrent_full_name");
+                      localStorage.removeItem("vrent_user_name");
+                      localStorage.removeItem("vrent_login_email");
+                      localStorage.removeItem("vrent_is_admin");
+                    } catch {}
+                    // ไปหน้า login
+                    router.push("/Login");
+                  }}
+                  className="px-1.5 sm:px-2 lg:px-3 py-1 sm:py-1.5 lg:py-2 text-xs sm:text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                  title="ออกจากระบบ"
+                >
+                  <span className="hidden sm:inline">ออกจากระบบ</span>
+                  <span className="sm:hidden">ออก</span>
+                </button>
               </div>
             </div>
           </div>

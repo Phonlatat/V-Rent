@@ -1471,23 +1471,66 @@ export default function DeliveryStaffPage() {
       <div className="relative z-10">
         {/* Header */}
         <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-white">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+            <div className="flex items-center justify-between h-14 sm:h-16">
+              {/* Left: Title */}
+              <div className="flex items-center min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
                   <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
                     Delivery Staff
                   </span>
                 </h1>
-                <span className="ml-3 px-2 py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold">
+                <span className="ml-2 sm:ml-3 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-full font-semibold hidden xs:inline-block">
                   Admin
                 </span>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-slate-300">ยินดีต้อนรับ</span>
-                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-black font-semibold text-sm">DS</span>
+
+              {/* Right: User Info & Logout */}
+              <div className="flex items-center space-x-2 sm:space-x-3 ml-2 sm:ml-4">
+                {/* User Info - Hidden on very small screens */}
+                <div className="hidden xs:flex items-center space-x-2 sm:space-x-3">
+                  <div className="text-right min-w-0">
+                    <div className="text-xs sm:text-sm text-slate-300 truncate">
+                      ยินดีต้อนรับ
+                    </div>
+                    <div className="text-xs sm:text-sm font-semibold text-white truncate max-w-[100px] sm:max-w-[120px]">
+                      {auth?.name || "Delivery Staff"}
+                    </div>
+                  </div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-black font-semibold text-xs sm:text-sm">
+                      {(auth?.name || "DS").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Avatar only for very small screens */}
+                <div className="xs:hidden w-7 h-7 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-black font-semibold text-xs">
+                    {(auth?.name || "DS").charAt(0).toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Logout Button */}
+                <button
+                  onClick={() => {
+                    // ล้างข้อมูล localStorage
+                    try {
+                      localStorage.removeItem("vrent_user_id");
+                      localStorage.removeItem("vrent_full_name");
+                      localStorage.removeItem("vrent_user_name");
+                      localStorage.removeItem("vrent_login_email");
+                      localStorage.removeItem("vrent_is_admin");
+                    } catch {}
+                    // ไปหน้า login
+                    window.location.href = "/Login";
+                  }}
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all duration-200 hover:scale-105 whitespace-nowrap"
+                  title="ออกจากระบบ"
+                >
+                  <span className="hidden sm:inline">ออกจากระบบ</span>
+                  <span className="sm:hidden">ออก</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1495,13 +1538,12 @@ export default function DeliveryStaffPage() {
 
         {/* Main Content */}
         <main className="flex-grow">
-          {/* 🚧 TEMPORARY: ข้ามหน้า Loading และ Access Denied เพื่อแก้ไข UX/UI */}
-          {false ? ( // auth.loading
+          {auth.loading ? (
             <LoadingCard
               title="กำลังตรวจสอบสิทธิ์..."
               subtitle="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน"
             />
-          ) : false ? ( // !auth.isAdmin
+          ) : !auth.isAdmin ? (
             <AccessDeniedCard
               title="เข้าถึงไม่ได้ - Delivery Staff"
               subtitle="หน้านี้สำหรับผู้ดูแลระบบเท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ"

@@ -159,14 +159,47 @@ export async function GET(req) {
     }
   );
   const text = await res.json();
+
+  // Debug log เพื่อตรวจสอบ response
+  console.log("Debug API Response:", {
+    text: text,
+    message: text.message,
+    messageLength: text.message?.length,
+    isAdminValue: text.message?.[5],
+    isAdminType: typeof text.message?.[5],
+    userId: userId,
+    roles: roles,
+  });
+
+  // ตรวจสอบ isAdmin จากหลายแหล่ง
+  let isAdminFromAPI = false;
+  if (text.message && Array.isArray(text.message) && text.message.length > 5) {
+    const apiAdminValue = text.message[5];
+    isAdminFromAPI =
+      Boolean(apiAdminValue) || apiAdminValue === "true" || apiAdminValue === 1;
+  }
+
+  // รวมการตรวจสอบจาก roles และ API response
+  const finalIsAdmin = isAdmin || isAdminFromAPI;
+
   return NextResponse.json({
     ok: true,
     user: {
       email: email || "",
       fullName: fullName || "",
       phone: phone || "",
-      isAdmin: text.message[5],
+      isAdmin: finalIsAdmin,
     },
-    raw: { userId, roles, tried },
+    raw: {
+      userId,
+      roles,
+      tried,
+      debug: {
+        apiResponse: text,
+        isAdminFromRoles: isAdmin,
+        isAdminFromAPI: isAdminFromAPI,
+        finalIsAdmin: finalIsAdmin,
+      },
+    },
   });
 }

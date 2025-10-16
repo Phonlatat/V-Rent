@@ -36,12 +36,32 @@ export async function POST(req) {
       );
     }
 
+    // Debug log เพื่อตรวจสอบ response จาก ERP
+    console.log("Login API Debug:", {
+      data: data,
+      is_admin: data.is_admin,
+      is_admin_type: typeof data.is_admin,
+      full_name: data.full_name,
+    });
+
+    // ตรวจสอบ is_admin ให้ครอบคลุมทุกกรณี
+    const isAdminValue =
+      data.is_admin === true ||
+      data.is_admin === "true" ||
+      data.is_admin === 1 ||
+      data.is_admin === "1";
+
     // ส่งข้อมูลกลับไปยัง frontend
     return NextResponse.json({
       success: true,
       full_name: data.full_name,
-      is_admin: data.is_admin || false,
+      is_admin: isAdminValue,
       message: data.message || "Login successful",
+      debug: {
+        original_is_admin: data.is_admin,
+        original_type: typeof data.is_admin,
+        processed_is_admin: isAdminValue,
+      },
     });
   } catch (error) {
     console.error("Login API error:", error);

@@ -311,55 +311,8 @@ function AdminDeliveryContent() {
   const [carProofs, setCarProofs] = useState([]);
   const [slipProofs, setSlipProofs] = useState([]); // ✅ สำหรับรูปสลิปโอนยอดเต็ม
 
-  // 🚧 TEMPORARY: Mock data สำหรับทดสอบ UX/UI
-  const [queue, setQueue] = useState([
-    {
-      bookingCode: "VR-2025-000123",
-      customerName: "สมชาย ใจดี",
-      customerPhone: "080-123-4567",
-      carName: "Toyota Corolla Cross",
-      carPlate: "1กก-1234",
-      pickupPlace: "สนามบินสุวรรณภูมิ (BKK)",
-      returnPlace: "สาขาสีลม",
-      pickupLocation: "สนามบินสุวรรณภูมิ (BKK)",
-      returnLocation: "สาขาสีลม",
-      pickupTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 ชั่วโมงจากนี้
-      returnTime: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(), // 26 ชั่วโมงจากนี้
-      rawStatus: "waiting pickup",
-      uiStatus: "waiting pickup",
-    },
-    {
-      bookingCode: "VR-2025-000124",
-      customerName: "สมหญิง รักดี",
-      customerPhone: "081-234-5678",
-      carName: "Honda Civic",
-      carPlate: "2ขข-5678",
-      pickupPlace: "สาขาเซ็นทรัลเวิลด์",
-      returnPlace: "สาขาเซ็นทรัลเวิลด์",
-      pickupLocation: "สาขาเซ็นทรัลเวิลด์",
-      returnLocation: "สาขาเซ็นทรัลเวิลด์",
-      pickupTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 ชั่วโมงที่แล้ว (overdue)
-      returnTime: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(), // 23 ชั่วโมงจากนี้
-      rawStatus: "waiting pickup",
-      uiStatus: "pickup overdue",
-    },
-    {
-      bookingCode: "VR-2025-000125",
-      customerName: "นายทดสอบ ระบบ",
-      customerPhone: "082-345-6789",
-      carName: "Nissan GT-R R32",
-      carPlate: "3คค-9012",
-      pickupPlace: "สาขาไอคอนสยาม",
-      returnPlace: "สาขาไอคอนสยาม",
-      pickupLocation: "สาขาไอคอนสยาม",
-      returnLocation: "สาขาไอคอนสยาม",
-      pickupTime: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4 ชั่วโมงจากนี้
-      returnTime: new Date(Date.now() + 28 * 60 * 60 * 1000).toISOString(), // 28 ชั่วโมงจากนี้
-      rawStatus: "waiting pickup",
-      uiStatus: "waiting pickup",
-    },
-  ]);
-  const [queueLoading, setQueueLoading] = useState(false); // ไม่ loading แล้วเพราะมี mock data
+  const [queue, setQueue] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(true);
   const [queueErr, setQueueErr] = useState("");
 
   // 🔒 ล็อกปุ่มระหว่างส่ง
@@ -367,10 +320,58 @@ function AdminDeliveryContent() {
   const [success, setSuccess] = useState({ open: false, warn: "" });
 
   /* ---- fetch rentals ---- */
-  // 🚧 TEMPORARY: ปิดการเรียก API เพื่อใช้ mock data
+  const fetchRentals = async () => {
+    setQueueLoading(true);
+    setQueueErr("");
+
+    try {
+      const response = await fetch(
+        "http://203.154.83.160/api/method/frappe.api.api.get_rentals",
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Transform the API data to match the expected format
+      const transformedData = (data.message || []).map((rental) => ({
+        bookingCode: rental.name || rental.rental_no || "",
+        customerName: rental.customer_name || "",
+        customerPhone: rental.customer_tel || rental.customer_phone || "",
+        carName: rental.car_name || "",
+        carPlate: rental.car_plate || "",
+        pickupPlace: rental.pickup_location || "",
+        returnPlace: rental.return_location || "",
+        pickupLocation: rental.pickup_location || "",
+        returnLocation: rental.return_location || "",
+        pickupTime: rental.pickup_time || "",
+        returnTime: rental.return_time || "",
+        rawStatus: rental.status || "waiting pickup",
+        uiStatus: rental.status || "waiting pickup",
+      }));
+
+      setQueue(transformedData);
+    } catch (error) {
+      console.error("Error fetching rentals:", error);
+      setQueueErr(error.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      setQueue([]);
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // ไม่ต้องเรียก API เพราะใช้ mock data แล้ว
-    console.log("🚧 TEMPORARY: ใช้ mock data แทนการเรียก API");
+    fetchRentals();
   }, []);
 
   const onField = (e) => {
@@ -944,15 +945,6 @@ function AdminDeliveryContent() {
           </div>
         </form>
 
-        {queueLoading && (
-          <p className="text-xs mt-3 text-slate-500">กำลังโหลดคิววันนี้...</p>
-        )}
-        {queueErr && (
-          <p className="text-xs mt-3 text-red-600">
-            โหลดคิวล้มเหลว: {queueErr}
-          </p>
-        )}
-
         {success.open && (
           <div className="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-[360px] rounded-xl shadow-2xl border border-slate-200 p-5 text-center">
@@ -1067,10 +1059,41 @@ function AdminDeliveryContent() {
 
       {/* ขวา: คิววันนี้ */}
       <aside className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8 h-fit group hover:bg-white/15 transition-all duration-300">
-        <div className="flex items-center mb-4">
-          <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mr-3">
+              <svg
+                className="w-4 h-4 text-black"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+                คิววันนี้ (Today)
+              </h3>
+              <p className="text-slate-300 text-sm mt-1">
+                แสดงเฉพาะงานรับรถที่นัดหมาย &quot;วันนี้&quot;
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fetchRentals}
+            disabled={queueLoading}
+            className="px-3 py-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white hover:bg-white/15 hover:border-white/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="รีเฟรชข้อมูล"
+          >
             <svg
-              className="w-4 h-4 text-black"
+              className={`w-4 h-4 ${queueLoading ? "animate-spin" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1079,27 +1102,24 @@ function AdminDeliveryContent() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
-              คิววันนี้ (Today)
-            </h3>
-            <p className="text-slate-300 text-sm mt-1">
-              แสดงเฉพาะงานรับรถที่นัดหมาย &quot;วันนี้&quot;
-            </p>
-          </div>
+          </button>
         </div>
-        <TodayQueue queue={queue} onPick={loadToForm} />
+        <TodayQueue
+          queue={queue}
+          onPick={loadToForm}
+          loading={queueLoading}
+          error={queueErr}
+        />
       </aside>
     </div>
   );
 }
 
 /* ───────────────── TodayQueue ───────────────── */
-function TodayQueue({ queue, onPick }) {
+function TodayQueue({ queue, onPick, loading, error }) {
   const sameDate = (a, b) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -1146,6 +1166,64 @@ function TodayQueue({ queue, onPick }) {
         return j;
       });
   }, [queue]);
+
+  if (loading) {
+    return (
+      <div className="mt-3">
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center space-x-2 text-slate-300">
+            <svg
+              className="animate-spin h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span>กำลังโหลดข้อมูล...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-3">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="text-red-400 mb-2">
+              <svg
+                className="w-8 h-8 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <p className="text-red-300 text-sm">เกิดข้อผิดพลาด: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-3">

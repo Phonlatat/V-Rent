@@ -117,8 +117,11 @@ export default function AdminPage() {
           id: v.name || v.id,
           name: v.vehicle_name || v.name,
           brand: v.brand,
-          pricePerDay: v.price_per_day || v.pricePerDay,
-          price_per_day: v.price_per_day,
+          pricePerDay: Number(v.price || v.price_per_day || v.pricePerDay || 0),
+          price_per_day: Number(v.price || v.price_per_day || 0),
+          price: Number(v.price || 0),
+          rate: Number(v.rate || 0),
+          rate_per_day: Number(v.rate_per_day || 0),
           status: v.vehicle_stage || v.status,
           image: v.image || v.vehicle_image,
           imageData: v.image || v.vehicle_image,
@@ -140,7 +143,7 @@ export default function AdminPage() {
     try {
       setBookingsLoading(true);
       const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_bookings",
+        "http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall",
         {
           method: "GET",
           credentials: "include",
@@ -179,7 +182,7 @@ export default function AdminPage() {
     try {
       setDeliveriesLoading(true);
       const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_deliveries",
+        "http://203.154.83.160/api/method/frappe.api.api.get_dlv",
         {
           method: "GET",
           credentials: "include",

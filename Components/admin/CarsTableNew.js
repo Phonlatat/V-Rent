@@ -544,10 +544,19 @@ export default function CarsTableNew({
                       {row.licensePlate || "—"}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                      {fmtBaht(row.pricePerDay)}
+                      {fmtBaht(
+                        Number(
+                          row.pricePerDay ||
+                            row.price_per_day ||
+                            row.price ||
+                            row.rate ||
+                            row.rate_per_day ||
+                            0
+                        )
+                      )}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <StatusBadge status={getCarRowStatus(row)} />
+                      <StatusBadge value={getCarRowStatus(row)} />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">

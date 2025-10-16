@@ -318,6 +318,44 @@ function AdminDeliveryContent() {
   // 🔒 ล็อกปุ่มระหว่างส่ง
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState({ open: false, warn: "" });
+  const [validationError, setValidationError] = useState({
+    open: false,
+    missingFields: [],
+  });
+
+  // สโกรลไปที่ modal เมื่อแสดงผล
+  useEffect(() => {
+    if (success.open) {
+      // รอให้ modal render เสร็จก่อน
+      setTimeout(() => {
+        const modal = document.querySelector("[data-success-modal]");
+        if (modal) {
+          modal.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
+          });
+        }
+      }, 150);
+    }
+  }, [success.open]);
+
+  // สโกรลไปที่ modal เตือนเมื่อแสดงผล
+  useEffect(() => {
+    if (validationError.open) {
+      // รอให้ modal render เสร็จก่อน
+      setTimeout(() => {
+        const modal = document.querySelector("[data-validation-modal]");
+        if (modal) {
+          modal.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
+          });
+        }
+      }, 150);
+    }
+  }, [validationError.open]);
 
   /* ---- fetch rentals ---- */
   const fetchRentals = async () => {
@@ -343,23 +381,37 @@ function AdminDeliveryContent() {
 
       const data = await response.json();
 
-      // Transform the API data to match the expected format
-      const transformedData = (data.message || []).map((rental) => ({
-        bookingCode: rental.name || rental.rental_no || "",
-        customerName: rental.customer_name || "",
-        customerPhone: rental.customer_tel || rental.customer_phone || "",
-        carName: rental.car_name || "",
-        carPlate: rental.car_plate || "",
-        pickupPlace: rental.pickup_location || "",
-        returnPlace: rental.return_location || "",
-        pickupLocation: rental.pickup_location || "",
-        returnLocation: rental.return_location || "",
-        pickupTime: rental.pickup_time || "",
-        returnTime: rental.return_time || "",
-        rawStatus: rental.status || "waiting pickup",
-        uiStatus: rental.status || "waiting pickup",
-      }));
+      // Debug: ตรวจสอบข้อมูลดิบจาก API
+      console.log("Raw API response:", data);
+      console.log("Sample raw rental:", data.message?.[0]);
 
+      // Transform the API data to match the expected format
+      const transformedData = (data.message || []).map((rental) => {
+        const transformed = {
+          bookingCode: rental.name || "",
+          customerName: rental.customer_name || "",
+          customerPhone: rental.customer_phone || "",
+          carName: rental.vehicle || "",
+          carPlate: rental.license_plate || "",
+          pickupPlace: rental.pickup_place || "",
+          returnPlace: rental.return_place || "",
+          pickupLocation: rental.pickup_place || "",
+          returnLocation: rental.return_place || "",
+          pickupTime: rental.pickup_date || "",
+          returnTime: rental.return_date || "",
+          rawStatus: rental.status || "Waiting Pickup",
+          uiStatus: rental.status
+            ? rental.status.toLowerCase().replace(/\s+/g, " ")
+            : "waiting pickup",
+        };
+
+        // Debug: ตรวจสอบการแปลงข้อมูล
+        console.log("Transformed rental:", transformed);
+
+        return transformed;
+      });
+
+      console.log("All transformed data:", transformedData);
       setQueue(transformedData);
     } catch (error) {
       console.error("Error fetching rentals:", error);
@@ -420,15 +472,52 @@ function AdminDeliveryContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const required = ["bookingCode", "customerName", "customerPhone"];
-    const missing = required.filter((k) => !form[k]?.trim());
-    if (missing.length) {
-      alert("กรุณากรอก: " + missing.join(", "));
-      return;
+    // ตรวจสอบข้อมูลที่จำเป็นทั้งหมด
+    const requiredFields = [
+      { key: "bookingCode", label: "รหัสการจอง" },
+      { key: "customerName", label: "ชื่อลูกค้า" },
+      { key: "customerPhone", label: "เบอร์ติดต่อ" },
+      { key: "customerId", label: "เลขบัตรประชาชน/Passport" },
+      { key: "carPlate", label: "ทะเบียนรถ" },
+      { key: "carName", label: "รุ่นรถ" },
+      { key: "pickupLocation", label: "สถานที่ส่งมอบ" },
+      { key: "pickupTime", label: "วัน-เวลาส่งมอบ" },
+      { key: "returnLocation", label: "สถานที่นัดคืนรถ" },
+      { key: "returnTime", label: "วัน-เวลาคืนรถ" },
+      { key: "odometer", label: "เลขไมล์ (กม.)" },
+    ];
+
+    // ตรวจสอบข้อมูลเสริมที่แนะนำให้กรอก
+    const recommendedFields = [{ key: "notes", label: "หมายเหตุเพิ่มเติม" }];
+
+    // ตรวจสอบช่องข้อความ
+    const missingTextFields = requiredFields.filter(
+      (field) => !form[field.key]?.trim()
+    );
+
+    // ตรวจสอบรูปภาพ
+    const missingImages = [];
+    if (idProofs.length === 0) {
+      missingImages.push("รูปยืนยันตัวตน (อย่างน้อย 1 รูป)");
+    }
+    if (carProofs.length === 0) {
+      missingImages.push("รูปสภาพรถตอนส่งมอบ (อย่างน้อย 1 รูป)");
+    }
+    if (slipProofs.length === 0) {
+      missingImages.push("รูปสลิปการโอนยอดเต็ม (อย่างน้อย 1 รูป)");
     }
 
-    if (idProofs.length === 0) {
-      alert("กรุณาแนบรูปยืนยันตัวตนอย่างน้อย 1 รูป");
+    // รวมรายการที่ขาดหายไปทั้งหมด
+    const allMissing = [
+      ...missingTextFields.map((field) => field.label),
+      ...missingImages,
+    ];
+
+    if (allMissing.length > 0) {
+      setValidationError({
+        open: true,
+        missingFields: allMissing,
+      });
       return;
     }
 
@@ -946,27 +1035,285 @@ function AdminDeliveryContent() {
         </form>
 
         {success.open && (
-          <div className="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-[360px] rounded-xl shadow-2xl border border-slate-200 p-5 text-center">
-              <div className="text-3xl">✅</div>
-              <h4 className="mt-2 text-lg font-bold">บันทึกสำเร็จ</h4>
+          <div
+            data-success-modal
+            className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={(e) => {
+              // ป้องกันการปิด modal เมื่อคลิกนอก modal
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <div className="bg-white/95 backdrop-blur-md w-full max-w-[420px] rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300">
+              {/* Header with gradient background */}
+              <div className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-8 text-center relative overflow-hidden">
+                {/* Background decoration */}
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-green-500/20"></div>
+                <div className="absolute -top-10 -right-10 w-20 h-20 bg-white/10 rounded-full"></div>
+                <div className="absolute -bottom-10 -left-10 w-16 h-16 bg-white/10 rounded-full"></div>
 
-              {!!success.warn && (
-                <p className="mt-1 text-xs text-slate-600 whitespace-pre-line">
-                  {success.warn}
+                {/* Success icon with animation */}
+                <div className="relative z-10 mb-4">
+                  <div className="w-16 h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
+                    <svg
+                      className="w-8 h-8 text-white animate-bounce"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Success message */}
+                <h4 className="relative z-10 text-2xl font-bold text-white mb-2">
+                  ส่งมอบสำเร็จ!
+                </h4>
+                <p className="relative z-10 text-emerald-100 text-sm">
+                  ข้อมูลการส่งมอบถูกบันทึกเรียบร้อยแล้ว
                 </p>
-              )}
+              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSuccess({ open: false, warn: "" });
-                  window.location.reload();
-                }}
-                className="mt-4 w-full rounded-lg bg-black text-white py-2 hover:bg-slate-900"
-              >
-                ไปต่อ
-              </button>
+              {/* Content area */}
+              <div className="px-6 py-6">
+                {/* Summary info */}
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 mb-6 border border-slate-200">
+                  <div className="flex items-center justify-center space-x-2 text-slate-600 mb-3">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">สรุปการส่งมอบ</span>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">รหัสการจอง:</span>
+                      <span className="font-semibold text-slate-700">
+                        {form.bookingCode || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">ลูกค้า:</span>
+                      <span className="font-semibold text-slate-700">
+                        {form.customerName || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">รถยนต์:</span>
+                      <span className="font-semibold text-slate-700">
+                        {form.carName || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">สถานะ:</span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        ส่งมอบแล้ว
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Warning message if exists */}
+                {!!success.warn && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <svg
+                        className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm text-amber-800 font-medium mb-1">
+                          หมายเหตุ:
+                        </p>
+                        <p className="text-sm text-amber-700 whitespace-pre-line">
+                          {success.warn}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccess({ open: false, warn: "" });
+                    }}
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-all duration-200 hover:scale-105"
+                  >
+                    ดูข้อมูลเพิ่มเติม
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccess({ open: false, warn: "" });
+                      window.location.reload();
+                    }}
+                    className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold hover:from-emerald-600 hover:to-green-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                  >
+                    ส่งมอบรายการถัดไป
+                  </button>
+                </div>
+
+                {/* Footer note */}
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-slate-500">
+                    ข้อมูลจะถูกอัปเดตในระบบทันที
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal เตือนการกรอกข้อมูล */}
+        {validationError.open && (
+          <div
+            data-validation-modal
+            className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={(e) => {
+              // ป้องกันการปิด modal เมื่อคลิกนอก modal
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <div className="bg-white/95 backdrop-blur-md w-full max-w-[400px] rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300">
+              {/* Header with warning background */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-6 text-center relative overflow-hidden">
+                {/* Background decoration */}
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-500/20"></div>
+                <div className="absolute -top-8 -right-8 w-16 h-16 bg-white/10 rounded-full"></div>
+                <div className="absolute -bottom-8 -left-8 w-12 h-12 bg-white/10 rounded-full"></div>
+
+                {/* Warning icon with animation */}
+                <div className="relative z-10 mb-3">
+                  <div className="w-12 h-12 mx-auto bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
+                    <svg
+                      className="w-6 h-6 text-white animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Warning message */}
+                <h4 className="relative z-10 text-xl font-bold text-white mb-1">
+                  กรุณากรอกข้อมูลให้ครบถ้วน
+                </h4>
+                <p className="relative z-10 text-amber-100 text-sm">
+                  ข้อมูลต่อไปนี้จำเป็นต้องกรอก (
+                  {validationError.missingFields.length} รายการ)
+                </p>
+              </div>
+
+              {/* Content area */}
+              <div className="px-6 py-6">
+                {/* Missing fields list */}
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 mb-6 border border-red-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2 text-red-600">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        ข้อมูลที่ขาดหายไป
+                      </span>
+                    </div>
+                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                      {validationError.missingFields.length} รายการ
+                    </span>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto">
+                    <ul className="space-y-2">
+                      {validationError.missingFields.map((field, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center space-x-3 text-sm"
+                        >
+                          <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-red-700 font-medium">
+                            {field}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {validationError.missingFields.length > 5 && (
+                    <div className="mt-3 pt-3 border-t border-red-200">
+                      <p className="text-xs text-red-600 text-center">
+                        มีข้อมูลที่ขาดหายไป{" "}
+                        {validationError.missingFields.length} รายการ
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValidationError({ open: false, missingFields: [] });
+                  }}
+                  className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold hover:from-amber-600 hover:to-orange-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  เข้าใจแล้ว
+                </button>
+
+                {/* Footer note */}
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-slate-500">
+                    กรุณากรอกข้อมูลที่ขาดหายไปแล้วลองใหม่อีกครั้ง
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1078,10 +1425,10 @@ function AdminDeliveryContent() {
             </div>
             <div>
               <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
-                คิววันนี้ (Today)
+                รายการการจอง (Bookings)
               </h3>
               <p className="text-slate-300 text-sm mt-1">
-                แสดงเฉพาะงานรับรถที่นัดหมาย &quot;วันนี้&quot;
+                แสดงข้อมูลการจองทั้งหมดจากระบบ
               </p>
             </div>
           </div>
@@ -1125,46 +1472,44 @@ function TodayQueue({ queue, onPick, loading, error }) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  const fmtTime = (iso) =>
-    iso
-      ? new Date(iso).toLocaleTimeString("th-TH", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "-";
+  const fmtTime = (iso) => {
+    if (!iso) return "-";
+    try {
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return "-";
+      return date.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting time:", error, iso);
+      return "-";
+    }
+  };
 
   const todayQueue = useMemo(() => {
-    const now = new Date();
+    // เอาการฟิลเตอร์ออกทั้งหมด - แสดงข้อมูลทั้งหมดที่ได้จาก API
+    console.log("Raw queue data:", queue);
+    console.log("Sample queue item:", queue[0]);
 
-    return queue
-      .filter((j) => {
-        if (!j.pickupTime) return false;
+    const result = queue.map((j) => {
+      // ยังคงมีการปรับสถานะอัตโนมัติสำหรับ overdue
+      const pick = new Date(j.pickupTime);
+      const overdue = isFinite(pick.getTime()) && pick < new Date();
 
-        // เฉพาะงานที่นัด "วันนี้"
-        if (!sameDate(new Date(j.pickupTime), now)) return false;
+      if (
+        overdue &&
+        String(j.uiStatus || "").toLowerCase() === "waiting pickup"
+      ) {
+        return { ...j, uiStatus: "pickup overdue" };
+      }
+      return j;
+    });
 
-        const s = String(j.uiStatus || "").toLowerCase();
+    console.log("Processed todayQueue:", result);
+    console.log("Sample processed item:", result[0]);
 
-        // ตัดสถานะที่ไม่เกี่ยว
-        if (s === "completed" || s === "cancelled" || s === "in use")
-          return false;
-
-        // ✅ รับสองสถานะ: waiting pickup และ pickup overdue (ถ้ามีจากต้นทาง)
-        return s === "waiting pickup" || s === "pickup overdue";
-      })
-      .map((j) => {
-        // ถ้างานยังเป็น waiting pickup แต่เวลานัด < ตอนนี้ => ยกระดับเป็น pickup overdue
-        const pick = new Date(j.pickupTime);
-        const overdue = isFinite(pick.getTime()) && pick < new Date();
-
-        if (
-          overdue &&
-          String(j.uiStatus || "").toLowerCase() === "waiting pickup"
-        ) {
-          return { ...j, uiStatus: "pickup overdue" };
-        }
-        return j;
-      });
+    return result;
   }, [queue]);
 
   if (loading) {
@@ -1228,7 +1573,7 @@ function TodayQueue({ queue, onPick, loading, error }) {
   return (
     <div className="mt-3">
       <div className="mb-2 text-[11px] sm:text-xs text-slate-300">
-        ทั้งหมด {todayQueue.length} งานในวันนี้
+        ทั้งหมด {todayQueue.length} รายการ
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm">
@@ -1265,6 +1610,19 @@ function TodayQueue({ queue, onPick, loading, error }) {
               .sort((a, b) => new Date(a.pickupTime) - new Date(b.pickupTime))
               .map((j) => {
                 const stat = STATUS[j.uiStatus] ?? STATUS["waiting pickup"];
+
+                // Debug: ตรวจสอบข้อมูลแต่ละรายการ
+                console.log("Table item data:", {
+                  bookingCode: j.bookingCode,
+                  pickupTime: j.pickupTime,
+                  carName: j.carName,
+                  carPlate: j.carPlate,
+                  pickupPlace: j.pickupPlace,
+                  returnPlace: j.returnPlace,
+                  customerName: j.customerName,
+                  customerPhone: j.customerPhone,
+                });
+
                 return (
                   <tr
                     key={j.bookingCode}
@@ -1340,7 +1698,7 @@ function TodayQueue({ queue, onPick, loading, error }) {
                   colSpan={7}
                   className="px-3 py-5 text-center text-slate-400"
                 >
-                  วันนี้ยังไม่มีคิวรับรถ
+                  ไม่มีข้อมูลการจอง
                 </td>
               </tr>
             )}

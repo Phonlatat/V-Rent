@@ -85,7 +85,7 @@ function Modal({ open, onClose, children }) {
         onClick={onClose}
         aria-label="ปิด"
       />
-      <div className="relative min-h-full flex items-start justify-center p-4">
+      <div className="relative min-h-full flex items-center justify-center p-4">
         {children}
       </div>
     </div>,
@@ -203,36 +203,37 @@ export default function DeliveriesTableNew({
   return (
     <div className="p-6">
       {/* Header with Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="ค้นหาการส่งมอบ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 pl-10 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+      <div className="space-y-4 mb-6">
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="ค้นหาการส่งมอบ..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 pl-10 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+          />
+          <svg
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
+          </svg>
         </div>
-        <div className="flex gap-2">
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+            className="flex-1 px-4 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
           >
             <option value="all" className="bg-slate-800 text-white">
               ทุกสถานะ
@@ -268,7 +269,7 @@ export default function DeliveriesTableNew({
               }
             }}
             disabled={loading}
-            className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             title="รีเฟรชข้อมูล"
           >
             {loading ? (
@@ -300,18 +301,23 @@ export default function DeliveriesTableNew({
                 />
               </svg>
             )}
+            <span className="hidden sm:inline">รีเฟรช</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4">
-          <div className="text-2xl font-bold text-white">{rows.length}</div>
-          <div className="text-sm text-slate-300">การส่งมอบทั้งหมด</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
+          <div className="text-xl md:text-2xl font-bold text-white">
+            {rows.length}
+          </div>
+          <div className="text-xs md:text-sm text-slate-300">
+            การส่งมอบทั้งหมด
+          </div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4">
-          <div className="text-2xl font-bold text-orange-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
+          <div className="text-xl md:text-2xl font-bold text-orange-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -320,10 +326,10 @@ export default function DeliveriesTableNew({
               ).length
             }
           </div>
-          <div className="text-sm text-slate-300">รอส่ง</div>
+          <div className="text-xs md:text-sm text-slate-300">รอส่ง</div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4">
-          <div className="text-2xl font-bold text-blue-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
+          <div className="text-xl md:text-2xl font-bold text-blue-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -332,10 +338,10 @@ export default function DeliveriesTableNew({
               ).length
             }
           </div>
-          <div className="text-sm text-slate-300">กำลังส่ง</div>
+          <div className="text-xs md:text-sm text-slate-300">กำลังส่ง</div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4">
-          <div className="text-2xl font-bold text-green-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
+          <div className="text-xl md:text-2xl font-bold text-green-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -344,13 +350,14 @@ export default function DeliveriesTableNew({
               ).length
             }
           </div>
-          <div className="text-sm text-slate-300">ส่งแล้ว</div>
+          <div className="text-xs md:text-sm text-slate-300">ส่งแล้ว</div>
         </div>
       </div>
 
       {/* Enhanced Table */}
       <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-white/10 backdrop-blur-sm">
               <tr>
@@ -536,6 +543,127 @@ export default function DeliveriesTableNew({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden">
+          {loading && rows.length === 0 ? (
+            <div className="p-8 text-center text-slate-300">
+              <div className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                กำลังโหลดข้อมูล...
+              </div>
+            </div>
+          ) : filteredRows.length === 0 ? (
+            <div className="p-8 text-center text-slate-300">
+              {searchTerm ? "ไม่พบข้อมูลที่ค้นหา" : "ไม่พบข้อมูลการส่งมอบ"}
+            </div>
+          ) : (
+            <div className="p-4 space-y-4">
+              {filteredRows.map((row, idx) => (
+                <div
+                  key={row.id}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-4 hover:bg-white/15 transition-all duration-200"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">
+                        #{idx + 1}
+                      </h3>
+                      <div className="mt-1">
+                        <StatusBadge status={row.status} />
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-slate-300">
+                      <div>{fmtDateTimeLocal(row.deliveryDate)}</div>
+                    </div>
+                  </div>
+
+                  {/* Customer Info */}
+                  <div className="mb-3">
+                    <div className="text-sm text-slate-400 mb-1">ลูกค้า:</div>
+                    <div className="text-white font-medium">
+                      {row.customerName || "—"}
+                    </div>
+                    <div className="text-sm text-slate-300">
+                      {row.customerPhone || "—"}
+                    </div>
+                  </div>
+
+                  {/* Car Info */}
+                  <div className="mb-3">
+                    <div className="text-sm text-slate-400 mb-1">รถยนต์:</div>
+                    <div className="text-white font-medium">
+                      {row.carName || "—"}
+                    </div>
+                    <div className="text-sm text-slate-300 font-mono">
+                      {row.carPlate || "—"}
+                    </div>
+                  </div>
+
+                  {/* Driver Info */}
+                  <div className="mb-4">
+                    <div className="text-sm text-slate-400 mb-1">
+                      พนักงานขับ:
+                    </div>
+                    <div className="text-white">{row.driverName || "—"}</div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openDetail(row)}
+                      className="flex-1 px-4 py-2 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all duration-200 text-sm font-medium"
+                    >
+                      ดูรายละเอียด
+                    </button>
+
+                    {String(row.status || "")
+                      .toLowerCase()
+                      .includes("pending") && (
+                      <button
+                        onClick={() => handleUpdateStatus(row, "in progress")}
+                        className="px-4 py-2 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-all duration-200 text-sm font-medium"
+                      >
+                        เริ่มส่ง
+                      </button>
+                    )}
+
+                    {String(row.status || "")
+                      .toLowerCase()
+                      .includes("in progress") && (
+                      <button
+                        onClick={() => handleUpdateStatus(row, "delivered")}
+                        className="px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all duration-200 text-sm font-medium"
+                      >
+                        ส่งเสร็จ
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

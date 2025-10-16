@@ -122,6 +122,7 @@ export default function CarList({ query }) {
       promo: query?.promo || "",
       ftype: query?.ftype || "",
     };
+    if (query?.type) b.type = query.type; // "ECO" | "SEDAN" | "SUV" | "PICKUP" | "VAN"
     if (query?.seatBucket) b.seat_bucket = query.seatBucket; // "5-" | "6-7" | "8+"
     if (query?.trans) b.trans = query.trans; // "auto" | "manual"
     if (query?.priceMin) b.min_price = Number(query.priceMin);
@@ -185,6 +186,38 @@ export default function CarList({ query }) {
         }
 
         // กรองฝั่ง client เพิ่มเติม
+        if (query?.type) {
+          list = list.filter((c) => {
+            const carType = String(c.type || c.vehicle_type || c.category || "")
+              .toLowerCase()
+              .trim();
+            const filterType = String(query.type).toLowerCase().trim();
+
+            // จับคู่แบบยืดหยุ่น
+            if (filterType === "eco") {
+              return (
+                carType === "eco" || carType === "เล็ก" || carType === "compact"
+              );
+            } else if (filterType === "sedan") {
+              return carType === "sedan" || carType === "เก๋ง";
+            } else if (filterType === "suv") {
+              return carType === "suv";
+            } else if (filterType === "pickup") {
+              return (
+                carType === "pickup" ||
+                carType === "กระบะ" ||
+                carType === "truck"
+              );
+            } else if (filterType === "van") {
+              return carType === "van" || carType === "ตู้";
+            } else if (filterType === "jdm") {
+              return carType === "jdm";
+            }
+
+            // จับคู่ตรงๆ
+            return carType === filterType;
+          });
+        }
         if (query?.seatBucket) {
           const s = (c) => takeSeats(c);
           if (query.seatBucket === "5-")
@@ -226,6 +259,7 @@ export default function CarList({ query }) {
     query?.search,
     query?.seatBucket,
     query?.trans,
+    query?.type,
   ]);
 
   return (

@@ -139,6 +139,7 @@ export default function CarsPageContent() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const filtered = useMemo(
     () =>
+      !!flt.search ||
       !!flt.type ||
       !!flt.seatBucket ||
       !!flt.trans ||
@@ -164,6 +165,7 @@ export default function CarsPageContent() {
       returnSame: payload.returnSame,
 
       // filters
+      type: flt.type, // ← เพิ่มการกรองประเภท
       seatBucket: flt.seatBucket,
       trans: flt.trans,
       priceMin: flt.priceMin,

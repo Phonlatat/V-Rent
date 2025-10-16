@@ -258,11 +258,11 @@ export default function ChoosePaymentClient() {
             const data = await response.json();
             const userInfo = data?.message || [];
 
-            // API response is an array: [name, phone, email, additional_field, image_url, is_admin]
+            // API response is a dict: {name, phone, email, additional_field, image_url, is_admin}
             setCustomerData({
-              name: userInfo[0] || "", // name
-              phone: userInfo[1] || "", // phone
-              email: userInfo[2] || "", // email
+              name: userInfo[1] || "", // name
+              phone: userInfo[2] || "", // phone
+              email: userInfo[0] || "", // email
             });
           }
         } catch (error) {
@@ -803,21 +803,21 @@ export default function ChoosePaymentClient() {
             </div>
 
             <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
-              <span className="text-slate-300">อีเมล</span>
+              <span className="text-slate-300">ชื่อผู้จอง</span>
               <span className="font-medium text-white text-right max-w-[65%] break-all">
                 {customerData.name || "-"}
               </span>
             </div>
 
             <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
-              <span className="text-slate-300">ชื่อ–นามสกุล</span>
+              <span className="text-slate-300">เบอร์โทร</span>
               <span className="text-white text-right max-w-[65%] break-all">
                 {customerData.phone || "-"}
               </span>
             </div>
 
             <div className="flex justify-between items-center p-3 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-colors duration-200">
-              <span className="text-slate-300">เบอร์โทร</span>
+              <span className="text-slate-300">อีเมล</span>
               <span className="text-white text-right max-w-[65%] break-all">
                 {customerData.email || "-"}
               </span>

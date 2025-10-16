@@ -156,8 +156,8 @@ export default function AdminSlideModal({
 
   return (
     <>
-      {/* Trigger Cards - ปรับให้เข้ากับธีม Dark */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Trigger Cards - ปรับให้เข้ากับธีม Dark และ Mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {tables.map((table) => (
           <button
             key={table.id}
@@ -165,28 +165,28 @@ export default function AdminSlideModal({
               setActiveTable(table.id);
               setIsOpen(true);
             }}
-            className="group relative bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl hover:bg-white/15 hover:border-white/30 transition-all duration-300 p-6 text-left hover:-translate-y-1 hover:shadow-2xl"
+            className="group relative bg-white/10 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/20 shadow-2xl hover:bg-white/15 hover:border-white/30 transition-all duration-300 p-4 md:p-6 text-left hover:-translate-y-1 hover:shadow-2xl"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {table.icon}
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base md:text-lg font-bold text-white group-hover:text-yellow-400 transition-colors duration-300 truncate">
                   {table.title}
                 </h3>
-                <p className="text-sm text-slate-300 mt-1 group-hover:text-white transition-colors duration-300">
+                <p className="text-xs md:text-sm text-slate-300 mt-1 group-hover:text-white transition-colors duration-300 line-clamp-2">
                   {table.description}
                 </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400/20 to-amber-500/20 text-yellow-300 border border-yellow-400/30">
+                <div className="mt-2 md:mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400/20 to-amber-500/20 text-yellow-300 border border-yellow-400/30">
                     {table.count} รายการ
                   </span>
                 </div>
               </div>
-              <div className="text-slate-400 group-hover:text-yellow-400 transition-colors duration-300">
+              <div className="text-slate-400 group-hover:text-yellow-400 transition-colors duration-300 flex-shrink-0">
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -234,48 +234,27 @@ export default function AdminSlideModal({
           {/* Modal Container */}
           <div className="absolute inset-y-0 right-0 w-full max-w-7xl bg-gradient-to-br from-slate-900 via-black to-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out">
             {/* Enhanced Header */}
-            <div className="sticky top-0 z-10 bg-black/20 backdrop-blur-md border-b border-white/10 px-6 py-4">
+            <div className="sticky top-0 z-10 bg-black/20 backdrop-blur-md border-b border-white/10 px-2 md:px-4 py-1 md:py-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-xl shadow-lg">
+                <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                  <div className="w-5 h-5 md:w-8 md:h-8 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-sm md:rounded-lg flex items-center justify-center text-xs md:text-sm shadow-lg flex-shrink-0">
                     {tables.find((t) => t.id === activeTable)?.icon}
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-xs md:text-sm font-bold text-white truncate">
                       {tables.find((t) => t.id === activeTable)?.title}
                     </h2>
-                    <p className="text-sm text-slate-300">
-                      {tables.find((t) => t.id === activeTable)?.description}
-                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Enhanced Table Switcher */}
-                  <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-1 border border-white/20">
-                    {tables.map((table) => (
-                      <button
-                        key={table.id}
-                        onClick={() => setActiveTable(table.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                          activeTable === table.id
-                            ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-lg"
-                            : "text-slate-300 hover:text-white hover:bg-white/10"
-                        }`}
-                      >
-                        <span className="mr-2">{table.icon}</span>
-                        {table.title}
-                      </button>
-                    ))}
-                  </div>
-
+                <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
                   {/* Enhanced Close Button */}
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/30 flex items-center justify-center text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
+                    className="w-5 h-5 md:w-7 md:h-7 rounded-sm md:rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/30 flex items-center justify-center text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-3 h-3"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -290,12 +269,52 @@ export default function AdminSlideModal({
                   </button>
                 </div>
               </div>
+
+              {/* Mobile Table Switcher */}
+              <div className="mt-1 md:hidden">
+                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-sm p-1 border border-white/20 overflow-x-auto">
+                  {tables.map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => setActiveTable(table.id)}
+                      className={`px-1 py-1 rounded-sm text-xs font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                        activeTable === table.id
+                          ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-lg"
+                          : "text-slate-300 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="mr-1">{table.icon}</span>
+                      {table.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Table Switcher */}
+              <div className="hidden md:block mt-1">
+                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+                  {tables.map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => setActiveTable(table.id)}
+                      className={`px-2 py-1 rounded-md text-xs font-medium transition-all duration-300 ${
+                        activeTable === table.id
+                          ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-lg"
+                          : "text-slate-300 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="mr-1">{table.icon}</span>
+                      {table.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Enhanced Content */}
-            <div className="h-[calc(100vh-80px)] overflow-y-auto">
-              <div className="p-6">
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
+            <div className="h-[calc(100vh-70px)] md:h-[calc(100vh-70px)] overflow-y-auto">
+              <div className="p-0 md:p-3 pb-0 md:pb-3">
+                <div className="bg-white/5 backdrop-blur-sm rounded-none md:rounded-lg border-none md:border border-white/10 overflow-hidden">
                   {renderTableContent()}
                 </div>
               </div>

@@ -115,6 +115,7 @@ export default function CarsFilter({
     ["SUV", "SUV"],
     ["PICKUP", "Pickup"],
     ["VAN", "Van"],
+    ["JDM", "JDM"],
   ];
   const seatOptions = [
     ["", "ทั้งหมด"],

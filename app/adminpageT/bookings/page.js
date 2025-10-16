@@ -365,7 +365,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
       <title>จัดการการจอง - Admin Dashboard</title>
 
       {/* Enhanced Background Pattern */}
@@ -396,7 +396,7 @@ export default function BookingsPage() {
         ))}
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
@@ -454,7 +454,7 @@ export default function BookingsPage() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1">
+        <main className="flex-1 flex flex-col">
           <div className="p-3 sm:p-6 lg:p-8">
             <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6">
               {/* Header */}
@@ -489,7 +489,7 @@ export default function BookingsPage() {
               </div>
 
               {/* Table Content */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 min-h-[60vh] p-4 sm:p-6 lg:p-8">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 min-h-[60vh] p-4 sm:p-6 lg:p-8 flex-1">
                 <BookingsTableNew
                   bookings={bookings}
                   carMapById={carMapById}
@@ -505,7 +505,9 @@ export default function BookingsPage() {
         </main>
 
         {/* Footer */}
-        <Footer />
+        <div className="mt-auto">
+          <Footer />
+        </div>
       </div>
     </div>
   );

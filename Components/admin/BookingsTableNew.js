@@ -137,11 +137,16 @@ function PaymentBadge({ status }) {
     const s = String(status || "")
       .toLowerCase()
       .trim();
+    // ตรวจสอบ partial ก่อน paid เพื่อให้ "Partial Paid" ได้สีเหลือง
+    if (
+      s.includes("partial") ||
+      s.includes("บางส่วน") ||
+      s.includes("partial pay")
+    ) {
+      return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
+    }
     if (s.includes("paid") || s.includes("จ่ายแล้ว")) {
       return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-    }
-    if (s.includes("partial") || s.includes("บางส่วน")) {
-      return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30";
     }
     if (s.includes("pending") || s.includes("รอจ่าย")) {
       return "bg-orange-500/20 text-orange-300 border-orange-500/30";
@@ -177,6 +182,16 @@ export default function BookingsTableNew({
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedDeleteBooking, setSelectedDeleteBooking] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [blockedDeleteOpen, setBlockedDeleteOpen] = useState(false);
+  const [blockedDeliveries, setBlockedDeliveries] = useState([]);
+  const [checkingDeliveries, setCheckingDeliveries] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [completeModalOpen, setCompleteModalOpen] = useState(false);
+  const [selectedActionBooking, setSelectedActionBooking] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Smooth scroll to top when component mounts
   useEffect(() => {
@@ -189,11 +204,44 @@ export default function BookingsTableNew({
   // Process bookings data
   const rows = useMemo(() => {
     if (!Array.isArray(bookings)) return [];
-    return bookings.map((booking, idx) => ({
-      ...booking,
-      _idx: idx,
-      car: carMapById.get(booking.carId) || carMapByKey.get(booking.carKey),
-    }));
+    return bookings.map((booking, idx) => {
+      // Debug: Log booking data to see what fields are available
+      if (idx === 0) {
+        console.log("Booking data sample:", booking);
+        console.log("Available vehicle fields:", {
+          vehicle: booking.vehicle,
+          carName: booking.carName,
+          vehicle_name: booking.vehicle_name,
+          license_plate: booking.license_plate,
+          carPlate: booking.carPlate,
+          licensePlate: booking.licensePlate,
+          carId: booking.carId,
+        });
+
+        // Debug license_plate specifically
+        console.log("License plate debug:", {
+          "booking.license_plate": booking.license_plate,
+          typeof: typeof booking.license_plate,
+          length: booking.license_plate?.length,
+        });
+
+        // Check car mapping
+        const carFromMap =
+          carMapById.get(booking.carId) || carMapByKey.get(booking.carKey);
+        console.log("Car from map:", carFromMap);
+        console.log("CarMapById keys:", Array.from(carMapById.keys()));
+        console.log("CarMapByKey keys:", Array.from(carMapByKey.keys()));
+      }
+
+      return {
+        ...booking,
+        _idx: idx,
+        car: carMapById.get(booking.carId) || carMapByKey.get(booking.carKey),
+        // Explicitly add license_plate from booking data
+        license_plate: booking.license_plate,
+        vehicle: booking.vehicle,
+      };
+    });
   }, [bookings, carMapById, carMapByKey]);
 
   // Filter bookings
@@ -337,6 +385,280 @@ export default function BookingsTableNew({
       alert(err?.message || "แก้ไขข้อมูลการจองไม่สำเร็จ");
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const checkDeliveriesForBooking = async (bookingId) => {
+    try {
+      setCheckingDeliveries(true);
+
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+
+      const res = await fetch(`${ERP_BASE}/api/method/frappe.api.api.get_dlv`, {
+        method: "GET",
+        headers,
+        credentials: "include",
+        redirect: "follow",
+      });
+
+      const text = await res.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        /* not json, ignore */
+      }
+
+      if (!res.ok) {
+        throw new Error("ไม่สามารถตรวจสอบข้อมูลการส่งมอบได้");
+      }
+
+      const deliveries = Array.isArray(payload?.message)
+        ? payload.message
+        : Array.isArray(payload)
+        ? payload
+        : [];
+
+      // หา deliveries ที่เกี่ยวข้องกับ booking นี้
+      const relatedDeliveries = deliveries.filter((delivery) => {
+        const deliveryBookingCode =
+          delivery?.booking_code ||
+          delivery?.booking ||
+          delivery?.bookingCode ||
+          delivery?.rental_no;
+        return deliveryBookingCode === bookingId;
+      });
+
+      return relatedDeliveries;
+    } catch (err) {
+      console.error("Error checking deliveries:", err);
+      return [];
+    } finally {
+      setCheckingDeliveries(false);
+    }
+  };
+
+  const openDelete = async (booking) => {
+    const bookingId = booking?.name || booking?.id || booking?.key;
+    if (!bookingId) {
+      alert("ไม่พบ ID ของการจอง");
+      return;
+    }
+
+    // ตรวจสอบว่ามี deliveries ที่เกี่ยวข้องหรือไม่
+    const relatedDeliveries = await checkDeliveriesForBooking(bookingId);
+
+    if (relatedDeliveries.length > 0) {
+      // มี deliveries ที่เกี่ยวข้อง - แสดง modal แจ้งเตือน
+      setSelectedDeleteBooking(booking);
+      setBlockedDeliveries(relatedDeliveries);
+      setBlockedDeleteOpen(true);
+    } else {
+      // ไม่มี deliveries - เปิด modal ลบปกติ
+      setSelectedDeleteBooking(booking);
+      setDeleteOpen(true);
+    }
+  };
+
+  const closeDelete = () => {
+    setDeleteOpen(false);
+    setSelectedDeleteBooking(null);
+  };
+
+  const closeBlockedDelete = () => {
+    setBlockedDeleteOpen(false);
+    setSelectedDeleteBooking(null);
+    setBlockedDeliveries([]);
+  };
+
+  const openCancelModal = (booking) => {
+    setSelectedActionBooking(booking);
+    setCancelModalOpen(true);
+  };
+
+  const openCompleteModal = (booking) => {
+    setSelectedActionBooking(booking);
+    setCompleteModalOpen(true);
+  };
+
+  const closeCancelModal = () => {
+    setCancelModalOpen(false);
+    setSelectedActionBooking(null);
+  };
+
+  const closeCompleteModal = () => {
+    setCompleteModalOpen(false);
+    setSelectedActionBooking(null);
+  };
+
+  const handleCancelBooking = async () => {
+    const bookingId =
+      selectedActionBooking?.name ||
+      selectedActionBooking?.id ||
+      selectedActionBooking?.key;
+    if (!bookingId) {
+      alert("ไม่พบ ID ของการจอง");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      console.log("Cancelling booking:", bookingId);
+
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+
+      // เรียก API เพื่อยกเลิกการจอง (เปลี่ยนสถานะเป็น Cancelled)
+      const res = await fetch(
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rental_status`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rental_id: bookingId,
+            status: "Cancelled",
+          }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
+
+      const text = await res.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        /* not json, ignore */
+      }
+
+      if (!res.ok) {
+        const msg =
+          payload?.message || payload?.exc || text || "ยกเลิกการจองไม่สำเร็จ";
+        throw new Error(msg);
+      }
+
+      onFetchBookings?.(); // Refresh the data
+      closeCancelModal();
+    } catch (err) {
+      console.error("Cancel error:", err);
+      alert(err?.message || "ยกเลิกการจองไม่สำเร็จ");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCompleteBooking = async () => {
+    const bookingId =
+      selectedActionBooking?.name ||
+      selectedActionBooking?.id ||
+      selectedActionBooking?.key;
+    if (!bookingId) {
+      alert("ไม่พบ ID ของการจอง");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      console.log("Completing booking:", bookingId);
+
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+
+      // เรียก API เพื่อเสร็จสิ้นการจอง (เปลี่ยนสถานะเป็น Completed)
+      const res = await fetch(
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rental_status`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rental_id: bookingId,
+            status: "Completed",
+          }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
+
+      const text = await res.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        /* not json, ignore */
+      }
+
+      if (!res.ok) {
+        const msg =
+          payload?.message ||
+          payload?.exc ||
+          text ||
+          "เสร็จสิ้นการจองไม่สำเร็จ";
+        throw new Error(msg);
+      }
+
+      onFetchBookings?.(); // Refresh the data
+      closeCompleteModal();
+    } catch (err) {
+      console.error("Complete error:", err);
+      alert(err?.message || "เสร็จสิ้นการจองไม่สำเร็จ");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const doDelete = async () => {
+    const bookingId =
+      selectedDeleteBooking?.name ||
+      selectedDeleteBooking?.id ||
+      selectedDeleteBooking?.key;
+    if (!bookingId) {
+      alert("ไม่พบ ID ของการจอง");
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+
+      console.log("Deleting booking:", bookingId);
+
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+
+      const res = await fetch(
+        `${ERP_BASE}/api/method/frappe.api.api.delete_rental`,
+        {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ rental_id: bookingId }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
+
+      const text = await res.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        /* not json, ignore */
+      }
+
+      if (!res.ok) {
+        const msg =
+          payload?.message || payload?.exc || text || "ลบไม่สำเร็จ (unknown)";
+        throw new Error(msg);
+      }
+
+      onFetchBookings?.(); // Refresh the data
+      closeDelete();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert(err?.message || "ลบการจองไม่สำเร็จ");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -581,10 +903,16 @@ export default function BookingsTableNew({
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-white">
-                        {row.vehicle || row.carName || "—"}
+                        {row.vehicle ||
+                          row.carName ||
+                          row.vehicle_name ||
+                          row.carId ||
+                          row.car?.name ||
+                          row.car?.vehicle_name ||
+                          "—"}
                       </div>
-                      <div className="text-sm text-slate-300">
-                        {row.license_plate || row.carPlate || "—"}
+                      <div className="text-sm text-slate-300 font-mono">
+                        {row.license_plate || "—"}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
@@ -699,6 +1027,81 @@ export default function BookingsTableNew({
                             </svg>
                           </button>
                         )}
+
+                        {/* ปุ่มยกเลิก - แสดงสำหรับการจองที่ยังไม่เสร็จสิ้นหรือยกเลิก */}
+                        {!String(row.status || "")
+                          .toLowerCase()
+                          .includes("completed") &&
+                          !String(row.status || "")
+                            .toLowerCase()
+                            .includes("cancelled") && (
+                            <button
+                              onClick={() => openCancelModal(row)}
+                              className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
+                              title="ยกเลิกการจอง"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+                          )}
+
+                        {/* ปุ่มเสร็จสิ้น - แสดงสำหรับการจองที่กำลังใช้งาน */}
+                        {String(row.status || "")
+                          .toLowerCase()
+                          .includes("in use") && (
+                          <button
+                            onClick={() => openCompleteModal(row)}
+                            className="text-green-400 hover:text-green-300 transition-colors duration-200"
+                            title="เสร็จสิ้นการจอง"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openDelete(row)}
+                          disabled={checkingDeliveries}
+                          className="text-red-400 hover:text-red-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            checkingDeliveries ? "กำลังตรวจสอบ..." : "ลบการจอง"
+                          }
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -777,10 +1180,16 @@ export default function BookingsTableNew({
                   <div className="mb-3">
                     <div className="text-sm text-slate-400 mb-1">รถยนต์:</div>
                     <div className="text-white font-medium">
-                      {row.vehicle || row.carName || "—"}
+                      {row.vehicle ||
+                        row.carName ||
+                        row.vehicle_name ||
+                        row.carId ||
+                        row.car?.name ||
+                        row.car?.vehicle_name ||
+                        "—"}
                     </div>
                     <div className="text-sm text-slate-300 font-mono">
-                      {row.license_plate || row.carPlate || "—"}
+                      {row.license_plate || "—"}
                     </div>
                   </div>
 
@@ -814,6 +1223,13 @@ export default function BookingsTableNew({
                     >
                       แก้ไข
                     </button>
+                    <button
+                      onClick={() => openDelete(row)}
+                      disabled={checkingDeliveries}
+                      className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all duration-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {checkingDeliveries ? "ตรวจสอบ..." : "ลบ"}
+                    </button>
                   </div>
 
                   {/* Status Action buttons */}
@@ -835,6 +1251,36 @@ export default function BookingsTableNew({
                       <button
                         onClick={() => handleComplete(row)}
                         className="flex-1 px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/30 transition-all duration-200 text-xs font-medium"
+                      >
+                        เสร็จสิ้น
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Additional Action buttons */}
+                  <div className="flex gap-2 mt-2">
+                    {/* ปุ่มยกเลิก - แสดงสำหรับการจองที่ยังไม่เสร็จสิ้นหรือยกเลิก */}
+                    {!String(row.status || "")
+                      .toLowerCase()
+                      .includes("completed") &&
+                      !String(row.status || "")
+                        .toLowerCase()
+                        .includes("cancelled") && (
+                        <button
+                          onClick={() => openCancelModal(row)}
+                          className="flex-1 px-3 py-2 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-all duration-200 text-xs font-medium"
+                        >
+                          ยกเลิก
+                        </button>
+                      )}
+
+                    {/* ปุ่มเสร็จสิ้น - แสดงสำหรับการจองที่กำลังใช้งาน */}
+                    {String(row.status || "")
+                      .toLowerCase()
+                      .includes("in use") && (
+                      <button
+                        onClick={() => openCompleteModal(row)}
+                        className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 transition-all duration-200 text-xs font-medium"
                       >
                         เสร็จสิ้น
                       </button>
@@ -1223,6 +1669,597 @@ export default function BookingsTableNew({
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editLoading ? "กำลังบันทึก..." : "บันทึก"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={deleteOpen} onClose={closeDelete}>
+        <div className="w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white border border-white/20">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0 w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">ยืนยันการลบ</h3>
+              <p className="text-slate-300 text-sm">
+                การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+          </div>
+
+          {selectedDeleteBooking && (
+            <div className="mb-6">
+              <div className="bg-white/5 rounded-xl p-4">
+                <h4 className="text-lg font-semibold text-red-400 mb-3">
+                  รายละเอียดการจองที่จะลบ
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รหัสการจอง:</span>
+                    <span className="text-white font-mono">
+                      {selectedDeleteBooking.name ||
+                        selectedDeleteBooking.id ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ลูกค้า:</span>
+                    <span className="text-white">
+                      {selectedDeleteBooking.customer_name ||
+                        selectedDeleteBooking.customerName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รถยนต์:</span>
+                    <span className="text-white">
+                      {selectedDeleteBooking.vehicle ||
+                        selectedDeleteBooking.carName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">วันที่:</span>
+                    <span className="text-white">
+                      {fmtDateTimeLocal(
+                        selectedDeleteBooking.pickup_date ||
+                          selectedDeleteBooking.pickupDate
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ราคา:</span>
+                    <span className="text-white font-semibold">
+                      {fmtBaht(
+                        selectedDeleteBooking.total_price ||
+                          selectedDeleteBooking.totalPrice ||
+                          0
+                      )}{" "}
+                      ฿
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={closeDelete}
+              disabled={deleteLoading}
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={doDelete}
+              disabled={deleteLoading}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {deleteLoading ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  กำลังลบ...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  ยืนยันลบ
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Blocked Delete Modal - แจ้งเตือนว่าต้องลบ deliveries ก่อน */}
+      <Modal open={blockedDeleteOpen} onClose={closeBlockedDelete}>
+        <div className="w-full max-w-2xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white border border-white/20">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0 w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">
+                ไม่สามารถลบการจองได้
+              </h3>
+              <p className="text-slate-300 text-sm">
+                การจองนี้ยังมีข้อมูลการส่งมอบที่เกี่ยวข้องอยู่
+              </p>
+            </div>
+          </div>
+
+          {selectedDeleteBooking && (
+            <div className="mb-6">
+              <div className="bg-white/5 rounded-xl p-4 mb-4">
+                <h4 className="text-lg font-semibold text-orange-400 mb-3">
+                  รายละเอียดการจองที่ต้องการลบ
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รหัสการจอง:</span>
+                    <span className="text-white font-mono">
+                      {selectedDeleteBooking.name ||
+                        selectedDeleteBooking.id ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ลูกค้า:</span>
+                    <span className="text-white">
+                      {selectedDeleteBooking.customer_name ||
+                        selectedDeleteBooking.customerName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รถยนต์:</span>
+                    <span className="text-white">
+                      {selectedDeleteBooking.vehicle ||
+                        selectedDeleteBooking.carName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">วันที่:</span>
+                    <span className="text-white">
+                      {fmtDateTimeLocal(
+                        selectedDeleteBooking.pickup_date ||
+                          selectedDeleteBooking.pickupDate
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                <h4 className="text-lg font-semibold text-red-400 mb-3">
+                  ต้องลบรายการส่งมอบต่อไปนี้ก่อน
+                </h4>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {blockedDeliveries.map((delivery, index) => (
+                    <div key={index} className="bg-white/5 rounded-lg p-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">รหัสการส่งมอบ:</span>
+                          <span className="text-white font-mono">
+                            {delivery?.delivery_code ||
+                              delivery?.dlv_code ||
+                              delivery?.name ||
+                              "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">ลูกค้า:</span>
+                          <span className="text-white">
+                            {delivery?.customer_name ||
+                              delivery?.customer ||
+                              "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">รถยนต์:</span>
+                          <span className="text-white">
+                            {delivery?.car_name || delivery?.vehicle || "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">วันที่ส่งมอบ:</span>
+                          <span className="text-white">
+                            {fmtDateTimeLocal(
+                              delivery?.pickup_time || delivery?.logged_at
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg
+                className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div className="text-sm">
+                <p className="text-blue-300 font-medium mb-1">คำแนะนำ:</p>
+                <p className="text-slate-300">
+                  กรุณาไปที่หน้า <strong>ส่งมอบ</strong>{" "}
+                  และลบรายการการส่งมอบที่เกี่ยวข้องกับการจองนี้ก่อน
+                  จากนั้นจึงจะสามารถลบการจองได้
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={closeBlockedDelete}
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300"
+            >
+              ปิด
+            </button>
+            <button
+              onClick={() => {
+                closeBlockedDelete();
+                // ไปที่หน้า deliveries
+                window.open("/adminpageT/deliveries", "_blank");
+              }}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+              ไปที่หน้าส่งมอบ
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Cancel Booking Modal */}
+      <Modal open={cancelModalOpen} onClose={closeCancelModal}>
+        <div className="w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white border border-white/20">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0 w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">
+                ยืนยันการยกเลิกการจอง
+              </h3>
+              <p className="text-slate-300 text-sm">
+                การดำเนินการนี้จะเปลี่ยนสถานะการจองเป็น &quot;ยกเลิก&quot;
+              </p>
+            </div>
+          </div>
+
+          {selectedActionBooking && (
+            <div className="mb-6">
+              <div className="bg-white/5 rounded-xl p-4">
+                <h4 className="text-lg font-semibold text-orange-400 mb-3">
+                  รายละเอียดการจองที่จะยกเลิก
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รหัสการจอง:</span>
+                    <span className="text-white font-mono">
+                      {selectedActionBooking.name ||
+                        selectedActionBooking.id ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ลูกค้า:</span>
+                    <span className="text-white">
+                      {selectedActionBooking.customer_name ||
+                        selectedActionBooking.customerName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รถยนต์:</span>
+                    <span className="text-white">
+                      {selectedActionBooking.vehicle ||
+                        selectedActionBooking.carName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">วันที่:</span>
+                    <span className="text-white">
+                      {fmtDateTimeLocal(
+                        selectedActionBooking.pickup_date ||
+                          selectedActionBooking.pickupDate
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ราคา:</span>
+                    <span className="text-white font-semibold">
+                      {fmtBaht(
+                        selectedActionBooking.total_price ||
+                          selectedActionBooking.totalPrice ||
+                          0
+                      )}{" "}
+                      ฿
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={closeCancelModal}
+              disabled={actionLoading}
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={handleCancelBooking}
+              disabled={actionLoading}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {actionLoading ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  กำลังยกเลิก...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  ยืนยันยกเลิก
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Complete Booking Modal */}
+      <Modal open={completeModalOpen} onClose={closeCompleteModal}>
+        <div className="w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white border border-white/20">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">
+                ยืนยันการเสร็จสิ้นการจอง
+              </h3>
+              <p className="text-slate-300 text-sm">
+                การดำเนินการนี้จะเปลี่ยนสถานะการจองเป็น &quot;เสร็จสิ้น&quot;
+              </p>
+            </div>
+          </div>
+
+          {selectedActionBooking && (
+            <div className="mb-6">
+              <div className="bg-white/5 rounded-xl p-4">
+                <h4 className="text-lg font-semibold text-green-400 mb-3">
+                  รายละเอียดการจองที่จะเสร็จสิ้น
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รหัสการจอง:</span>
+                    <span className="text-white font-mono">
+                      {selectedActionBooking.name ||
+                        selectedActionBooking.id ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ลูกค้า:</span>
+                    <span className="text-white">
+                      {selectedActionBooking.customer_name ||
+                        selectedActionBooking.customerName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">รถยนต์:</span>
+                    <span className="text-white">
+                      {selectedActionBooking.vehicle ||
+                        selectedActionBooking.carName ||
+                        "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">วันที่:</span>
+                    <span className="text-white">
+                      {fmtDateTimeLocal(
+                        selectedActionBooking.pickup_date ||
+                          selectedActionBooking.pickupDate
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">ราคา:</span>
+                    <span className="text-white font-semibold">
+                      {fmtBaht(
+                        selectedActionBooking.total_price ||
+                          selectedActionBooking.totalPrice ||
+                          0
+                      )}{" "}
+                      ฿
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={closeCompleteModal}
+              disabled={actionLoading}
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ยกเลิก
+            </button>
+            <button
+              onClick={handleCompleteBooking}
+              disabled={actionLoading}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {actionLoading ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  กำลังเสร็จสิ้น...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  ยืนยันเสร็จสิ้น
+                </>
+              )}
             </button>
           </div>
         </div>

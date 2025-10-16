@@ -40,6 +40,114 @@ export default function BookingPage() {
 
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  // ===== Authentication Guard =====
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginError, setLoginError] = useState(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // ตรวจสอบสถานะล็อกอิน
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // ตรวจสอบจาก localStorage ก่อน
+        const userId = localStorage.getItem("vrent_user_id") || "";
+        const email = localStorage.getItem("vrent_login_email") || "";
+
+        if (userId || email) {
+          setIsAuthenticated(true);
+          setAuthLoading(false);
+          return;
+        }
+
+        // ถ้าไม่มีใน localStorage ให้ตรวจสอบจาก ERP
+        const ERP_BASE =
+          process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
+        const response = await fetch(
+          `${ERP_BASE}/api/method/frappe.auth.get_logged_user`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json().catch(() => ({}));
+        const user = data?.message || "";
+
+        if (user && user !== "Guest") {
+          localStorage.setItem("vrent_user_id", user);
+          setIsAuthenticated(true);
+        } else {
+          setShowLoginPrompt(true);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setShowLoginPrompt(true);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // ฟังก์ชันล็อกอิน
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      }
+
+      // เก็บข้อมูลผู้ใช้ใน localStorage
+      localStorage.setItem("vrent_user_id", data.full_name || loginForm.email);
+      localStorage.setItem(
+        "vrent_full_name",
+        data.full_name || loginForm.email
+      );
+      localStorage.setItem("vrent_is_admin", data.is_admin ? "true" : "false");
+
+      setIsAuthenticated(true);
+      setShowLoginModal(false);
+      setShowLoginPrompt(false);
+      setLoginForm({ email: "", password: "" });
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginError(error?.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // ฟังก์ชันจัดการ popup
+  const handleGoToLogin = () => {
+    setShowLoginPrompt(false);
+    setShowLoginModal(true);
+  };
+
+  const handleClosePrompt = () => {
+    setShowLoginPrompt(false);
+    router.back(); // กลับไปหน้าก่อนหน้า
+  };
+
   // ---------- รถจาก query/fallback ----------
   const carFromQuery = useMemo(
     () => ({
@@ -170,7 +278,9 @@ export default function BookingPage() {
     let uid = uidFromQuery;
     if (!uid) {
       try {
+        // เปลี่ยนลำดับความสำคัญ ให้ใช้ชื่อผู้ใช้ก่อน
         uid =
+          localStorage.getItem("vrent_full_name") ||
           localStorage.getItem("vrent_user_id") ||
           localStorage.getItem("vrent_login_email") ||
           "";
@@ -196,13 +306,14 @@ export default function BookingPage() {
         );
         if (!r.ok) return;
         const j = await r.json();
-        const userInfo = j?.message || {};
+        const userInfo = j?.message || [];
 
+        // API response is an array: [name, phone, email, additional_field, image_url, is_admin]
         setForm((prev) => ({
           ...prev,
-          name: userInfo.full_name || userInfo.name || prev.name,
-          phone: userInfo.phone || userInfo.mobile_no || prev.phone,
-          email: userInfo.email || userInfo.user_id || prev.email,
+          name: userInfo[0] || "", // name = "Phonlatues" (force update)
+          phone: userInfo[1] || "", // phone = "0910429674" (force update)
+          email: userInfo[2] || "", // email = null (force update)
         }));
       } catch {}
     })();
@@ -306,6 +417,185 @@ export default function BookingPage() {
 
     router.push(`/payment/choose?${qp}`);
   };
+
+  // แสดงหน้าจอโหลดขณะตรวจสอบการล็อกอิน
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // แสดง popup แจ้งเตือนก่อนล็อกอิน
+  if (showLoginPrompt) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 flex items-center justify-center p-4">
+        {/* Background overlay */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        {/* Popup */}
+        <div className="relative z-10 w-full max-w-md">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 shadow-2xl transform transition-all duration-300 scale-100">
+            {/* Icon */}
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-10 h-10 text-black"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                  ต้องการล็อกอิน
+                </span>
+              </h2>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                กรุณาล็อกอินเพื่อเข้าถึงหน้าจองรถ
+                <br />
+                หรือคุณสามารถดูข้อมูลรถได้โดยไม่ต้องล็อกอิน
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={handleGoToLogin}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+                ไปหน้าล็อกอิน
+              </button>
+
+              <button
+                onClick={handleClosePrompt}
+                className="w-full py-3 rounded-xl border border-white/20 bg-white/5 text-white font-medium hover:bg-white/10 hover:border-white/30 transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                </svg>
+                ดูเฉยๆ (ออกจากหน้านี้)
+              </button>
+            </div>
+
+            {/* Additional info */}
+            <div className="mt-6 text-center">
+              <p className="text-slate-400 text-xs">
+                ยังไม่มีบัญชี?{" "}
+                <Link
+                  href="/Signup"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors"
+                >
+                  สมัครสมาชิก
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // แสดงหน้าต่างล็อกอิน
+  if (showLoginModal) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 shadow-2xl">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                  V-Rent
+                </span>
+              </h1>
+              <p className="text-slate-300">กรุณาล็อกอิน</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  อีเมล
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={loginForm.email}
+                  onChange={(e) =>
+                    setLoginForm((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  className="w-full px-4 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+                  placeholder="กรอกอีเมลของคุณ"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  รหัสผ่าน
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={loginForm.password}
+                  onChange={(e) =>
+                    setLoginForm((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+                  placeholder="กรอกรหัสผ่านของคุณ"
+                  required
+                />
+              </div>
+
+              {loginError && (
+                <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3">
+                  <p className="text-red-300 text-sm">{loginError}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 disabled:scale-100"
+              >
+                {loginLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-slate-300 text-sm">
+                ยังไม่มีบัญชี?{" "}
+                <Link
+                  href="/Signup"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors"
+                >
+                  สมัครสมาชิก
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -536,7 +826,7 @@ export default function BookingPage() {
                       {/* ผู้ติดต่อ */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         <div className="space-y-2 min-w-0">
-                          <label className={labelCls}>ชื่อ–นามสกุล</label>
+                          <label className={labelCls}>อีเมล</label>
                           <input
                             name="name"
                             value={form.name || ""}
@@ -547,7 +837,7 @@ export default function BookingPage() {
                           />
                         </div>
                         <div className="space-y-2 min-w-0">
-                          <label className={labelCls}>เบอร์โทร</label>
+                          <label className={labelCls}>ชื่อ–นามสกุล</label>
                           <input
                             name="phone"
                             value={form.phone || ""}
@@ -558,7 +848,7 @@ export default function BookingPage() {
                           />
                         </div>
                         <div className="space-y-2 min-w-0 sm:col-span-2 lg:col-span-1">
-                          <label className={labelCls}>อีเมล</label>
+                          <label className={labelCls}>เบอร์โทร</label>
                           <input
                             type="email"
                             name="email"

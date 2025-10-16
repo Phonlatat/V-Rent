@@ -412,17 +412,27 @@ export default function BookingBox({
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm mb-1 text-slate-800">
-              ประเภทรถ
-            </label>
+            <label className="block text-sm mb-1 text-white">ประเภทรถ</label>
             <select
               name="carType"
               value={form.carType}
               onChange={handleChange}
-              className="w-full h-11 rounded-lg border border-slate-300 px-3"
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
+              style={{
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
             >
               {carTypes.map((c) => (
-                <option key={c.value} value={c.value}>
+                <option
+                  key={c.value}
+                  value={c.value}
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    padding: "8px 12px",
+                  }}
+                >
                   {c.label}
                 </option>
               ))}
@@ -430,17 +440,27 @@ export default function BookingBox({
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-slate-800">
-              ผู้โดยสาร
-            </label>
+            <label className="block text-sm mb-1 text-white">ผู้โดยสาร</label>
             <select
               name="passengers"
               value={form.passengers}
               onChange={handleChange}
-              className="w-full h-11 rounded-lg border border-slate-300 px-3"
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
+              style={{
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
             >
               {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
+                <option
+                  key={n}
+                  value={n}
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    padding: "8px 12px",
+                  }}
+                >
                   {n}
                 </option>
               ))}
@@ -448,7 +468,7 @@ export default function BookingBox({
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-slate-800">
+            <label className="block text-sm mb-1 text-white">
               โค้ดโปรโมชัน
             </label>
             <input
@@ -457,7 +477,7 @@ export default function BookingBox({
               value={form.promo}
               onChange={handleChange}
               placeholder="กรอกถ้ามี"
-              className="w-full h-11 rounded-lg border border-slate-300 px-3 placeholder:text-slate-600"
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 placeholder:text-slate-300 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
             />
           </div>
         </div>

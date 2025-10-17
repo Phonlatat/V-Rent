@@ -109,7 +109,22 @@ export default function BookingsPage() {
           totalPrice: b.total_price || b.totalPrice,
           status: b.booking_status || b.status,
           paymentStatus: b.payment_status || b.paymentStatus,
+          vehicle: b.vehicle || b.carId,
+          license_plate: b.license_plate,
+          pickup_place: b.pickup_place,
+          return_place: b.return_place,
         }));
+
+        // Debug transformed bookings
+        console.log("Transformed bookings:", transformedBookings);
+        if (transformedBookings.length > 0) {
+          console.log("First booking sample:", transformedBookings[0]);
+          console.log(
+            "License plate from API:",
+            transformedBookings[0]?.license_plate
+          );
+        }
+        console.log("-----------------------------");
 
         setBookings(transformedBookings);
       }

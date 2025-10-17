@@ -221,6 +221,10 @@ export default function BookingsTableNew({
         // Debug license_plate specifically
         console.log("License plate debug:", {
           "booking.license_plate": booking.license_plate,
+          "booking.carPlate": booking.carPlate,
+          "booking.licensePlate": booking.licensePlate,
+          "booking.car?.license_plate": booking.car?.license_plate,
+          "booking.car?.licensePlate": booking.car?.licensePlate,
           typeof: typeof booking.license_plate,
           length: booking.license_plate?.length,
         });
@@ -233,13 +237,38 @@ export default function BookingsTableNew({
         console.log("CarMapByKey keys:", Array.from(carMapByKey.keys()));
       }
 
+      const carData =
+        carMapById.get(booking.carId) || carMapByKey.get(booking.carKey);
+      const finalLicensePlate =
+        booking.license_plate ||
+        booking.carPlate ||
+        booking.licensePlate ||
+        carData?.license_plate ||
+        carData?.licensePlate;
+      const finalVehicle =
+        booking.vehicle ||
+        booking.carName ||
+        booking.vehicle_name ||
+        booking.carId ||
+        carData?.name ||
+        carData?.vehicle_name;
+
+      // Debug final values
+      if (idx === 0) {
+        console.log("Final row values:", {
+          finalLicensePlate,
+          finalVehicle,
+          carData,
+        });
+      }
+
       return {
         ...booking,
         _idx: idx,
-        car: carMapById.get(booking.carId) || carMapByKey.get(booking.carKey),
+        car: carData,
         // Explicitly add license_plate from booking data
-        license_plate: booking.license_plate,
-        vehicle: booking.vehicle,
+        license_plate: finalLicensePlate,
+        vehicle: finalVehicle,
       };
     });
   }, [bookings, carMapById, carMapByKey]);
@@ -355,26 +384,71 @@ export default function BookingsTableNew({
 
       console.log("Sending edit request:", editForm);
 
-      // TODO: Replace with actual API endpoint
-      const res = await fetch("/api/bookings/edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: bookingId,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          pickup_date: pickupDate,
-          return_date: returnDate,
-          pickup_place: editForm.pickup_place || editForm.pickupLocation || "",
-          return_place: editForm.return_place || editForm.returnLocation || "",
-          remarks: editForm.remarks || editForm.notes || "",
-        }),
-        credentials: "include",
-      });
+      // Prepare headers
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+
+      // Call the edit_rental API
+      const res = await fetch(
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rental`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rid: bookingId,
+            remark: editForm.remarks || editForm.notes || "",
+            additional_options: "",
+            down_payment: 0,
+            discount: 0,
+            base_price: editForm.total_price || editForm.totalPrice || 0,
+            vehicle:
+              editForm.vehicle ||
+              selectedBooking?.vehicle ||
+              selectedBooking?.carId ||
+              "",
+            total_price:
+              editForm.total_price ||
+              editForm.totalPrice ||
+              selectedBooking?.total_price ||
+              selectedBooking?.totalPrice ||
+              0,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            pickup_date: pickupDate,
+            return_date: returnDate,
+            pickup_place:
+              editForm.pickup_place || editForm.pickupLocation || "",
+            return_place:
+              editForm.return_place || editForm.returnLocation || "",
+            status: editForm.status || selectedBooking?.status || "",
+            booking_status: editForm.status || selectedBooking?.status || "",
+            payment_status:
+              editForm.payment_status ||
+              editForm.paymentStatus ||
+              selectedBooking?.payment_status ||
+              selectedBooking?.paymentStatus ||
+              "",
+          }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
+
+      const text = await res.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        /* not json, ignore */
+      }
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Edit failed (${res.status})`);
+        const msg =
+          payload?.message ||
+          payload?.exc ||
+          text ||
+          `แก้ไขข้อมูลการจองไม่สำเร็จ (${res.status})`;
+        throw new Error(msg);
       }
 
       alert("แก้ไขข้อมูลการจองสำเร็จ");
@@ -511,14 +585,18 @@ export default function BookingsTableNew({
       headers.append("Content-Type", "application/json");
 
       // เรียก API เพื่อยกเลิกการจอง (เปลี่ยนสถานะเป็น Cancelled)
+      const vehicleId =
+        selectedActionBooking?.carId || selectedActionBooking?.vehicle;
+
       const res = await fetch(
-        `${ERP_BASE}/api/method/frappe.api.api.edit_rental_status`,
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rentals_status`,
         {
           method: "POST",
           headers,
           body: JSON.stringify({
             rental_id: bookingId,
             status: "Cancelled",
+            vid: bookingId, // vid คือรหัสการจอง
           }),
           credentials: "include",
           redirect: "follow",
@@ -537,6 +615,64 @@ export default function BookingsTableNew({
         const msg =
           payload?.message || payload?.exc || text || "ยกเลิกการจองไม่สำเร็จ";
         throw new Error(msg);
+      }
+
+      // ตรวจสอบว่ามีข้อมูลการส่งมอบหรือไม่ก่อนเปลี่ยนสถานะรถ
+      const relatedDeliveries = await checkDeliveriesForBooking(bookingId);
+
+      if (relatedDeliveries.length === 0) {
+        // ไม่มีข้อมูลการส่งมอบ → เปลี่ยนสถานะรถเป็น "ว่าง"
+        // vehicleId ได้ถูกกำหนดไว้แล้วข้างบน
+
+        if (vehicleId) {
+          try {
+            console.log("Updating vehicle status to Available for:", vehicleId);
+            console.log("Vehicle data:", {
+              vid: vehicleId,
+              license_plate:
+                selectedActionBooking?.license_plate ||
+                selectedActionBooking?.car?.license_plate,
+              status: "Available",
+            });
+
+            const vehicleRes = await fetch(
+              `${ERP_BASE}/api/method/frappe.api.api.edit_vehicle_status`,
+              {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  vid: vehicleId, // รหัสรถยนต์
+                  license_plate:
+                    selectedActionBooking?.license_plate ||
+                    selectedActionBooking?.car?.license_plate,
+                  status: "Available",
+                }),
+                credentials: "include",
+                redirect: "follow",
+              }
+            );
+
+            const vehicleText = await vehicleRes.text();
+            let vehiclePayload = null;
+            try {
+              vehiclePayload = JSON.parse(vehicleText);
+            } catch {
+              /* not json, ignore */
+            }
+
+            if (!vehicleRes.ok) {
+              console.warn("Failed to update vehicle status:", vehicleText);
+              // ไม่แสดง error ให้ผู้ใช้ เพราะการยกเลิกการจองสำเร็จแล้ว
+            } else {
+              console.log("Vehicle status updated successfully");
+            }
+          } catch (vehicleErr) {
+            console.warn("Error updating vehicle status:", vehicleErr);
+            // ไม่แสดง error ให้ผู้ใช้ เพราะการยกเลิกการจองสำเร็จแล้ว
+          }
+        }
+      } else {
+        console.log("Vehicle status not updated due to existing deliveries");
       }
 
       onFetchBookings?.(); // Refresh the data
@@ -569,13 +705,14 @@ export default function BookingsTableNew({
 
       // เรียก API เพื่อเสร็จสิ้นการจอง (เปลี่ยนสถานะเป็น Completed)
       const res = await fetch(
-        `${ERP_BASE}/api/method/frappe.api.api.edit_rental_status`,
+        `${ERP_BASE}/api/method/frappe.api.api.edit_rentals_status`,
         {
           method: "POST",
           headers,
           body: JSON.stringify({
             rental_id: bookingId,
             status: "Completed",
+            vid: bookingId,
           }),
           credentials: "include",
           redirect: "follow",
@@ -599,6 +736,38 @@ export default function BookingsTableNew({
         throw new Error(msg);
       }
 
+      // อัปเดตสถานะรถเป็น "ซ่อมบำรุง" หลังจากเสร็จสิ้นการจอง
+      const vehicleId =
+        selectedActionBooking?.carId || selectedActionBooking?.vehicle;
+      if (vehicleId) {
+        try {
+          const vehicleRes = await fetch(
+            `${ERP_BASE}/api/method/frappe.api.api.edit_vehicle_status`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                vehicle_id: vehicleId,
+                status: "Maintenance",
+                vid: bookingId,
+                license_plate: selectedActionBooking?.license_plate || "",
+              }),
+              credentials: "include",
+              redirect: "follow",
+            }
+          );
+
+          if (!vehicleRes.ok) {
+            console.warn("Failed to update vehicle status to Maintenance");
+          } else {
+            console.log("Vehicle status updated to Maintenance successfully");
+          }
+        } catch (vehicleErr) {
+          console.warn("Error updating vehicle status:", vehicleErr);
+        }
+      }
+
+      alert("เสร็จสิ้นการจองสำเร็จ และรถอยู่ในสถานะซ่อมบำรุง");
       onFetchBookings?.(); // Refresh the data
       closeCompleteModal();
     } catch (err) {
@@ -1004,29 +1173,6 @@ export default function BookingsTableNew({
                             </svg>
                           </button>
                         )}
-                        {String(row.status || "")
-                          .toLowerCase()
-                          .includes("in use") && (
-                          <button
-                            onClick={() => handleComplete(row)}
-                            className="text-yellow-400 hover:text-yellow-300 transition-colors duration-200"
-                            title="เสร็จสิ้น"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12l2 2 4-4"
-                              />
-                            </svg>
-                          </button>
-                        )}
 
                         {/* ปุ่มยกเลิก - แสดงสำหรับการจองที่ยังไม่เสร็จสิ้นหรือยกเลิก */}
                         {!String(row.status || "")
@@ -1323,57 +1469,6 @@ export default function BookingsTableNew({
                         "—"}
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm text-slate-300">อีเมล</label>
-                    <div className="text-white">
-                      {selectedBooking.customerEmail || "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300">ที่อยู่</label>
-                    <div className="text-white">
-                      {selectedBooking.customerAddress || "—"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Car Information */}
-              <div className="bg-white/5 rounded-xl p-4">
-                <h4 className="text-lg font-semibold text-yellow-400 mb-3">
-                  ข้อมูลรถยนต์
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-slate-300">รถยนต์</label>
-                    <div className="text-white font-medium">
-                      {selectedBooking.vehicle ||
-                        selectedBooking.carName ||
-                        "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300">
-                      ป้ายทะเบียน
-                    </label>
-                    <div className="text-white font-mono">
-                      {selectedBooking.license_plate ||
-                        selectedBooking.carPlate ||
-                        "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300">ยี่ห้อ</label>
-                    <div className="text-white">
-                      {selectedBooking.carBrand || "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300">ประเภทรถ</label>
-                    <div className="text-white">
-                      {selectedBooking.carType || "—"}
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -1387,12 +1482,6 @@ export default function BookingsTableNew({
                     <label className="text-sm text-slate-300">รหัสการจอง</label>
                     <div className="text-white font-mono">
                       {selectedBooking.name || selectedBooking.id || "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-300">วันที่จอง</label>
-                    <div className="text-white">
-                      {fmtDateTimeLocal(selectedBooking.bookingDate) || "—"}
                     </div>
                   </div>
                   <div>
@@ -1454,9 +1543,9 @@ export default function BookingsTableNew({
                       สถานที่รับรถ
                     </label>
                     <div className="text-white">
-                      {selectedBooking.pickup_place ||
-                        selectedBooking.pickupLocation ||
-                        "—"}
+                      {selectedBooking.pickup_place
+                        ? decodeURIComponent(selectedBooking.pickup_place)
+                        : selectedBooking.pickupLocation || "—"}
                     </div>
                   </div>
                   <div>
@@ -1464,9 +1553,9 @@ export default function BookingsTableNew({
                       สถานที่คืนรถ
                     </label>
                     <div className="text-white">
-                      {selectedBooking.return_place ||
-                        selectedBooking.returnLocation ||
-                        "—"}
+                      {selectedBooking.return_place
+                        ? decodeURIComponent(selectedBooking.return_place)
+                        : selectedBooking.returnLocation || "—"}
                     </div>
                   </div>
                 </div>
@@ -1526,149 +1615,478 @@ export default function BookingsTableNew({
 
       {/* Edit Modal */}
       <Modal open={editOpen} onClose={closeEdit}>
-        <div className="w-full max-w-2xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white max-h-[90vh] overflow-y-auto border border-white/20">
-          <h3 className="text-xl font-bold mb-4">แก้ไขข้อมูลการจอง</h3>
-          <p className="text-slate-300 mb-6">อัปเดตข้อมูลการจองรถยนต์</p>
-
-          {/* Form */}
-          <div className="space-y-4">
-            {/* ชื่อลูกค้า */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                ชื่อลูกค้า *
-              </label>
-              <input
-                type="text"
-                value={editForm.customer_name || editForm.customerName || ""}
-                onChange={(e) =>
-                  handleEditFormChange("customer_name", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-                placeholder="เช่น สมชาย ใจดี"
-              />
+        <div className="w-full max-w-6xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white max-h-[90vh] overflow-y-auto border border-white/20">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-shrink-0 w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-6 h-6 text-yellow-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
             </div>
-
-            {/* เบอร์โทรศัพท์ */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                เบอร์โทรศัพท์ *
-              </label>
-              <input
-                type="tel"
-                value={editForm.customer_phone || editForm.customerPhone || ""}
-                onChange={(e) =>
-                  handleEditFormChange("customer_phone", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-                placeholder="เช่น 081-234-5678"
-              />
-            </div>
-
-            {/* วันที่รับรถ */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                วันที่รับรถ *
-              </label>
-              <input
-                type="datetime-local"
-                value={
-                  editForm.pickup_date || editForm.pickupDate
-                    ? new Date(editForm.pickup_date || editForm.pickupDate)
-                        .toISOString()
-                        .slice(0, 16)
-                    : ""
-                }
-                onChange={(e) =>
-                  handleEditFormChange("pickup_date", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-              />
-            </div>
-
-            {/* วันที่คืนรถ */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                วันที่คืนรถ *
-              </label>
-              <input
-                type="datetime-local"
-                value={
-                  editForm.return_date || editForm.returnDate
-                    ? new Date(editForm.return_date || editForm.returnDate)
-                        .toISOString()
-                        .slice(0, 16)
-                    : ""
-                }
-                onChange={(e) =>
-                  handleEditFormChange("return_date", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-              />
-            </div>
-
-            {/* สถานที่รับรถ */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                สถานที่รับรถ
-              </label>
-              <input
-                type="text"
-                value={editForm.pickup_place || editForm.pickupLocation || ""}
-                onChange={(e) =>
-                  handleEditFormChange("pickup_place", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-                placeholder="เช่น สนามบินสุวรรณภูมิ"
-              />
-            </div>
-
-            {/* สถานที่คืนรถ */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                สถานที่คืนรถ
-              </label>
-              <input
-                type="text"
-                value={editForm.return_place || editForm.returnLocation || ""}
-                onChange={(e) =>
-                  handleEditFormChange("return_place", e.target.value)
-                }
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-                placeholder="เช่น สนามบินสุวรรณภูมิ"
-              />
-            </div>
-
-            {/* หมายเหตุ */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                หมายเหตุ
-              </label>
-              <textarea
-                value={editForm.remarks || editForm.notes || ""}
-                onChange={(e) =>
-                  handleEditFormChange("remarks", e.target.value)
-                }
-                rows={3}
-                className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
-                placeholder="หมายเหตุเพิ่มเติม..."
-              />
+              <h3 className="text-2xl font-bold text-white">
+                แก้ไขข้อมูลการจอง
+              </h3>
+              <p className="text-slate-300">
+                อัปเดตข้อมูลการจองรถยนต์และสถานะทั้งหมด
+              </p>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          {/* Form Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* คอลัมน์ซ้าย - ข้อมูลการจอง */}
+            <div className="space-y-6">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h4 className="text-lg font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  ข้อมูลลูกค้า
+                </h4>
+                <div className="space-y-4">
+                  {/* ชื่อลูกค้า */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      ชื่อลูกค้า *
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        editForm.customer_name || editForm.customerName || ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("customer_name", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+                      placeholder={`ปัจจุบัน: ${
+                        selectedBooking?.customer_name ||
+                        selectedBooking?.customerName ||
+                        "—"
+                      }`}
+                    />
+                  </div>
+
+                  {/* เบอร์โทรศัพท์ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      เบอร์โทรศัพท์ *
+                    </label>
+                    <input
+                      type="tel"
+                      value={
+                        editForm.customer_phone || editForm.customerPhone || ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("customer_phone", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+                      placeholder={`ปัจจุบัน: ${
+                        selectedBooking?.customer_phone ||
+                        selectedBooking?.customerPhone ||
+                        "—"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h4 className="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                    />
+                  </svg>
+                  ข้อมูลการจอง
+                </h4>
+                <div className="space-y-4">
+                  {/* วันที่รับรถ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      วันที่รับรถ * (ปัจจุบัน:{" "}
+                      {selectedBooking?.pickup_date ||
+                      selectedBooking?.pickupDate
+                        ? new Date(
+                            selectedBooking.pickup_date ||
+                              selectedBooking.pickupDate
+                          ).toLocaleString("th-TH")
+                        : "—"}
+                      )
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={
+                        editForm.pickup_date || editForm.pickupDate
+                          ? new Date(
+                              editForm.pickup_date || editForm.pickupDate
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("pickup_date", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* วันที่คืนรถ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      วันที่คืนรถ * (ปัจจุบัน:{" "}
+                      {selectedBooking?.return_date ||
+                      selectedBooking?.returnDate
+                        ? new Date(
+                            selectedBooking.return_date ||
+                              selectedBooking.returnDate
+                          ).toLocaleString("th-TH")
+                        : "—"}
+                      )
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={
+                        editForm.return_date || editForm.returnDate
+                          ? new Date(
+                              editForm.return_date || editForm.returnDate
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("return_date", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* ราคารวม */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      ราคารวม (บาท)
+                    </label>
+                    <input
+                      type="number"
+                      value={editForm.total_price || editForm.totalPrice || ""}
+                      onChange={(e) =>
+                        handleEditFormChange("total_price", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+                      placeholder="เช่น 1000"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h4 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  สถานที่
+                </h4>
+                <div className="space-y-4">
+                  {/* สถานที่รับรถ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      สถานที่รับรถ
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        editForm.pickup_place || editForm.pickupLocation || ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("pickup_place", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300"
+                      placeholder={`ปัจจุบัน: ${
+                        selectedBooking?.pickup_place
+                          ? decodeURIComponent(selectedBooking.pickup_place)
+                          : selectedBooking?.pickupLocation || "—"
+                      }`}
+                    />
+                  </div>
+
+                  {/* สถานที่คืนรถ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      สถานที่คืนรถ
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        editForm.return_place || editForm.returnLocation || ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("return_place", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300"
+                      placeholder={`ปัจจุบัน: ${
+                        selectedBooking?.return_place
+                          ? decodeURIComponent(selectedBooking.return_place)
+                          : selectedBooking?.returnLocation || "—"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* คอลัมน์ขวา - สถานะและข้อมูลเพิ่มเติม */}
+            <div className="space-y-6">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h4 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  สถานะการจอง
+                </h4>
+                <div className="space-y-4">
+                  {/* สถานะการจอง */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      สถานะการจอง *
+                    </label>
+                    <select
+                      value={editForm.status || ""}
+                      onChange={(e) =>
+                        handleEditFormChange("status", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300"
+                    >
+                      <option value="" className="bg-slate-800 text-white">
+                        เลือกสถานะ (ปัจจุบัน: {selectedBooking?.status || "—"})
+                      </option>
+                      <option
+                        value="Waiting Pickup"
+                        className="bg-slate-800 text-white"
+                      >
+                        รอรับ
+                      </option>
+                      <option
+                        value="Pickup Overdue"
+                        className="bg-slate-800 text-white"
+                      >
+                        เลยกำหนดรับ
+                      </option>
+                      <option
+                        value="In Use"
+                        className="bg-slate-800 text-white"
+                      >
+                        กำลังเช่า
+                      </option>
+                      <option
+                        value="Completed"
+                        className="bg-slate-800 text-white"
+                      >
+                        เสร็จสิ้น
+                      </option>
+                      <option
+                        value="Cancelled"
+                        className="bg-slate-800 text-white"
+                      >
+                        ยกเลิก
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* สถานะการชำระเงิน */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      สถานะการชำระเงิน
+                    </label>
+                    <select
+                      value={
+                        editForm.payment_status || editForm.paymentStatus || ""
+                      }
+                      onChange={(e) =>
+                        handleEditFormChange("payment_status", e.target.value)
+                      }
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all duration-300"
+                    >
+                      <option value="" className="bg-slate-800 text-white">
+                        เลือกสถานะการชำระเงิน (ปัจจุบัน:{" "}
+                        {selectedBooking?.payment_status ||
+                          selectedBooking?.paymentStatus ||
+                          "—"}
+                        )
+                      </option>
+                      <option
+                        value="Partial Pay"
+                        className="bg-slate-800 text-white"
+                      >
+                        ชำระบางส่วน
+                      </option>
+                      <option value="Paid" className="bg-slate-800 text-white">
+                        ชำระแล้ว
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h4 className="text-lg font-semibold text-indigo-400 mb-4 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  หมายเหตุและข้อมูลเพิ่มเติม
+                </h4>
+                <div className="space-y-4">
+                  {/* หมายเหตุ */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      หมายเหตุ
+                    </label>
+                    <textarea
+                      value={editForm.remarks || editForm.notes || ""}
+                      onChange={(e) =>
+                        handleEditFormChange("remarks", e.target.value)
+                      }
+                      rows={4}
+                      className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-300"
+                      placeholder={`ปัจจุบัน: ${
+                        selectedBooking?.remarks ||
+                        selectedBooking?.notes ||
+                        "—"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-white/10">
             <button
               onClick={closeEdit}
               disabled={editLoading}
-              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
               ยกเลิก
             </button>
             <button
               onClick={doEdit}
               disabled={editLoading}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {editLoading ? "กำลังบันทึก..." : "บันทึก"}
+              {editLoading ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  กำลังบันทึก...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  บันทึกการเปลี่ยนแปลง
+                </>
+              )}
             </button>
           </div>
         </div>

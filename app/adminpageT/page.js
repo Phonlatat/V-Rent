@@ -10,6 +10,7 @@ import Link from "next/link";
 import EmployeeCard from "@/Components/admin/EmployeeCard";
 import AddCarCard from "@/Components/admin/AddCarCard";
 import AdminSlideModal from "@/Components/admin/AdminSlideModal";
+import Dashboard from "@/Components/admin/Dashboard";
 
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
@@ -745,6 +746,11 @@ export default function AdminPage() {
                       onFetchDeliveries={fetchDeliveries} // เพิ่มใหม่
                       getCarRowStatus={getCarRowStatus}
                     />
+                  </div>
+
+                  {/* Dashboard Section */}
+                  <div className="mb-4 sm:mb-6">
+                    <Dashboard />
                   </div>
                 </div>
               </div>

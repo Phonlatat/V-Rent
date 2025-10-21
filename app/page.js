@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { cars } from "@/data/cars";
+import CarDetailModal from "@/Components/CarDetailModal";
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -12,7 +13,103 @@ export default function Home() {
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [animatedStats, setAnimatedStats] = useState({});
   const [openFAQ, setOpenFAQ] = useState(null);
+  const [randomCars, setRandomCars] = useState([]);
+  const [carsLoading, setCarsLoading] = useState(true);
+  const [carsError, setCarsError] = useState(null);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const sectionRefs = useRef({});
+
+  // ฟังก์ชันสำหรับดึงข้อมูลรถสุ่มจาก API
+  const fetchRandomCars = async () => {
+    try {
+      setCarsLoading(true);
+      setCarsError(null);
+
+      const response = await fetch("/api/vehicles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          limit: 6, // ดึง 6 คันเพื่อแสดงในส่วนรถยอดนิยม
+          random: true, // ส่งพารามิเตอร์เพื่อให้ API สุ่มรถ
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch vehicles");
+      }
+
+      const data = await response.json();
+      let vehicles = [];
+
+      // ตรวจสอบรูปแบบข้อมูลที่ได้จาก API
+      if (data.message && Array.isArray(data.message)) {
+        vehicles = data.message;
+      } else if (Array.isArray(data)) {
+        vehicles = data;
+      } else {
+        throw new Error("Invalid data format from API");
+      }
+
+      // ถ้าได้ข้อมูลรถจริงมา ให้ใช้ข้อมูลนั้น
+      if (vehicles.length > 0) {
+        // แปลงข้อมูลจาก API ให้ตรงกับรูปแบบที่ใช้ใน component
+        const formattedCars = vehicles.map((vehicle, index) => ({
+          id: vehicle.name || vehicle.id || `api-${index}`,
+          name: vehicle.vehicle_name || vehicle.name || "รถยนต์",
+          brand: vehicle.brand || vehicle.make || "ไม่ระบุ",
+          type: vehicle.vehicle_type || vehicle.type || "รถยนต์",
+          pricePerDay: parseInt(
+            vehicle.daily_rate || vehicle.price_per_day || 1000
+          ),
+          year: parseInt(vehicle.year || vehicle.model_year || 2020),
+          seats: parseInt(vehicle.seating_capacity || vehicle.seats || 5),
+          transmission: vehicle.transmission || "อัตโนมัติ",
+          fuel: vehicle.fuel_type || "เบนซิน",
+          image: vehicle.image || vehicle.vehicle_image || "/noimage.jpg",
+          description:
+            vehicle.description || vehicle.notes || "รถคุณภาพดี พร้อมให้บริการ",
+          company: { name: vehicle.company || "V-Rent Partner" },
+        }));
+
+        // สุ่มเลือก 6 คัน
+        const shuffled = formattedCars.sort(() => 0.5 - Math.random());
+        setRandomCars(shuffled.slice(0, 6));
+      } else {
+        // ถ้าไม่มีข้อมูลจาก API ให้ใช้ข้อมูล static แทน
+        const shuffled = [...cars].sort(() => 0.5 - Math.random());
+        setRandomCars(shuffled.slice(0, 6));
+      }
+    } catch (error) {
+      console.error("Error fetching random cars:", error);
+      setCarsError(error.message);
+
+      // Fallback: ใช้ข้อมูล static และสุ่ม
+      const shuffled = [...cars].sort(() => 0.5 - Math.random());
+      setRandomCars(shuffled.slice(0, 6));
+    } finally {
+      setCarsLoading(false);
+    }
+  };
+
+  // ดึงข้อมูลรถสุ่มเมื่อ component โหลด
+  useEffect(() => {
+    fetchRandomCars();
+  }, []);
+
+  // ฟังก์ชันสำหรับเปิด modal แสดงรายละเอียดรถ
+  const handleViewDetails = (car) => {
+    setSelectedCar(car);
+    setIsModalOpen(true);
+  };
+
+  // ฟังก์ชันสำหรับปิด modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCar(null);
+  };
 
   // Hero image carousel
   useEffect(() => {
@@ -170,15 +267,15 @@ export default function Home() {
     },
   ];
 
-  // Popular cars data
-  const popularCars = [
-    cars.find((c) => c.id === 1), // Toyota Corolla Cross
-    cars.find((c) => c.id === 4), // Nissan Skyline R34
-    cars.find((c) => c.id === 2), // Mitsubishi Evolution
-    cars.find((c) => c.id === 3), // Toyota AE86
-    cars.find((c) => c.id === 7), // Nissan Silvia S13
-    cars.find((c) => c.id === 8), // Subaru WRX STI
-  ].filter(Boolean);
+  // Popular cars data - ใช้ข้อมูลสุ่มจาก API แทนข้อมูล static
+  // const popularCars = [
+  //   cars.find((c) => c.id === 1), // Toyota Corolla Cross
+  //   cars.find((c) => c.id === 4), // Nissan Skyline R34
+  //   cars.find((c) => c.id === 2), // Mitsubishi Evolution
+  //   cars.find((c) => c.id === 3), // Toyota AE86
+  //   cars.find((c) => c.id === 7), // Nissan Silvia S13
+  //   cars.find((c) => c.id === 8), // Subaru WRX STI
+  // ].filter(Boolean);
 
   // Hero images for carousel
   const heroImages = [
@@ -517,49 +614,123 @@ export default function Home() {
               รถยอดนิยม
             </h2>
             <p className="text-slate-300">รถคัดสรรคุณภาพสูง พร้อมให้บริการ</p>
+            {carsError && (
+              <p className="text-yellow-400 text-sm mt-2">
+                กำลังใช้ข้อมูลสำรอง (ไม่สามารถเชื่อมต่อ API ได้)
+              </p>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularCars.map((car, index) => (
-              <div
-                key={car.id}
-                className="group bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:bg-white/15 transition-all duration-300 hover:-translate-y-2 hover:scale-105 hover:border-yellow-400/30 hover:shadow-xl"
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={car.image}
-                    alt={car.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
-                    {car.type}
+
+          {carsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 animate-pulse"
+                >
+                  <div className="h-48 bg-slate-700/50"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-slate-700/50 rounded mb-2"></div>
+                    <div className="h-3 bg-slate-700/50 rounded mb-3 w-2/3"></div>
+                    <div className="h-6 bg-slate-700/50 rounded w-1/2"></div>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-white font-semibold mb-1 group-hover:text-yellow-400 transition-colors duration-300">
-                    {car.name}
-                  </h3>
-                  <p className="text-slate-400 text-sm mb-3">
-                    {car.brand} • {car.year} • {car.transmission}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-yellow-400 font-bold text-lg">
-                      ฿{car.pricePerDay.toLocaleString()}/วัน
-                    </span>
-                    <Link
-                      href={`/car/${car.id}`}
-                      className="opacity-0 group-hover:opacity-100 bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105"
-                    >
-                      ดูรายละเอียด
-                    </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {randomCars.map((car, index) => (
+                <div
+                  key={car.id}
+                  className="group bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:bg-white/15 transition-all duration-300 hover:-translate-y-2 hover:scale-105 hover:border-yellow-400/30 hover:shadow-xl"
+                  style={{ transitionDelay: `${index * 100}ms` }}
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={car.image}
+                      alt={car.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
+                      {car.type}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-white font-semibold mb-1 group-hover:text-yellow-400 transition-colors duration-300">
+                      {car.name}
+                    </h3>
+                    <p className="text-slate-400 text-sm mb-3">
+                      {car.brand} • {car.year} • {car.transmission}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-yellow-400 font-bold text-lg">
+                        ฿{car.pricePerDay.toLocaleString()}/วัน
+                      </span>
+                      <button
+                        onClick={() => handleViewDetails(car)}
+                        className="opacity-0 group-hover:opacity-100 bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105"
+                      >
+                        ดูรายละเอียด
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-8">
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={fetchRandomCars}
+              disabled={carsLoading}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black rounded-xl hover:from-amber-500 hover:to-yellow-400 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {carsLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  กำลังโหลด...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  สุ่มรถใหม่
+                </>
+              )}
+            </button>
+
             <Link
               href="/cars"
               className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-xl hover:bg-white/20 hover:border-yellow-400/30 transition-all duration-300 hover:scale-105"
@@ -702,7 +873,7 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="text-slate-300 text-sm sm:text-base mb-2">
-                        "{testimonial.text}"
+                        &ldquo;{testimonial.text}&rdquo;
                       </p>
                       <div className="flex items-center justify-center gap-2">
                         <div className="flex">
@@ -1050,6 +1221,13 @@ export default function Home() {
           <div className="w-1 h-3 bg-white/50 rounded-full mt-2 animate-pulse" />
         </div>
       </div>
+
+      {/* Car Detail Modal */}
+      <CarDetailModal
+        car={selectedCar}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

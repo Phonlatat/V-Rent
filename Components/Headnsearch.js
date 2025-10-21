@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import BookingBox from "@/Components/bookingbox";
 
 const ERP_BASE = (
@@ -51,11 +51,22 @@ export default function Headnsearch({
       <div className="pt-[max(2rem,env(safe-area-inset-top))] pb-8">
         <div className="px-4 sm:px-6">
           <div className="mx-auto w-full max-w-6xl">
-            <BookingBox
-              pickupLocation={pickupLocation}
-              setPickupLocation={setPickupLocation}
-              pushToCars={true}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="w-6 h-6 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-white text-sm">กำลังโหลด...</p>
+                  </div>
+                </div>
+              }
+            >
+              <BookingBox
+                pickupLocation={pickupLocation}
+                setPickupLocation={setPickupLocation}
+                pushToCars={true}
+              />
+            </Suspense>
           </div>
         </div>
       </div>

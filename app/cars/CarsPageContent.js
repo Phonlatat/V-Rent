@@ -1,7 +1,7 @@
 // app/cars/CarsPageContent.js
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import BookingBox from "@/Components/bookingbox";
@@ -9,7 +9,7 @@ import CarsFilter from "@/Components/CarsCard/carsfilter";
 import CarList from "@/Components/CarsCard/carList";
 import FilterDrawer from "@/Components/CarsCard/FilterDrawer"; // drawer สำหรับมือถือ
 
-export default function CarsPageContent() {
+function CarsPageContentInner() {
   const search = useSearchParams();
 
   /* ------ ดึงค่าจาก URL (payload คงค่า form ของผู้ใช้) ------ */
@@ -251,5 +251,22 @@ export default function CarsPageContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CarsPageContent() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-300">กำลังโหลดข้อมูล...</p>
+          </div>
+        </div>
+      }
+    >
+      <CarsPageContentInner />
+    </Suspense>
   );
 }

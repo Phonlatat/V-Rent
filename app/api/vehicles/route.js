@@ -13,6 +13,12 @@ export async function POST(req) {
     payload = await req.json();
   } catch {}
 
+  // ถ้ามีพารามิเตอร์ random ให้เพิ่มการสุ่มใน payload
+  if (payload.random) {
+    payload.randomize = true;
+    payload.order_by = "RAND()"; // สำหรับ MySQL/MariaDB
+  }
+
   // 1) พยายามเรียก search (รองรับ body)
   try {
     const r = await fetch(ERP_SEARCH_URL, {
@@ -31,7 +37,19 @@ export async function POST(req) {
     }
 
     if (r.ok && (j?.message || Array.isArray(j))) {
-      return NextResponse.json(j);
+      // ถ้าข้อมูลที่ได้เป็น array ให้ส่งกลับไปเลย
+      let vehicles = j?.message || j;
+
+      // ถ้ามี limit ให้จำกัดจำนวน
+      if (payload.limit && Array.isArray(vehicles)) {
+        vehicles = vehicles.slice(0, payload.limit);
+      }
+
+      return NextResponse.json({
+        message: vehicles,
+        success: true,
+        count: Array.isArray(vehicles) ? vehicles.length : 0,
+      });
     }
     // ถ้า search ไม่โอเค ไป fallback ต่อ
     console.warn("search_available_vehicles failed; fallback", j);

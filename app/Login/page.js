@@ -421,7 +421,7 @@ export default function Login() {
                   onClick={() => router.push("/Signup")}
                   className="w-full rounded-xl sm:rounded-2xl border border-white/40 text-white/95 py-3 sm:py-4 text-sm sm:text-base hover:bg-white/15 hover:border-white/60 active:scale-[.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/40 font-medium"
                 >
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                   <span className="text-yellow-400 hover:text-yellow-300 underline underline-offset-4 hover:underline-offset-2 transition-all duration-300 font-semibold">
                     Sign up
                   </span>

@@ -19,6 +19,8 @@ export default function Home() {
   const [selectedCar, setSelectedCar] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const sectionRefs = useRef({});
+  // ตรวจสอบว่า ERP_BASE ถูกต้องใน production
+  const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 
   // ฟังก์ชันสำหรับดึงข้อมูลรถสุ่มจาก API
   const fetchRandomCars = async () => {
@@ -647,10 +649,13 @@ export default function Home() {
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={car.image}
+                      src={`/api/image-proxy?url=${encodeURIComponent(
+                        car.image
+                      )}`}
                       alt={car.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = "/noimage.jpg";
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">

@@ -657,6 +657,7 @@ export default function Home() {
                         e.target.src = "/noimage.jpg";
                       }}
                     />
+
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute top-3 right-3 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold">
                       {car.type}

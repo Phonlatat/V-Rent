@@ -6,32 +6,6 @@ export default function Slidemodal({ onSelectCity }) {
   const tabs = useMemo(
     () => [
       {
-        key: "recommend",
-        mLabel: "แนะนำ",
-        label: "รถเช่าแนะนำ",
-        content: (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {["Toyota Yaris", "Toyota Fortuner", "Toyota Commuter"].map(
-              (name, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-4 shadow-lg hover:shadow-xl hover:bg-white/15 hover:border-yellow-400/30 transition-all duration-300"
-                >
-                  <div className="text-white font-semibold">{name}</div>
-                  <p className="text-sm text-slate-300 mt-1">
-                    เกียร์อัตโนมัติ • แอร์เย็น • รับ-ส่งสนามบิน
-                  </p>
-                  <button className="mt-3 px-3 py-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-medium hover:from-amber-500 hover:to-yellow-400 hover:scale-105 transition-all duration-300">
-                    จองเลย
-                  </button>
-                </div>
-              )
-            )}
-          </div>
-        ),
-      },
-
-      {
         key: "cities",
         mLabel: "ยอดนิยม",
         label: "สถานที่รับรถยอดนิยม",

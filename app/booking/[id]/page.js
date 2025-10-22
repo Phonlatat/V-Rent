@@ -748,7 +748,16 @@ export default function BookingPage() {
                     <div className="flex items-start gap-4 sm:gap-6">
                       <div className="relative w-24 h-18 sm:w-32 sm:h-24 rounded-xl overflow-hidden border border-white/20 shadow-lg transition-transform duration-300 hover:scale-105">
                         <Image
-                          src={car.image || "/noimage.jpg"}
+                          src={
+                            car.image
+                              ? car.image.startsWith("data:") ||
+                                car.image.startsWith("/")
+                                ? car.image
+                                : `/api/image-proxy?url=${encodeURIComponent(
+                                    car.image
+                                  )}`
+                              : "/noimage.jpg"
+                          }
                           alt={car.name}
                           fill
                           className="object-cover"

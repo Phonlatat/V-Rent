@@ -14,7 +14,7 @@ function normalizeFileUrl(u) {
   if (!/^https?:\/\//i.test(s)) {
     s = ERP_BASE.replace(/\/+$/, "") + "/" + s.replace(/^\/+/, "");
   }
-  return encodeURI(s);
+  return `/api/image-proxy?url=${encodeURIComponent(s)}`;
 }
 
 const toDate = (val) => {
@@ -989,7 +989,9 @@ export default function DeliveriesTableNew({
                               selectedDelivery.confirm_proofs !== "—" && (
                                 <div className="space-y-2">
                                   <img
-                                    src={`http://203.154.83.160${selectedDelivery.confirm_proofs}`}
+                                    src={`/api/image-proxy?url=${encodeURIComponent(
+                                      `http://203.154.83.160${selectedDelivery.confirm_proofs}`
+                                    )}`}
                                     alt="รูปภาพยืนยันตัวตน"
                                     className="w-full h-32 object-cover rounded-lg border border-white/20"
                                     onError={(e) => {
@@ -1044,7 +1046,9 @@ export default function DeliveriesTableNew({
                               selectedDelivery.car_proofs !== "—" && (
                                 <div className="space-y-2">
                                   <img
-                                    src={`http://203.154.83.160${selectedDelivery.car_proofs}`}
+                                    src={`/api/image-proxy?url=${encodeURIComponent(
+                                      `http://203.154.83.160${selectedDelivery.car_proofs}`
+                                    )}`}
                                     alt="รูปภาพรถยนต์"
                                     className="w-full h-32 object-cover rounded-lg border border-white/20"
                                     onError={(e) => {
@@ -1099,7 +1103,9 @@ export default function DeliveriesTableNew({
                               selectedDelivery.slip_proofs !== "—" && (
                                 <div className="space-y-2">
                                   <img
-                                    src={`http://203.154.83.160${selectedDelivery.slip_proofs}`}
+                                    src={`/api/image-proxy?url=${encodeURIComponent(
+                                      `http://203.154.83.160${selectedDelivery.slip_proofs}`
+                                    )}`}
                                     alt="สลิปชำระเงิน"
                                     className="w-full h-32 object-cover rounded-lg border border-white/20"
                                     onError={(e) => {

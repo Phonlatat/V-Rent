@@ -89,13 +89,10 @@ export default function CarsPage() {
   // ===== API Fetch Functions =====
   const fetchCars = async () => {
     try {
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_vehicles_admin",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/vehicles-admin", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -128,13 +125,10 @@ export default function CarsPage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/rentals", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();

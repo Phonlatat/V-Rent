@@ -80,11 +80,16 @@ function normalizeImage(u) {
   if (!u) return noImg;
   let s = String(u).trim();
   if (!s) return noImg;
-  if (/^https?:\/\//i.test(s)) return s; // absolute url
-  if (s.startsWith("//")) return "https:" + s; // //host/path
-  if (s.startsWith("/")) return ERP_BASE + s; // /files/... จาก ERP
+  if (/^https?:\/\//i.test(s))
+    return `/api/image-proxy?url=${encodeURIComponent(s)}`; // absolute url
+  if (s.startsWith("//"))
+    return `/api/image-proxy?url=${encodeURIComponent("https:" + s)}`; // //host/path
+  if (s.startsWith("/"))
+    return `/api/image-proxy?url=${encodeURIComponent(ERP_BASE + s)}`; // /files/... จาก ERP
   // อย่างอื่นถือว่าเป็น relative -> ชี้ไป ERP
-  return ERP_BASE + "/" + s.replace(/^\/+/, "");
+  return `/api/image-proxy?url=${encodeURIComponent(
+    ERP_BASE + "/" + s.replace(/^\/+/, "")
+  )}`;
 }
 
 /** เดารูป: API ใหม่ใช้ vehicle_image เป็นหลัก */

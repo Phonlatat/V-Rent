@@ -292,7 +292,7 @@ export default function PartnerIntroPrimeDrive() {
               className="rounded-2xl overflow-hidden border border-white/20 hover:border-white/30 transition"
             >
               <Image
-                src={car.img}
+                src={`/api/image-proxy?url=${encodeURIComponent(car.img)}`}
                 alt={car.name}
                 width={800}
                 height={500}

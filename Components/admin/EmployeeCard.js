@@ -240,7 +240,9 @@ export default function EmployeeCard({ userId = "" }) {
   }, [userId]);
 
   const bannerImage =
-    employee.image && employee.image !== "-" ? employee.image : "/noimage.jpg"; // 🔁 เปลี่ยนเป็น placeholder ถ้าไม่มีรูป
+    employee.image && employee.image !== "-"
+      ? `/api/image-proxy?url=${encodeURIComponent(employee.image)}`
+      : "/noimage.jpg"; // 🔁 เปลี่ยนเป็น placeholder ถ้าไม่มีรูป
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden group hover:bg-white/15 transition-all duration-300">

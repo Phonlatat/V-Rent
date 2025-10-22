@@ -859,7 +859,12 @@ function AdminDeliveryContent() {
                     className="relative rounded-lg overflow-hidden border border-slate-300"
                   >
                     <img
-                      src={p.dataUrl || p.url}
+                      src={
+                        p.dataUrl ||
+                        (p.url && p.url.startsWith("data:")
+                          ? p.url
+                          : `/api/image-proxy?url=${encodeURIComponent(p.url)}`)
+                      }
                       alt={`ID Proof ${i + 1}`}
                       className="w-full h-32 object-cover"
                     />
@@ -906,7 +911,12 @@ function AdminDeliveryContent() {
                     className="relative rounded-lg overflow-hidden border border-slate-300"
                   >
                     <img
-                      src={p.dataUrl || p.url}
+                      src={
+                        p.dataUrl ||
+                        (p.url && p.url.startsWith("data:")
+                          ? p.url
+                          : `/api/image-proxy?url=${encodeURIComponent(p.url)}`)
+                      }
                       alt={`Car Proof ${i + 1}`}
                       className="w-full h-32 object-cover"
                     />
@@ -953,7 +963,12 @@ function AdminDeliveryContent() {
                     className="relative rounded-lg overflow-hidden border border-slate-300"
                   >
                     <img
-                      src={p.dataUrl || p.url}
+                      src={
+                        p.dataUrl ||
+                        (p.url && p.url.startsWith("data:")
+                          ? p.url
+                          : `/api/image-proxy?url=${encodeURIComponent(p.url)}`)
+                      }
                       alt={`Slip Proof ${i + 1}`}
                       className="w-full h-32 object-cover"
                     />

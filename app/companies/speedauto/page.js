@@ -249,7 +249,7 @@ export default function PartnerIntroSpeedAuto() {
           </div>
           <div className="rounded-3xl overflow-hidden border border-white/10">
             <img
-              src="https://picsum.photos/1200/800?random=51"
+              src="/api/image-proxy?url=https%3A%2F%2Fpicsum.photos%2F1200%2F800%3Frandom%3D51"
               alt="benefits"
               className="w-full h-72 object-cover"
             />
@@ -290,7 +290,7 @@ export default function PartnerIntroSpeedAuto() {
               className="rounded-2xl overflow-hidden border border-white/10 hover:border-white/20 transition"
             >
               <img
-                src={car.img}
+                src={`/api/image-proxy?url=${encodeURIComponent(car.img)}`}
                 alt={car.name}
                 className="h-44 w-full object-cover"
               />

@@ -184,13 +184,10 @@ export default function AdminPage() {
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_vehicles",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/vehicles", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -226,13 +223,10 @@ export default function AdminPage() {
   const fetchBookings = async () => {
     try {
       setBookingsLoading(true);
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/rentals", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -265,13 +259,10 @@ export default function AdminPage() {
   const fetchDeliveries = async () => {
     try {
       setDeliveriesLoading(true);
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_dlv",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/deliveries", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();

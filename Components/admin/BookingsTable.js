@@ -21,7 +21,7 @@ function normalizeFileUrl(u) {
   if (!/^https?:\/\//i.test(s)) {
     s = ERP_BASE.replace(/\/+$/, "") + "/" + s.replace(/^\/+/, "");
   }
-  return encodeURI(s);
+  return `/api/image-proxy?url=${encodeURIComponent(s)}`;
 }
 
 /* ───────── helpers ───────── */

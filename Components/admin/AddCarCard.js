@@ -357,7 +357,13 @@ export default function AddCarCard({
           {localForm.imageData ? (
             <div className="mt-2">
               <img
-                src={localForm.imageData}
+                src={
+                  localForm.imageData.startsWith("data:")
+                    ? localForm.imageData
+                    : `/api/image-proxy?url=${encodeURIComponent(
+                        localForm.imageData
+                      )}`
+                }
                 alt="ตัวอย่างรูปรถ"
                 className="h-24 w-full max-w-[180px] rounded-xl border border-white/20 object-cover"
               />

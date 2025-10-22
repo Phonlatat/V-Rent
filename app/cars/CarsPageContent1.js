@@ -16,7 +16,7 @@ function normalizeImage(u) {
   if (s.startsWith("/")) s = IMG_BASE.replace(/\/+$/, "") + s;
   if (!/^https?:\/\//i.test(s))
     s = IMG_BASE.replace(/\/+$/, "") + "/" + s.replace(/^\/+/, "");
-  return encodeURI(s);
+  return `/api/image-proxy?url=${encodeURIComponent(s)}`;
 }
 const slugify = (v) =>
   String(v ?? "")

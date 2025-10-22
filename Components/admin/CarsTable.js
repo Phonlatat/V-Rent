@@ -27,7 +27,7 @@ function normalizeImage(u) {
   if (!/^https?:\/\//i.test(s)) {
     s = ERP_BASE.replace(/\/+$/, "") + "/" + s.replace(/^\/+/, "");
   }
-  return encodeURI(s);
+  return `/api/image-proxy?url=${encodeURIComponent(s)}`;
 }
 
 function Modal({ open, onClose, children }) {

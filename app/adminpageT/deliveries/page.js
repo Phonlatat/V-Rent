@@ -41,13 +41,10 @@ export default function DeliveriesPage() {
   // ===== API Fetch Functions =====
   const fetchDeliveries = async () => {
     try {
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.get_dlv",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/admin/deliveries", {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();

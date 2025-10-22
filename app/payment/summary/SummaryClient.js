@@ -37,7 +37,12 @@ export default function PaymentSummaryPage() {
   const return_at = sp.get("return_at") || "-";
 
   const carName = sp.get("carName") || "-";
-  const carImage = sp.get("carImage") || "/noimage.jpg";
+  const carImage = sp.get("carImage")
+    ? sp.get("carImage").startsWith("data:") ||
+      sp.get("carImage").startsWith("/")
+      ? sp.get("carImage")
+      : `/api/image-proxy?url=${encodeURIComponent(sp.get("carImage"))}`
+    : "/noimage.jpg";
   const pricePerDay = sp.get("pricePerDay") || "0";
   const carBrand = sp.get("carBrand") || "-";
   const carType = sp.get("carType") || "-";

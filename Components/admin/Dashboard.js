@@ -84,7 +84,7 @@ export default function Dashboard() {
       // Fetch all dashboard data and bookings in parallel
       const [vehicleRes, customerRes, pieRes, bookingsData] = await Promise.all(
         [
-          fetch(`${ERP_BASE}/api/method/frappe.api.api.get_report_saperate`, {
+          fetch(`/api/erp-proxy/frappe.api.api.get_report_saperate`, {
             method: "POST",
             headers,
             body: JSON.stringify({
@@ -94,7 +94,7 @@ export default function Dashboard() {
             credentials: "include",
             redirect: "follow",
           }),
-          fetch(`${ERP_BASE}/api/method/frappe.api.api.get_report_customer`, {
+          fetch(`/api/erp-proxy/frappe.api.api.get_report_customer`, {
             method: "POST",
             headers,
             body: JSON.stringify({
@@ -104,7 +104,7 @@ export default function Dashboard() {
             credentials: "include",
             redirect: "follow",
           }),
-          fetch(`${ERP_BASE}/api/method/frappe.api.api.get_report_piechart`, {
+          fetch(`/api/erp-proxy/frappe.api.api.get_report_piechart`, {
             method: "POST",
             headers,
             body: JSON.stringify({

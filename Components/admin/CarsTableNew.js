@@ -9,10 +9,8 @@ import { createPortal } from "react-dom";
 const MAX_FILE_MB = 3;
 
 /** ───────── ERP CONFIG (ปรับได้) ───────── */
-const ERP_DELETE_URL =
-  "http://203.154.83.160/api/method/frappe.api.api.delete_vehicle";
-const ERP_EDIT_URL =
-  "http://203.154.83.160/api/method/frappe.api.api.edit_vehicles";
+const ERP_DELETE_URL = "/api/erp-proxy/frappe.api.api.delete_vehicle";
+const ERP_EDIT_URL = "/api/erp-proxy/frappe.api.api.edit_vehicles";
 
 /** ✅ Base URL และตัวช่วยแปลง URL รูป */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";

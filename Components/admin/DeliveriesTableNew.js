@@ -236,15 +236,12 @@ export default function DeliveriesTableNew({
 
       console.log("Sending delete request for delivery ID:", selectedDeleteId);
 
-      const response = await fetch(
-        "http://203.154.83.160/api/method/frappe.api.api.delete_dlv",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dlv_id: selectedDeleteId }),
-          credentials: "include",
-        }
-      );
+      const response = await fetch("/api/erp-proxy/frappe.api.api.delete_dlv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dlv_id: selectedDeleteId }),
+        credentials: "include",
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

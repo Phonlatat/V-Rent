@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const RENTAL_ENDPOINTS = [
-  "/api/method/frappe.api.api.get_rentals_today",
-  "/api/method/frappe.api.api.get_rentals_overall",
-  "/api/method/frappe.api.api.get_rentals",
+  "/api/erp-proxy/frappe.api.api.get_rentals_today",
+  "/api/erp-proxy/frappe.api.api.get_rentals_overall",
+  "/api/erp-proxy/frappe.api.api.get_rentals",
 ];
 
 export default function EmployeeCard({ userId = "" }) {

@@ -469,7 +469,7 @@ export default function BookingsTableNew({
       const headers = new Headers();
       headers.append("Content-Type", "application/json");
 
-      const res = await fetch(`${ERP_BASE}/api/method/frappe.api.api.get_dlv`, {
+      const res = await fetch(`/api/erp-proxy/frappe.api.api.get_dlv`, {
         method: "GET",
         headers,
         credentials: "include",

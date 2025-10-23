@@ -39,7 +39,7 @@ export default function Header() {
     setSigningOut(true);
     try {
       // ลบ session cookie ที่ ERPNext
-      await fetch("http://203.154.83.160/api/method/logout", {
+      await fetch("/api/erp-proxy/logout", {
         method: "GET",
         credentials: "include",
       });

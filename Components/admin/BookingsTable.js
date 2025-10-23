@@ -356,7 +356,7 @@ async function apiUpdateStatus({ rid, status, payment }) {
   fd.append("rid", rid);
   if (status) fd.append("status", status); // "Completed" | "Cancelled" | ...
   if (typeof payment !== "undefined") fd.append("payment_status", payment); // "Paid" | ""
-  const res = await fetch(`${ERP_BASE}/api/method/frappe.api.api.edit_rental`, {
+  const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_rental`, {
     method: "POST",
     body: fd,
     credentials: "include",

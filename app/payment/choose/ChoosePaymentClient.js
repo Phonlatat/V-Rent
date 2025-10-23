@@ -245,7 +245,7 @@ export default function ChoosePaymentClient() {
       (async () => {
         try {
           const response = await fetch(
-            `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
+            `/api/erp-proxy/frappe.api.api.get_user_information`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -373,7 +373,12 @@ export default function ChoosePaymentClient() {
 
       const res = await fetch(
         "http://203.154.83.160/api/method/frappe.api.api.create_rental",
-        { method: "POST", body: fd, credentials: "include", redirect: "follow" }
+        {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+          redirect: "follow",
+        }
       );
 
       const text = await res.text();

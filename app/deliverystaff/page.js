@@ -364,7 +364,7 @@ function AdminDeliveryContent() {
 
     try {
       const response = await fetch(
-        "/api/erp-proxy/frappe.api.api.get_rentals",
+        "http://203.154.83.160/api/method/frappe.api.api.get_rentals",
         {
           method: "GET",
           credentials: "include",
@@ -445,7 +445,7 @@ function AdminDeliveryContent() {
     headers.append("Content-Type", "application/json");
 
     const res = await fetch(
-      "/api/erp-proxy/frappe.api.api.edit_rentals_status",
+      "http://203.154.83.160/api/method/frappe.api.api.edit_rentals_status",
       {
         method: "POST",
         headers,
@@ -570,13 +570,16 @@ function AdminDeliveryContent() {
     setSubmitting(true);
     try {
       // 1) บันทึกส่งมอบ
-      const res = await fetch("/api/erp-proxy/frappe.api.api.create_dlv", {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-        redirect: "follow",
-        cache: "no-store",
-      });
+      const res = await fetch(
+        "http://203.154.83.160/api/method/frappe.api.api.create_dlv",
+        {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+          redirect: "follow",
+          cache: "no-store",
+        }
+      );
       const text = await res.text();
       let json;
       try {

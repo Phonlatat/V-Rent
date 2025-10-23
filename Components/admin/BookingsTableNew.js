@@ -389,45 +389,50 @@ export default function BookingsTableNew({
       headers.append("Content-Type", "application/json");
 
       // Call the edit_rental API
-      const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_rental`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          rid: bookingId,
-          remark: editForm.remarks || editForm.notes || "",
-          additional_options: "",
-          down_payment: 0,
-          discount: 0,
-          base_price: editForm.total_price || editForm.totalPrice || 0,
-          vehicle:
-            editForm.vehicle ||
-            selectedBooking?.vehicle ||
-            selectedBooking?.carId ||
-            "",
-          total_price:
-            editForm.total_price ||
-            editForm.totalPrice ||
-            selectedBooking?.total_price ||
-            selectedBooking?.totalPrice ||
-            0,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          pickup_date: pickupDate,
-          return_date: returnDate,
-          pickup_place: editForm.pickup_place || editForm.pickupLocation || "",
-          return_place: editForm.return_place || editForm.returnLocation || "",
-          status: editForm.status || selectedBooking?.status || "",
-          booking_status: editForm.status || selectedBooking?.status || "",
-          payment_status:
-            editForm.payment_status ||
-            editForm.paymentStatus ||
-            selectedBooking?.payment_status ||
-            selectedBooking?.paymentStatus ||
-            "",
-        }),
-        credentials: "include",
-        redirect: "follow",
-      });
+      const res = await fetch(
+        `http://203.154.83.160/api/method/frappe.api.api.edit_rental`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rid: bookingId,
+            remark: editForm.remarks || editForm.notes || "",
+            additional_options: "",
+            down_payment: 0,
+            discount: 0,
+            base_price: editForm.total_price || editForm.totalPrice || 0,
+            vehicle:
+              editForm.vehicle ||
+              selectedBooking?.vehicle ||
+              selectedBooking?.carId ||
+              "",
+            total_price:
+              editForm.total_price ||
+              editForm.totalPrice ||
+              selectedBooking?.total_price ||
+              selectedBooking?.totalPrice ||
+              0,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            pickup_date: pickupDate,
+            return_date: returnDate,
+            pickup_place:
+              editForm.pickup_place || editForm.pickupLocation || "",
+            return_place:
+              editForm.return_place || editForm.returnLocation || "",
+            status: editForm.status || selectedBooking?.status || "",
+            booking_status: editForm.status || selectedBooking?.status || "",
+            payment_status:
+              editForm.payment_status ||
+              editForm.paymentStatus ||
+              selectedBooking?.payment_status ||
+              selectedBooking?.paymentStatus ||
+              "",
+          }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
 
       const text = await res.text();
       let payload = null;
@@ -464,12 +469,15 @@ export default function BookingsTableNew({
       const headers = new Headers();
       headers.append("Content-Type", "application/json");
 
-      const res = await fetch(`/api/erp-proxy/frappe.api.api.get_dlv`, {
-        method: "GET",
-        headers,
-        credentials: "include",
-        redirect: "follow",
-      });
+      const res = await fetch(
+        `http://203.154.83.160/api/method/frappe.api.api.get_dlv`,
+        {
+          method: "GET",
+          headers,
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
 
       const text = await res.text();
       let payload = null;
@@ -584,7 +592,7 @@ export default function BookingsTableNew({
         selectedActionBooking?.carId || selectedActionBooking?.vehicle;
 
       const res = await fetch(
-        `/api/erp-proxy/frappe.api.api.edit_rentals_status`,
+        `http://203.154.83.160/api/method/frappe.api.api.edit_rentals_status`,
         {
           method: "POST",
           headers,
@@ -631,7 +639,7 @@ export default function BookingsTableNew({
             });
 
             const vehicleRes = await fetch(
-              `/api/erp-proxy/frappe.api.api.edit_vehicle_status`,
+              `http://203.154.83.160/api/method/frappe.api.api.edit_vehicle_status`,
               {
                 method: "POST",
                 headers,
@@ -700,7 +708,7 @@ export default function BookingsTableNew({
 
       // เรียก API เพื่อเสร็จสิ้นการจอง (เปลี่ยนสถานะเป็น Completed)
       const res = await fetch(
-        `/api/erp-proxy/frappe.api.api.edit_rentals_status`,
+        `http://203.154.83.160/api/method/frappe.api.api.edit_rentals_status`,
         {
           method: "POST",
           headers,
@@ -791,13 +799,16 @@ export default function BookingsTableNew({
       const headers = new Headers();
       headers.append("Content-Type", "application/json");
 
-      const res = await fetch(`/api/erp-proxy/frappe.api.api.delete_rental`, {
-        method: "DELETE",
-        headers,
-        body: JSON.stringify({ rental_id: bookingId }),
-        credentials: "include",
-        redirect: "follow",
-      });
+      const res = await fetch(
+        `http://203.154.83.160/api/method/frappe.api.api.delete_rental`,
+        {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ rental_id: bookingId }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
 
       const text = await res.text();
       let payload = null;

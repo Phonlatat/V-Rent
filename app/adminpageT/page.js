@@ -339,8 +339,8 @@ export default function AdminPage() {
           return;
         }
 
-        // เรียก ERP เพื่อดู role ผู้ใช้
-        const url = `${GET_USER_INFO_EP}?user_id=${encodeURIComponent(uid)}`;
+        // เรียก ERP เพื่อดู role ผู้ใช้ - ใช้ API route ที่มีอยู่
+        const url = `/api/erp/me?user_id=${encodeURIComponent(uid)}`;
 
         const res = await fetch(url, {
           method: "GET",
@@ -526,9 +526,7 @@ export default function AdminPage() {
   }, [allowed]);
 
   // ===== UI: Gate states =====
-  // 🚧 TEMPORARY: ข้ามหน้า Loading เพื่อแก้ไข UX/UI
-  if (false) {
-    // authLoading
+  if (authLoading) {
     return (
       <LoadingCard
         title="กำลังตรวจสอบสิทธิ์เข้าถึง..."
@@ -537,9 +535,7 @@ export default function AdminPage() {
     );
   }
 
-  // 🚧 TEMPORARY: บังคับเข้าไปหน้า Admin Dashboard เพื่อแก้ไข UX/UI
-  if (false) {
-    // !allowed
+  if (!allowed) {
     return (
       <AccessDeniedCard
         title="เข้าถึงไม่ได้ - Admin Dashboard"

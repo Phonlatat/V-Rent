@@ -30,7 +30,7 @@ export default function Header() {
       let uid = localStorage.getItem("vrent_user_id") || "";
       if (!uid) {
         const whoRes = await fetch(
-          `/api/erp-proxy/frappe.auth.get_logged_user`,
+          `http://203.154.83.160/api/method/frappe.auth.get_logged_user`,
           { method: "GET", credentials: "include", cache: "no-store" }
         );
         const whoJson = await whoRes.json().catch(() => ({}));
@@ -43,7 +43,9 @@ export default function Header() {
       if (!uid) return; // ❗ ไม่มีผู้ใช้ก็ไม่ต้องเรียกต่อ
 
       // 2) เรียก get_user_information พร้อม query user_id
-      const u = new URL(`/api/erp-proxy/frappe.api.api.get_user_information`);
+      const u = new URL(
+        `http://203.154.83.160/api/method/frappe.api.api.get_user_information`
+      );
       u.searchParams.set("user_id", uid);
       const r = await fetch(u.toString(), {
         method: "GET",
@@ -106,7 +108,7 @@ export default function Header() {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      await fetch(`/api/erp-proxy/logout`, {
+      await fetch(`http://203.154.83.160/api/method/logout`, {
         method: "GET",
         credentials: "include",
       });

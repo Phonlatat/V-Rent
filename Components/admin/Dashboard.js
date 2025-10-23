@@ -32,7 +32,7 @@ export default function Dashboard() {
       headers.append("Content-Type", "application/json");
 
       const response = await fetch(
-        `/api/erp-proxy/frappe.api.api.get_rentals_overall`,
+        `http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall`,
         {
           method: "GET",
           headers,
@@ -84,36 +84,45 @@ export default function Dashboard() {
       // Fetch all dashboard data and bookings in parallel
       const [vehicleRes, customerRes, pieRes, bookingsData] = await Promise.all(
         [
-          fetch(`/api/erp-proxy/frappe.api.api.get_report_saperate`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              start_date: startDate,
-              end_date: endDate,
-            }),
-            credentials: "include",
-            redirect: "follow",
-          }),
-          fetch(`/api/erp-proxy/frappe.api.api.get_report_customer`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              start_date: startDate,
-              end_date: endDate,
-            }),
-            credentials: "include",
-            redirect: "follow",
-          }),
-          fetch(`/api/erp-proxy/frappe.api.api.get_report_piechart`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              start_date: startDate,
-              end_date: endDate,
-            }),
-            credentials: "include",
-            redirect: "follow",
-          }),
+          fetch(
+            `http://203.154.83.160/api/method/frappe.api.api.get_report_saperate`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate,
+              }),
+              credentials: "include",
+              redirect: "follow",
+            }
+          ),
+          fetch(
+            `http://203.154.83.160/api/method/frappe.api.api.get_report_customer`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate,
+              }),
+              credentials: "include",
+              redirect: "follow",
+            }
+          ),
+          fetch(
+            `http://203.154.83.160/api/method/frappe.api.api.get_report_piechart`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate,
+              }),
+              credentials: "include",
+              redirect: "follow",
+            }
+          ),
           fetchAllBookings(),
         ]
       );

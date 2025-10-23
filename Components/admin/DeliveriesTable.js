@@ -71,12 +71,15 @@ export default function DeliveriesTable() {
         const headers = new Headers();
         headers.append("Content-Type", "application/json");
 
-        const res = await fetch("/api/erp-proxy/frappe.api.api.get_dlv", {
-          method: "GET",
-          headers,
-          credentials: "include",
-          redirect: "follow",
-        });
+        const res = await fetch(
+          "http://203.154.83.160/api/method/frappe.api.api.get_dlv",
+          {
+            method: "GET",
+            headers,
+            credentials: "include",
+            redirect: "follow",
+          }
+        );
 
         const text = await res.text();
         let json;
@@ -305,13 +308,16 @@ export default function DeliveriesTable() {
       const headers = new Headers();
       headers.append("Content-Type", "application/json");
 
-      const res = await fetch("/api/erp-proxy/frappe.api.api.delete_dlv", {
-        method: "DELETE",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({ dlv_id: dlvId }),
-        redirect: "follow",
-      });
+      const res = await fetch(
+        "http://203.154.83.160/api/method/frappe.api.api.delete_dlv",
+        {
+          method: "DELETE",
+          headers,
+          credentials: "include",
+          body: JSON.stringify({ dlv_id: dlvId }),
+          redirect: "follow",
+        }
+      );
 
       const text = await res.text();
       // พยายาม parse เผื่อ backend ส่ง json กลับ

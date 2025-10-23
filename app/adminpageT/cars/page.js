@@ -258,8 +258,8 @@ export default function CarsPage() {
           return;
         }
 
-        // เรียก ERP เพื่อดู role ผู้ใช้
-        const url = `${GET_USER_INFO_EP}?user_id=${encodeURIComponent(uid)}`;
+        // เรียก ERP เพื่อดู role ผู้ใช้ - ใช้ API route ที่มีอยู่
+        const url = `/api/erp/me?user_id=${encodeURIComponent(uid)}`;
 
         const res = await fetch(url, {
           method: "GET",

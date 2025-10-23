@@ -371,68 +371,22 @@ export default function ChoosePaymentClient() {
 
       if (slip) fd.append("receipt", slip, slip.name || "receipt.jpg");
 
-      let res;
-      let text;
-      let j;
-
-      try {
-        // ลองใช้ proxy ก่อน
-        console.log("Trying proxy for create_rental...");
-        res = await fetch("/api/erp-proxy/frappe.api.api.create_rental", {
+      const res = await fetch(
+        "http://203.154.83.160/api/method/frappe.api.api.create_rental",
+        {
           method: "POST",
           body: fd,
           credentials: "include",
           redirect: "follow",
-        });
-
-        text = await res.text();
-        try {
-          j = JSON.parse(text);
-        } catch {
-          j = { raw: text };
         }
+      );
 
-        if (!res.ok) {
-          throw new Error(`Proxy failed with status ${res.status}`);
-        }
-
-        console.log("Proxy success for create_rental");
-      } catch (proxyError) {
-        console.log("Proxy failed, trying direct HTTP...", proxyError.message);
-
-        try {
-          // Fallback ไปใช้ HTTP URL โดยตรง
-          res = await fetch(
-            "http://203.154.83.160/api/method/frappe.api.api.create_rental",
-            {
-              method: "POST",
-              body: fd,
-              credentials: "include",
-              redirect: "follow",
-            }
-          );
-
-          text = await res.text();
-          try {
-            j = JSON.parse(text);
-          } catch {
-            j = { raw: text };
-          }
-
-          if (!res.ok) {
-            throw new Error(`Direct HTTP failed with status ${res.status}`);
-          }
-
-          console.log("Direct HTTP success for create_rental");
-        } catch (directError) {
-          console.error(
-            "Both proxy and direct HTTP failed:",
-            directError.message
-          );
-          alert("ไม่สามารถบันทึกข้อมูลการชำระเงินได้ กรุณาลองใหม่อีกครั้ง");
-          setSubmitting(false);
-          return;
-        }
+      const text = await res.text();
+      let j;
+      try {
+        j = JSON.parse(text);
+      } catch {
+        j = { raw: text };
       }
 
       // ---- ไปหน้า SUMMARY พร้อมพกข้อมูลทั้งหมด ----

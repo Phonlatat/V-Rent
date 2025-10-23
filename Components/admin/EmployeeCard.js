@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 const RENTAL_ENDPOINTS = [
-  "/api/erp-proxy/frappe.api.api.get_rentals_today",
-  "/api/erp-proxy/frappe.api.api.get_rentals_overall",
-  "/api/erp-proxy/frappe.api.api.get_rentals",
+  "http://203.154.83.160/api/method/frappe.api.api.get_rentals_today",
+  "http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall",
+  "http://203.154.83.160/api/method/frappe.api.api.get_rentals",
 ];
 
 export default function EmployeeCard({ userId = "" }) {
@@ -58,7 +58,7 @@ export default function EmployeeCard({ userId = "" }) {
         }
 
         /** 1) ข้อมูลพนักงาน */
-        const url = `/api/erp-proxy/frappe.api.api.get_admin?user_id=${encodeURIComponent(
+        const url = `http://203.154.83.160/api/method/frappe.api.api.get_admin?user_id=${encodeURIComponent(
           effectiveUserId
         )}`;
 

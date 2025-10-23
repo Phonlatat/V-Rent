@@ -332,16 +332,19 @@ const API_TO_UI_STATUS = Object.fromEntries(
 
 // เปลี่ยนสถานะการเช่าของใบจอง
 async function apiEditRentalStatus(vid, status) {
-  const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_rentals_status`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}),
-    },
-    credentials: "include",
-    redirect: "follow",
-    body: JSON.stringify({ vid: String(vid), status: String(status) }),
-  });
+  const res = await fetch(
+    `http://203.154.83.160/api/method/frappe.api.api.edit_rentals_status`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}),
+      },
+      credentials: "include",
+      redirect: "follow",
+      body: JSON.stringify({ vid: String(vid), status: String(status) }),
+    }
+  );
   const text = await res.text();
   if (!res.ok) throw new Error(text || "เปลี่ยนสถานะไม่สำเร็จ");
   return text;
@@ -353,14 +356,17 @@ async function apiUpdateStatus({ rid, status, payment }) {
   fd.append("rid", rid);
   if (status) fd.append("status", status); // "Completed" | "Cancelled" | ...
   if (typeof payment !== "undefined") fd.append("payment_status", payment); // "Paid" | ""
-  const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_rental`, {
-    method: "POST",
-    body: fd,
-    credentials: "include",
-    headers: {
-      ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}),
-    },
-  });
+  const res = await fetch(
+    `http://203.154.83.160/api/method/frappe.api.api.edit_rental`,
+    {
+      method: "POST",
+      body: fd,
+      credentials: "include",
+      headers: {
+        ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}),
+      },
+    }
+  );
   const text = await res.text();
   if (!res.ok) throw new Error(text || "อัปเดตไม่สำเร็จ");
   return text;
@@ -372,13 +378,16 @@ async function apiEditVehicleStatus({ vid, status }) {
   headers.append("Content-Type", "application/json");
   if (ERP_AUTH) headers.append("Authorization", ERP_AUTH);
 
-  const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_vehicle_status`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ vid: String(vid), status: String(status) }),
-    credentials: "include",
-    redirect: "follow",
-  });
+  const res = await fetch(
+    `http://203.154.83.160/api/method/frappe.api.api.edit_vehicle_status`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ vid: String(vid), status: String(status) }),
+      credentials: "include",
+      redirect: "follow",
+    }
+  );
   const text = await res.text();
   if (!res.ok) throw new Error(text || "เปลี่ยนสถานะรถไม่สำเร็จ");
   return text;
@@ -663,12 +672,15 @@ function EditModal({ open, data, carOptions = [], onClose, onSaved }) {
           : ""
       );
 
-      const res = await fetch(`/api/erp-proxy/frappe.api.api.edit_rental`, {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-        headers: { ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}) },
-      });
+      const res = await fetch(
+        `http://203.154.83.160/api/method/frappe.api.api.edit_rental`,
+        {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+          headers: { ...(ERP_AUTH ? { Authorization: ERP_AUTH } : {}) },
+        }
+      );
       const text = await res.text();
       if (!res.ok) throw new Error(text || "อัปเดตไม่สำเร็จ");
 
@@ -1172,7 +1184,7 @@ export default function BookingsTable({
         setLoading(true);
         setErr("");
         const res = await fetch(
-          `/api/erp-proxy/frappe.api.api.get_rentals_overall`,
+          `http://203.154.83.160/api/method/frappe.api.api.get_rentals_overall`,
           {
             method: "GET",
             credentials: "include",
@@ -1494,13 +1506,16 @@ export default function BookingsTable({
       headers.append("Content-Type", "application/json");
       if (ERP_AUTH) headers.append("Authorization", ERP_AUTH);
 
-      const res = await fetch(`/api/erp-proxy/frappe.api.api.delete_rental`, {
-        method: "DELETE",
-        headers,
-        body: JSON.stringify({ rental_id: b.bookingCode }),
-        credentials: "include",
-        redirect: "follow",
-      });
+      const res = await fetch(
+        `http://203.154.83.160/api/method/frappe.api.api.delete_rental`,
+        {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ rental_id: b.bookingCode }),
+          credentials: "include",
+          redirect: "follow",
+        }
+      );
 
       const text = await res.text();
       if (!res.ok) {

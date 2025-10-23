@@ -93,7 +93,7 @@ function Modal({ open, onClose, children }) {
         onClick={onClose}
         aria-label="ปิด"
       />
-      <div className="relative min-h-full flex items-center justify-center p-4">
+      <div className="relative min-h-full flex items-start sm:items-center justify-center p-2 sm:p-4">
         {children}
       </div>
     </div>,
@@ -832,9 +832,9 @@ export default function BookingsTableNew({
   };
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 md:p-6">
       {/* Header with Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col gap-3 sm:gap-4 mb-6">
         <div className="flex-1">
           <div className="relative">
             <input
@@ -842,10 +842,10 @@ export default function BookingsTableNew({
               placeholder="ค้นหาการจอง..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 pl-10 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+              className="w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3 pl-8 sm:pl-10 text-white placeholder-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-sm sm:text-base"
             />
             <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400"
+              className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -863,7 +863,7 @@ export default function BookingsTableNew({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex-1 px-4 py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300"
+            className="flex-1 px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-sm sm:text-base"
           >
             <option value="all" className="bg-slate-800 text-white">
               ทุกสถานะ
@@ -899,7 +899,7 @@ export default function BookingsTableNew({
               }
             }}
             disabled={loading}
-            className="px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="px-3 py-2 sm:px-4 sm:py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
             title="รีเฟรชข้อมูล"
           >
             {loading ? (
@@ -937,15 +937,15 @@ export default function BookingsTableNew({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 sm:p-3">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-white">
             {rows.length}
           </div>
-          <div className="text-xs md:text-sm text-slate-300">การจองทั้งหมด</div>
+          <div className="text-xs sm:text-sm text-slate-300">การจองทั้งหมด</div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-blue-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 sm:p-3">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -954,10 +954,10 @@ export default function BookingsTableNew({
               ).length
             }
           </div>
-          <div className="text-xs md:text-sm text-slate-300">ยืนยันแล้ว</div>
+          <div className="text-xs sm:text-sm text-slate-300">ยืนยันแล้ว</div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-green-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 sm:p-3">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -966,10 +966,10 @@ export default function BookingsTableNew({
               ).length
             }
           </div>
-          <div className="text-xs md:text-sm text-slate-300">กำลังเช่า</div>
+          <div className="text-xs sm:text-sm text-slate-300">กำลังเช่า</div>
         </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-3">
-          <div className="text-xl md:text-2xl font-bold text-emerald-400">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-2 sm:p-3">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-emerald-400">
             {
               rows.filter((r) =>
                 String(r.status || "")
@@ -978,7 +978,7 @@ export default function BookingsTableNew({
               ).length
             }
           </div>
-          <div className="text-xs md:text-sm text-slate-300">เสร็จสิ้น</div>
+          <div className="text-xs sm:text-sm text-slate-300">เสร็จสิ้น</div>
         </div>
       </div>
 
@@ -1356,30 +1356,30 @@ export default function BookingsTableNew({
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => openDetail(row)}
-                      className="flex-1 px-3 py-2 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all duration-200 text-xs font-medium"
+                      className="flex-1 min-w-[80px] px-3 py-2 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-all duration-200 text-xs font-medium"
                     >
                       ดูรายละเอียด
                     </button>
                     <button
                       onClick={() => openEdit(row)}
-                      className="flex-1 px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/30 transition-all duration-200 text-xs font-medium"
+                      className="flex-1 min-w-[80px] px-3 py-2 rounded-lg bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/30 transition-all duration-200 text-xs font-medium"
                     >
                       แก้ไข
                     </button>
                     <button
                       onClick={() => openDelete(row)}
                       disabled={checkingDeliveries}
-                      className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all duration-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 min-w-[80px] px-3 py-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all duration-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {checkingDeliveries ? "ตรวจสอบ..." : "ลบ"}
                     </button>
                   </div>
 
                   {/* Status Action buttons */}
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {String(row.status || "")
                       .toLowerCase()
                       .includes("confirmed") && (
@@ -1404,7 +1404,7 @@ export default function BookingsTableNew({
                   </div>
 
                   {/* Additional Action buttons */}
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {/* ปุ่มยกเลิก - แสดงสำหรับการจองที่ยังไม่เสร็จสิ้นหรือยกเลิก */}
                     {!String(row.status || "")
                       .toLowerCase()
@@ -1441,8 +1441,28 @@ export default function BookingsTableNew({
 
       {/* Detail Modal */}
       <Modal open={detailOpen} onClose={closeDetail}>
-        <div className="w-full max-w-3xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white max-h-[90vh] overflow-y-auto border border-white/20">
-          <h3 className="text-xl font-bold mb-4">รายละเอียดการจอง</h3>
+        <div className="w-full max-w-sm sm:max-w-md md:max-w-3xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-4 sm:p-6 shadow-2xl text-white max-h-[95vh] overflow-y-auto border border-white/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg sm:text-xl font-bold">รายละเอียดการจอง</h3>
+            <button
+              onClick={closeDetail}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
           {selectedBooking && (
             <div className="space-y-6">
               {/* Customer Information */}
@@ -1450,20 +1470,22 @@ export default function BookingsTableNew({
                 <h4 className="text-lg font-semibold text-yellow-400 mb-3">
                   ข้อมูลลูกค้า
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">ชื่อลูกค้า</label>
-                    <div className="text-white font-medium">
+                    <label className="text-xs sm:text-sm text-slate-300">
+                      ชื่อลูกค้า
+                    </label>
+                    <div className="text-sm sm:text-base text-white font-medium">
                       {selectedBooking.customer_name ||
                         selectedBooking.customerName ||
                         "—"}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       เบอร์โทรศัพท์
                     </label>
-                    <div className="text-white">
+                    <div className="text-sm sm:text-base text-white">
                       {selectedBooking.customer_phone ||
                         selectedBooking.customerPhone ||
                         "—"}
@@ -1477,18 +1499,20 @@ export default function BookingsTableNew({
                 <h4 className="text-lg font-semibold text-yellow-400 mb-3">
                   ข้อมูลการจอง
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">รหัสการจอง</label>
-                    <div className="text-white font-mono">
+                    <label className="text-xs sm:text-sm text-slate-300">
+                      รหัสการจอง
+                    </label>
+                    <div className="text-sm sm:text-base text-white font-mono">
                       {selectedBooking.name || selectedBooking.id || "—"}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       วันที่รับรถ
                     </label>
-                    <div className="text-white">
+                    <div className="text-sm sm:text-base text-white">
                       {fmtDateTimeLocal(
                         selectedBooking.pickup_date ||
                           selectedBooking.pickupDate
@@ -1496,10 +1520,10 @@ export default function BookingsTableNew({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       วันที่คืนรถ
                     </label>
-                    <div className="text-white">
+                    <div className="text-sm sm:text-base text-white">
                       {fmtDateTimeLocal(
                         selectedBooking.return_date ||
                           selectedBooking.returnDate
@@ -1507,8 +1531,10 @@ export default function BookingsTableNew({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">จำนวนวัน</label>
-                    <div className="text-white">
+                    <label className="text-xs sm:text-sm text-slate-300">
+                      จำนวนวัน
+                    </label>
+                    <div className="text-sm sm:text-base text-white">
                       {computeDays(
                         selectedBooking.pickup_date ||
                           selectedBooking.pickupDate,
@@ -1519,8 +1545,10 @@ export default function BookingsTableNew({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">ราคารวม</label>
-                    <div className="text-white font-semibold">
+                    <label className="text-xs sm:text-sm text-slate-300">
+                      ราคารวม
+                    </label>
+                    <div className="text-sm sm:text-base text-white font-semibold">
                       {fmtBaht(
                         selectedBooking.total_price ||
                           selectedBooking.totalPrice ||
@@ -1537,22 +1565,22 @@ export default function BookingsTableNew({
                 <h4 className="text-lg font-semibold text-yellow-400 mb-3">
                   ข้อมูลสถานที่
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       สถานที่รับรถ
                     </label>
-                    <div className="text-white">
+                    <div className="text-sm sm:text-base text-white">
                       {selectedBooking.pickup_place
                         ? decodeURIComponent(selectedBooking.pickup_place)
                         : selectedBooking.pickupLocation || "—"}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       สถานที่คืนรถ
                     </label>
-                    <div className="text-white">
+                    <div className="text-sm sm:text-base text-white">
                       {selectedBooking.return_place
                         ? decodeURIComponent(selectedBooking.return_place)
                         : selectedBooking.returnLocation || "—"}
@@ -1566,9 +1594,9 @@ export default function BookingsTableNew({
                 <h4 className="text-lg font-semibold text-yellow-400 mb-3">
                   สถานะ
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       สถานะการจอง
                     </label>
                     <div className="mt-1">
@@ -1576,7 +1604,7 @@ export default function BookingsTableNew({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-300">
+                    <label className="text-xs sm:text-sm text-slate-300">
                       สถานะการชำระเงิน
                     </label>
                     <div className="mt-1">
@@ -1615,11 +1643,39 @@ export default function BookingsTableNew({
 
       {/* Edit Modal */}
       <Modal open={editOpen} onClose={closeEdit}>
-        <div className="w-full max-w-6xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-6 shadow-2xl text-white max-h-[90vh] overflow-y-auto border border-white/20">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-shrink-0 w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+        <div className="w-full max-w-sm sm:max-w-md md:max-w-4xl lg:max-w-6xl rounded-2xl bg-gradient-to-br from-slate-900 via-black to-slate-800 p-4 sm:p-6 shadow-2xl text-white max-h-[95vh] overflow-y-auto border border-white/20">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                  แก้ไขข้อมูลการจอง
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 hidden sm:block">
+                  อัปเดตข้อมูลการจองรถยนต์และสถานะทั้งหมด
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={closeEdit}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200"
+            >
               <svg
-                className="w-6 h-6 text-yellow-400"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1628,22 +1684,14 @@ export default function BookingsTableNew({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">
-                แก้ไขข้อมูลการจอง
-              </h3>
-              <p className="text-slate-300">
-                อัปเดตข้อมูลการจองรถยนต์และสถานะทั้งหมด
-              </p>
-            </div>
+            </button>
           </div>
 
           {/* Form Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             {/* คอลัมน์ซ้าย - ข้อมูลการจอง */}
             <div className="space-y-6">
               <div className="bg-white/5 rounded-xl p-6 border border-white/10">

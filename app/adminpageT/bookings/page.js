@@ -374,15 +374,15 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 overflow-x-hidden">
       <title>จัดการการจอง - Admin Dashboard</title>
 
       {/* Enhanced Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-20 -right-20 w-40 h-40 sm:w-80 sm:h-80 bg-gradient-to-br from-blue-400/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse" />
         <div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
+          className="absolute -bottom-20 -left-20 w-40 h-40 sm:w-80 sm:h-80 bg-gradient-to-br from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "2s" }}
         />
       </div>
@@ -408,7 +408,7 @@ export default function BookingsPage() {
       <div className="relative z-10 flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="w-full px-2 sm:px-4 lg:px-8">
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Left: Back button & Title */}
               <div className="flex items-center min-w-0 flex-1">
@@ -465,7 +465,7 @@ export default function BookingsPage() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col">
           <div className="p-3 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6">
+            <div className="w-full px-2 sm:px-4 lg:px-6">
               {/* Header */}
               <div className="text-center mb-6 sm:mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-2xl mb-4">
@@ -498,7 +498,7 @@ export default function BookingsPage() {
               </div>
 
               {/* Table Content */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 min-h-[60vh] p-4 sm:p-6 lg:p-8 flex-1">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 min-h-[60vh] p-2 sm:p-4 md:p-6 lg:p-8 flex-1">
                 <BookingsTableNew
                   bookings={bookings}
                   carMapById={carMapById}

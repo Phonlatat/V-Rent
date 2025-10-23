@@ -58,10 +58,11 @@ export default function EmployeeCard({ userId = "" }) {
         }
 
         /** 1) ข้อมูลพนักงาน */
-        const u = new URL(`${ERP_BASE}/api/method/frappe.api.api.get_admin`);
-        u.searchParams.set("user_id", effectiveUserId);
+        const url = `/api/erp-proxy/frappe.api.api.get_admin?user_id=${encodeURIComponent(
+          effectiveUserId
+        )}`;
 
-        const resEmp = await fetch(u.toString(), {
+        const resEmp = await fetch(url, {
           method: "GET",
           credentials: "include",
           signal: controller.signal,
@@ -134,12 +135,13 @@ export default function EmployeeCard({ userId = "" }) {
 
         for (const path of RENTAL_ENDPOINTS) {
           try {
-            const url = new URL(`${ERP_BASE}${path}`);
-            url.searchParams.set("date", ymd);
-            url.searchParams.set("from_date", ymd);
-            url.searchParams.set("to_date", ymd);
+            const url = `${path}?date=${encodeURIComponent(
+              ymd
+            )}&from_date=${encodeURIComponent(
+              ymd
+            )}&to_date=${encodeURIComponent(ymd)}`;
 
-            const r = await fetch(url.toString(), {
+            const r = await fetch(url, {
               method: "GET",
               credentials: "include",
               signal: controller.signal,

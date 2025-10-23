@@ -32,7 +32,7 @@ export default function Dashboard() {
       headers.append("Content-Type", "application/json");
 
       const response = await fetch(
-        `${ERP_BASE}/api/method/frappe.api.api.get_rentals_overall`,
+        `/api/erp-proxy/frappe.api.api.get_rentals_overall`,
         {
           method: "GET",
           headers,

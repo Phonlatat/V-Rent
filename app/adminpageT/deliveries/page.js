@@ -9,7 +9,7 @@ import Link from "next/link";
 
 /** ================== ERP CONFIG ================== */
 const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
-const GET_USER_INFO_EP = "/api/method/frappe.api.api.get_user_information";
+const GET_USER_INFO_EP = "/api/erp-proxy/frappe.api.api.get_user_information";
 
 /** กลุ่ม role ที่ถือว่าเป็นแอดมิน */
 const ADMIN_ROLES = new Set([
@@ -208,10 +208,9 @@ export default function DeliveriesPage() {
         }
 
         // เรียก ERP เพื่อดู role ผู้ใช้
-        const u = new URL(`${ERP_BASE}${GET_USER_INFO_EP}`);
-        u.searchParams.set("user_id", uid);
+        const url = `${GET_USER_INFO_EP}?user_id=${encodeURIComponent(uid)}`;
 
-        const res = await fetch(u.toString(), {
+        const res = await fetch(url, {
           method: "GET",
           credentials: "include",
           signal: controller.signal,

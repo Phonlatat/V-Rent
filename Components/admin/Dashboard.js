@@ -557,7 +557,7 @@ export default function Dashboard() {
                         <h4 className="text-lg font-semibold text-white">
                           {vehicle.license_plate}
                         </h4>
-                        <div className="text-xs text-slate-400 bg-white/10 px-2 py-1 rounded-full">
+                        <div className="text-xs text-white bg-white/10 px-2 py-1 rounded-full">
                           {vehicle.rental_count} ครั้ง
                         </div>
                       </div>
@@ -578,7 +578,7 @@ export default function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-slate-400">
+                  <div className="col-span-full text-center py-8 text-white">
                     ไม่พบข้อมูลรถยนต์ในช่วงวันที่ที่เลือก
                   </div>
                 )}
@@ -614,7 +614,7 @@ export default function Dashboard() {
                         <h4 className="text-lg font-semibold text-white">
                           {customer.customer_name}
                         </h4>
-                        <div className="text-xs text-slate-400 bg-white/10 px-2 py-1 rounded-full">
+                        <div className="text-xs text-white bg-white/10 px-2 py-1 rounded-full">
                           {customer.rental_count} ครั้ง
                         </div>
                       </div>
@@ -627,7 +627,7 @@ export default function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-slate-400">
+                  <div className="col-span-full text-center py-8 text-white">
                     ไม่พบข้อมูลลูกค้าในช่วงวันที่ที่เลือก
                   </div>
                 )}
@@ -669,7 +669,7 @@ export default function Dashboard() {
                         <h4 className="text-lg font-semibold text-white capitalize">
                           {item.type}
                         </h4>
-                        <div className="text-xs text-slate-400 bg-white/10 px-2 py-1 rounded-full">
+                        <div className="text-xs text-white bg-white/10 px-2 py-1 rounded-full">
                           {formatPercent(item.percent)}%
                         </div>
                       </div>
@@ -690,7 +690,7 @@ export default function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-slate-400">
+                  <div className="col-span-full text-center py-8 text-white">
                     ไม่พบข้อมูลประเภทรถในช่วงวันที่ที่เลือก
                   </div>
                 )}
@@ -731,7 +731,7 @@ export default function Dashboard() {
                           <p className="text-sm text-slate-300">
                             {booking.customerPhone}
                           </p>
-                          <p className="text-xs text-slate-400 font-mono">
+                          <p className="text-xs text-white font-mono">
                             ID: {booking.id}
                           </p>
                         </div>
@@ -797,7 +797,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-white">
                   ไม่พบข้อมูลการเช่าในช่วงวันที่ที่เลือก
                 </div>
               )}

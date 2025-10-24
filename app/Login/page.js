@@ -1,260 +1,311 @@
-// app/Login/page.jsx (หรือที่ไฟล์คุณอยู่)
+// app/Login/page.jsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Headers from "@/Components/Header";
-import Footer from "@/Components/FooterMinimal";
-
-const USER_PATH = "/mainpage"; // ✅ ไปหน้า mainpage เสมอ
 
 export default function Login() {
   const router = useRouter();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [remember, setRemember] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errMsg, setErrMsg] = useState("");
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedEmail = localStorage.getItem("vrent_login_email") || "";
-      const savedRemember = localStorage.getItem("vrent_remember") === "1";
-      if (savedEmail) setEmail(savedEmail);
-      if (savedRemember) setRemember(true);
-    } catch {}
+    setIsLoaded(true);
   }, []);
+
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value ?? "" }));
+    setError(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return;
-    setErrMsg("");
-    setLoading(true);
+    setError(null);
 
+    setLoading(true);
     try {
-      // ✅ Login กับ ERPNext/Frappe
-      const res = await fetch("https://demo.erpeazy.com/api/method/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include",
-        redirect: "follow",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          usr: email,
-          pwd: password,
+          email: form.email,
+          password: form.password,
         }),
       });
 
-      const rawText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        data = { raw: rawText };
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        const msg =
-          data?.message ||
-          data?.exc ||
-          data?.raw ||
-          "Login failed. Please check your credentials.";
-        throw new Error(typeof msg === "string" ? msg : "Login failed.");
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
 
-      // ✅ จำอีเมลตามตัวเลือก
-      try {
-        if (remember) {
-          localStorage.setItem("vrent_login_email", email);
-          localStorage.setItem("vrent_remember", "1");
-        } else {
-          localStorage.removeItem("vrent_login_email");
-          localStorage.removeItem("vrent_remember");
-        }
-        // เก็บ user id ไว้ใช้ที่หน้าอื่น
-        localStorage.setItem("vrent_user_id", String(email || ""));
-        // ถ้าหน้าอื่นอ้างอิงค่านี้อยู่ ให้รีเซ็ตเป็น 0 ไปก่อน
-        localStorage.setItem("vrent_is_admin", "0");
-      } catch {}
+      // Debug log เพื่อตรวจสอบข้อมูลที่ได้รับ
+      console.log("Login Response Debug:", {
+        data: data,
+        is_admin: data.is_admin,
+        is_admin_type: typeof data.is_admin,
+        full_name: data.full_name,
+        debug: data.debug,
+      });
 
-      // ✅ ไป mainpage เสมอ
-      router.push(USER_PATH);
+      // ตรวจสอบ is_admin ให้ครอบคลุมทุกกรณี
+      const isAdminValue =
+        data.is_admin === true ||
+        data.is_admin === "true" ||
+        data.is_admin === 1 ||
+        data.is_admin === "1";
+
+      // เก็บข้อมูลผู้ใช้ใน localStorage
+      localStorage.setItem("vrent_user_id", data.full_name || form.email);
+      localStorage.setItem("vrent_full_name", data.full_name || form.email);
+      localStorage.setItem("vrent_is_admin", isAdminValue.toString());
+      localStorage.setItem("vrent_login_email", form.email);
+
+      // Debug log เพื่อตรวจสอบข้อมูลที่เก็บใน localStorage
+      console.log("LocalStorage Debug:", {
+        vrent_user_id: data.full_name || form.email,
+        vrent_full_name: data.full_name || form.email,
+        vrent_is_admin: isAdminValue.toString(),
+        vrent_login_email: form.email,
+      });
+
+      // ตรวจสอบสิทธิ์ admin
+      if (isAdminValue) {
+        router.push("/adminpageT");
+      } else {
+        router.push("/mainpage");
+      }
     } catch (err) {
       console.error(err);
-      setErrMsg(err?.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      setError(err?.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-slate-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white overflow-hidden relative">
       <title>Login - V-Rent</title>
-      <Headers />
 
-      {/* background aurora / glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
+      {/* Enhanced Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Main gradient orbs */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-yellow-400/30 to-amber-500/30 rounded-full blur-3xl animate-pulse" />
         <div
-          className="absolute left-1/2 top-[-10%] w-[60rem] h-[60rem] -translate-x-1/2 rounded-full opacity-30 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(50% 50% at 50% 50%, #7C5CFF 0%, rgba(124,92,255,0.0) 60%)",
-          }}
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
         />
         <div
-          className="absolute left-[10%] bottom-[-20%] w-[50rem] h-[50rem] rounded-full opacity-20 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(50% 50% at 50% 50%, #34D399 0%, rgba(52,211,153,0.0) 60%)",
-          }}
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-emerald-400/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        />
+
+        {/* Additional floating gradients */}
+        <div
+          className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-pink-400/20 to-rose-500/20 rounded-full blur-2xl animate-pulse"
+          style={{ animationDelay: "0.5s" }}
+        />
+        <div
+          className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-br from-indigo-400/20 to-blue-500/20 rounded-full blur-2xl animate-pulse"
+          style={{ animationDelay: "1.5s" }}
         />
       </div>
 
-      <main className="flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {/* glass card */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40">
-            <div className="px-8 pt-8 pb-6">
-              {/* V-Rent icon */}
+      {/* Enhanced Floating Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-white/20 rounded-full animate-pulse"
+            style={{
+              width: `${2 + Math.random() * 4}px`,
+              height: `${2 + Math.random() * 4}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+              animationDuration: `${3 + Math.random() * 3}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <main className="flex items-center justify-center min-h-screen p-3 sm:p-4 relative z-10">
+        <div className="w-full max-w-sm sm:max-w-md">
+          <div
+            className={`
+              rounded-2xl sm:rounded-3xl border border-white/20 
+              bg-gradient-to-b from-white/15 via-white/8 to-white/15
+              backdrop-blur-2xl
+              shadow-[0_20px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.1)]
+              transition-all duration-1000 ease-out
+              hover:shadow-[0_30px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.2)]
+              hover:scale-[1.01] sm:hover:scale-[1.02]
+              ${
+                isLoaded
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-12"
+              }
+            `}
+          >
+            <div className="px-5 sm:px-8 pt-6 sm:pt-10 pb-6 sm:pb-8">
+              {/* Enhanced Brand Logo */}
               <div
-                className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full 
-                bg-gradient-to-br from-[#1B1B2F] to-[#0A0A12] 
-                shadow-2xl ring-2 ring-indigo-500/60"
+                className={`
+                mx-auto mb-6 sm:mb-8 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center 
+                rounded-2xl sm:rounded-3xl bg-gradient-to-br from-yellow-400/30 to-amber-500/30 
+                border border-yellow-400/40 shadow-xl sm:shadow-2xl shadow-yellow-500/30
+                transition-all duration-1000 ease-out
+                ${
+                  isLoaded
+                    ? "opacity-100 scale-100 rotate-0"
+                    : "opacity-0 scale-75 rotate-12"
+                }
+              `}
+                style={{ transitionDelay: "0.2s" }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="56"
-                  height="56"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-white"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 4L12 20L21 4"
-                    stroke="white"
-                    strokeWidth="3.5"
-                    strokeLinejoin="miter"
-                  />
-                  <path
-                    d="M6 4L12 15L18 4"
-                    stroke="white"
-                    strokeWidth="2.5"
-                    strokeLinejoin="miter"
-                    opacity="0.85"
-                  />
-                </svg>
+                <span className="text-2xl sm:text-3xl font-black bg-gradient-to-br from-yellow-400 to-amber-500 bg-clip-text text-transparent animate-pulse">
+                  V
+                </span>
               </div>
 
-              <h1 className="text-center text-2xl font-semibold">V-Rent</h1>
-              <p className="mt-1 text-center text-sm text-slate-400">
-                Connected You to Every Road.
-              </p>
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                {/* Email */}
-                <label className="block">
-                  <span className="mb-2 block text-sm text-slate-300">
-                    Email Address / Username
+              {/* Enhanced Title */}
+              <div
+                className={`
+                text-center transition-all duration-1000 ease-out
+                ${
+                  isLoaded
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-6"
+                }
+              `}
+                style={{ transitionDelay: "0.4s" }}
+              >
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                  <span className="bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 bg-clip-text text-transparent">
+                    V-Rent
                   </span>
+                </h1>
+                <p className="text-sm sm:text-base text-white/90 font-medium">
+                  เช่ารถยนต์คุณภาพสูง พร้อมบริการครบครัน
+                </p>
+                <p className="text-xs sm:text-sm text-white/70 mt-1">
+                  Connect to every road
+                </p>
+              </div>
+
+              {/* Enhanced Divider */}
+              <div
+                className={`
+                mt-6 sm:mt-8 mb-4 sm:mb-6 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent
+                transition-all duration-1000 ease-out
+                ${isLoaded ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"}
+              `}
+                style={{ transitionDelay: "0.6s" }}
+              />
+
+              <form
+                onSubmit={handleSubmit}
+                className={`
+                  space-y-4 sm:space-y-5 transition-all duration-1000 ease-out
+                  ${
+                    isLoaded
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-6"
+                  }
+                `}
+                style={{ transitionDelay: "0.8s" }}
+              >
+                {/* Enhanced Email Address / Username */}
+                <div className="group">
+                  <label className="block mb-2 sm:mb-3 text-sm font-semibold text-white/95">
+                    Email Address / Username
+                  </label>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
                       <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-white/60 group-focus-within:text-yellow-400 transition-colors duration-300"
                         fill="none"
-                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
                         <path
-                          d="M3 7.5 12 13l9-5.5"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
                           strokeLinecap="round"
-                        />
-                        <rect
-                          x="3"
-                          y="5"
-                          width="18"
-                          height="14"
-                          rx="3"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
                         />
                       </svg>
-                    </span>
+                    </div>
                     <input
                       type="text"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@domain.com"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="Enter your email or username"
                       autoComplete="username"
-                      className="w-full rounded-xl border border-white/10 bg-[#0F1530]/60 px-10 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
+                      required
+                      autoCapitalize="none"
+                      inputMode="email"
+                      enterKeyHint="next"
+                      className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-white/30 bg-white/[0.10] text-white placeholder:text-white/60 outline-none hover:bg-white/[0.15] hover:border-white/50 focus:bg-white/[0.20] focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/40 transition-all duration-300 text-sm sm:text-base"
                     />
                   </div>
-                </label>
+                </div>
 
-                {/* Password */}
-                <label className="block">
-                  <span className="mb-2 block text-sm text-slate-300">
+                {/* Enhanced Password */}
+                <div className="group">
+                  <label className="block mb-2 sm:mb-3 text-sm font-semibold text-white/95">
                     Password
-                  </span>
+                  </label>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
                       <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
+                        className="h-4 w-4 sm:h-5 sm:w-5 text-white/60 group-focus-within:text-yellow-400 transition-colors duration-300"
                         fill="none"
-                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        <rect
-                          x="4"
-                          y="10"
-                          width="16"
-                          height="10"
-                          rx="2"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
                         <path
-                          d="M8 10V7a4 4 0 1 1 8 0v3"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
                           strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                         />
                       </svg>
-                    </span>
+                    </div>
                     <input
-                      type={show ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      type={showPw ? "text" : "password"}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Enter your password"
                       autoComplete="current-password"
-                      className="w-full rounded-xl border border-white/10 bg-[#0F1530]/60 px-10 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
+                      required
+                      enterKeyHint="done"
+                      className="w-full pl-10 sm:pl-12 pr-12 sm:pr-14 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-white/30 bg-white/[0.10] text-white placeholder:text-white/60 outline-none hover:bg-white/[0.15] hover:border-white/50 focus:bg-white/[0.20] focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/40 transition-all duration-300 text-sm sm:text-base"
                     />
                     <button
                       type="button"
-                      onClick={() => setShow((s) => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-200"
-                      aria-label={show ? "Hide password" : "Show password"}
+                      onClick={() => setShowPw((s) => !s)}
+                      className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 rounded-lg p-1.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all duration-300"
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                      aria-pressed={showPw}
                     >
-                      {show ? (
+                      {showPw ? (
                         <svg
-                          width="18"
-                          height="18"
+                          width="16"
+                          height="16"
+                          className="sm:w-5 sm:h-5"
                           viewBox="0 0 24 24"
                           fill="none"
-                          aria-hidden="true"
                         >
                           <path
                             d="M3 3l18 18"
@@ -270,11 +321,11 @@ export default function Login() {
                         </svg>
                       ) : (
                         <svg
-                          width="18"
-                          height="18"
+                          width="16"
+                          height="16"
+                          className="sm:w-5 sm:h-5"
                           viewBox="0 0 24 24"
                           fill="none"
-                          aria-hidden="true"
                         >
                           <path
                             d="M21 12s-3.5 6-9 6-9-6-9-6 3.5-6 9-6 9 6 9 6Z"
@@ -292,50 +343,94 @@ export default function Login() {
                       )}
                     </button>
                   </div>
-                </label>
+                </div>
 
-                {/* error */}
-                {errMsg && (
-                  <div className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                    {errMsg}
+                {/* Enhanced Error Message */}
+                {error && (
+                  <div className="rounded-xl sm:rounded-2xl border border-red-400/40 bg-gradient-to-r from-red-500/15 to-red-600/15 px-4 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm text-red-200 flex items-center gap-2 sm:gap-3 animate-pulse shadow-lg shadow-red-500/20">
+                    <svg
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {error}
                   </div>
                 )}
 
-                {/* remember + signup */}
-                <div className="mt-1 flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                {/* Enhanced Remember this session */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/85 hover:text-white transition-colors duration-300 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-white/10 bg-[#0F1530] text-indigo-500 focus:ring-indigo-500/40"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
+                      className="rounded border-white/40 bg-white/10 text-yellow-400 focus:ring-yellow-400/40 w-3.5 h-3.5 sm:w-4 sm:h-4"
                     />
-                    Remember this session
+                    <span className="font-medium">Remember this session</span>
                   </label>
-                  <a
-                    href="/Signup"
-                    className="text-sm text-indigo-400 hover:text-indigo-300"
+                  <button
+                    type="button"
+                    className="text-xs sm:text-sm text-yellow-400 hover:text-yellow-300 underline underline-offset-4 hover:underline-offset-2 transition-all duration-300 font-medium"
                   >
-                    Sign up
-                  </a>
+                    Forgot password?
+                  </button>
                 </div>
 
-                {/* Login */}
+                {/* Enhanced Primary CTA Button */}
                 <button
                   type="submit"
                   disabled={loading}
                   aria-busy={loading}
-                  className="mt-2 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-medium text-white shadow-lg shadow-indigo-900/40 transition hover:from-indigo-400 hover:to-violet-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl sm:rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 py-3 sm:py-4 text-sm sm:text-base font-bold text-black shadow-xl shadow-yellow-500/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/40 hover:from-amber-500 hover:to-yellow-400 active:scale-[.98] focus:outline-none focus:ring-2 focus:ring-yellow-400/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 sm:gap-3"
                 >
-                  {loading ? "Logging in..." : "Login"}
+                  {loading && (
+                    <svg
+                      className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-20"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-90"
+                        d="M22 12a10 10 0 0 1-10 10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                    </svg>
+                  )}
+                  <span>{loading ? "Signing in..." : "Sign In"}</span>
+                </button>
+
+                {/* Enhanced Secondary Action Button */}
+                <button
+                  type="button"
+                  onClick={() => router.push("/Signup")}
+                  className="w-full rounded-xl sm:rounded-2xl border border-white/40 text-white/95 py-3 sm:py-4 text-sm sm:text-base hover:bg-white/15 hover:border-white/60 active:scale-[.98] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/40 font-medium"
+                >
+                  Don&apos;t have an account?{" "}
+                  <span className="text-yellow-400 hover:text-yellow-300 underline underline-offset-4 hover:underline-offset-2 transition-all duration-300 font-semibold">
+                    Sign up
+                  </span>
                 </button>
               </form>
             </div>
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

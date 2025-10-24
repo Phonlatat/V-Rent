@@ -1,17 +1,23 @@
 // app/api/vehicles/route.js
 import { NextResponse } from "next/server";
 
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160";
 
 // เปลี่ยนเป็น endpoint ที่คุณใช้จริงได้
-const ERP_SEARCH_URL = `${ERP_BASE}/api/method/erpnext.api.search_available_vehicles`;
-const ERP_ADMIN_LIST_URL = `${ERP_BASE}/api/method/erpnext.api.get_vehicles_admin`;
+const ERP_SEARCH_URL = `${ERP_BASE}/api/method/frappe.api.api.get_vehicles`;
+const ERP_ADMIN_LIST_URL = `${ERP_BASE}/api/method/frappe.api.api.get_vehicles_admin`;
 
 export async function POST(req) {
   let payload = {};
   try {
     payload = await req.json();
   } catch {}
+
+  // ถ้ามีพารามิเตอร์ random ให้เพิ่มการสุ่มใน payload
+  if (payload.random) {
+    payload.randomize = true;
+    payload.order_by = "RAND()"; // สำหรับ MySQL/MariaDB
+  }
 
   // 1) พยายามเรียก search (รองรับ body)
   try {
@@ -31,7 +37,19 @@ export async function POST(req) {
     }
 
     if (r.ok && (j?.message || Array.isArray(j))) {
-      return NextResponse.json(j);
+      // ถ้าข้อมูลที่ได้เป็น array ให้ส่งกลับไปเลย
+      let vehicles = j?.message || j;
+
+      // ถ้ามี limit ให้จำกัดจำนวน
+      if (payload.limit && Array.isArray(vehicles)) {
+        vehicles = vehicles.slice(0, payload.limit);
+      }
+
+      return NextResponse.json({
+        message: vehicles,
+        success: true,
+        count: Array.isArray(vehicles) ? vehicles.length : 0,
+      });
     }
     // ถ้า search ไม่โอเค ไป fallback ต่อ
     console.warn("search_available_vehicles failed; fallback", j);

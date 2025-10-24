@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160"
 ).replace(/\/+$/, "");
 
 async function getJSON(url, cookie) {
@@ -85,10 +85,31 @@ export async function GET(req) {
   const userIdFallback =
     req.headers.get("x-user-id") || url.searchParams.get("user_id") || "";
 
-  const info = await getJSON(
-    `${ERP_BASE}/api/method/erpnext.api.get_user_information`,
-    cookie
-  );
+  // Try direct HTTP call first, fallback to proxy if needed
+  let info = null;
+  try {
+    info = await getJSON(
+      `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
+      cookie
+    );
+  } catch (error) {
+    console.log("Direct HTTP call failed, trying proxy:", error.message);
+    try {
+      const infoResponse = await fetch(
+        `${req.nextUrl.origin}/api/admin/user-info?${new URLSearchParams({
+          user_id: userIdFallback,
+          email: emailFallback,
+        }).toString()}`,
+        {
+          method: "GET",
+          headers: { Cookie: cookie },
+        }
+      );
+      info = infoResponse.ok ? await infoResponse.json() : null;
+    } catch (proxyError) {
+      console.error("Proxy call also failed:", proxyError.message);
+    }
+  }
   const msg = info?.message ?? info ?? {};
 
   let email =
@@ -149,24 +170,73 @@ export async function GET(req) {
     roles.some((r) => /^(Administrator|System Manager)$/i.test(String(r)));
 
   if (!fullName && email) fullName = email.split("@")[0];
-  const res = await fetch(
-    `${ERP_BASE}/api/method/erpnext.api.get_user_information`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ user_id: userId }),
+  // Try direct HTTP call first, fallback to proxy if needed
+  let text = { message: [] };
+  try {
+    const res = await fetch(
+      `${ERP_BASE}/api/method/frappe.api.api.get_user_information`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ user_id: userId }),
+      }
+    );
+    text = await res.json();
+  } catch (error) {
+    console.log("Direct POST HTTP call failed, trying proxy:", error.message);
+    try {
+      const res = await fetch(`${req.nextUrl.origin}/api/admin/user-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      text = res.ok ? await res.json() : { message: [] };
+    } catch (proxyError) {
+      console.error("Proxy POST call also failed:", proxyError.message);
     }
-  );
-  const text = await res.json();
+  }
+
+  // Debug log เพื่อตรวจสอบ response
+  console.log("Debug API Response:", {
+    text: text,
+    message: text.message,
+    messageLength: text.message?.length,
+    isAdminValue: text.message?.[5],
+    isAdminType: typeof text.message?.[5],
+    userId: userId,
+    roles: roles,
+  });
+
+  // ตรวจสอบ isAdmin จากหลายแหล่ง
+  let isAdminFromAPI = false;
+  if (text.message && Array.isArray(text.message) && text.message.length > 5) {
+    const apiAdminValue = text.message[5];
+    isAdminFromAPI =
+      Boolean(apiAdminValue) || apiAdminValue === "true" || apiAdminValue === 1;
+  }
+
+  // รวมการตรวจสอบจาก roles และ API response
+  const finalIsAdmin = isAdmin || isAdminFromAPI;
+
   return NextResponse.json({
     ok: true,
     user: {
       email: email || "",
       fullName: fullName || "",
       phone: phone || "",
-      isAdmin: text.message[5],
+      isAdmin: finalIsAdmin,
     },
-    raw: { userId, roles, tried },
+    raw: {
+      userId,
+      roles,
+      tried,
+      debug: {
+        apiResponse: text,
+        isAdminFromRoles: isAdmin,
+        isAdminFromAPI: isAdminFromAPI,
+        finalIsAdmin: finalIsAdmin,
+      },
+    },
   });
 }

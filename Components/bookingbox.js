@@ -1,9 +1,11 @@
+// Components/BookingBox.jsx
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { carTypes } from "@/data/carTypes";
 
+/* map ประเภทรถ -> ftype ของ ERP */
 const carTypeToFType = {
   any: undefined,
   eco: "ECO",
@@ -13,7 +15,7 @@ const carTypeToFType = {
   van: "VAN",
 };
 
-// รวม date + time เป็น ISO (เวลาเครื่องผู้ใช้) → คืน ISO (UTC)
+// รวม date + time เป็น ISO (ตามโซนเวลาเครื่อง) → คืน ISO (UTC)
 function toLocalISO(dateStr, timeStr) {
   const [y, m, d] = (dateStr || "").split("-").map(Number);
   const [hh = 0, mm = 0] = (timeStr || "00:00").split(":").map(Number);
@@ -21,35 +23,134 @@ function toLocalISO(dateStr, timeStr) {
   const dt = new Date(y, (m || 1) - 1, d, hh, mm, 0, 0);
   return Number.isNaN(dt.getTime()) ? "" : dt.toISOString();
 }
-
 function clampTime(t = "") {
   if (!/^\d{2}:\d{2}$/.test(t)) return "01:00";
   return t < "01:00" ? "01:00" : t > "23:59" ? "23:59" : t;
 }
 
-export default function BookingBox({ onSearch }) {
+// แปลงข้อมูลจาก URL parameters กลับเป็นรูปแบบฟอร์ม
+function fromURLParams(searchParams) {
+  const pickupAt =
+    searchParams.get("pickupAt") || searchParams.get("pickup_at");
+  const returnAt =
+    searchParams.get("dropoffAt") || searchParams.get("return_at");
+
+  // แปลง ISO string เป็น date และ time
+  const parseDateTime = (isoString) => {
+    if (!isoString) return { date: "", time: "01:00" };
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return { date: "", time: "01:00" };
+
+      const pad = (n) => String(n).padStart(2, "0");
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+        d.getDate()
+      )}`;
+      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return { date, time };
+    } catch {
+      return { date: "", time: "01:00" };
+    }
+  };
+
+  const pickupDateTime = parseDateTime(pickupAt);
+  const returnDateTime = parseDateTime(returnAt);
+
+  // แปลง ftype กลับเป็น carType
+  const ftypeToCarType = {
+    ECO: "eco",
+    SEDAN: "sedan",
+    SUV: "suv",
+    PICKUP: "pickup",
+    VAN: "van",
+  };
+
+  return {
+    pickupLocation:
+      searchParams.get("pickupLocation") ||
+      searchParams.get("pickup_location") ||
+      "",
+    dropoffLocation:
+      searchParams.get("dropoffLocation") ||
+      searchParams.get("dropoff_location") ||
+      "",
+    returnSame:
+      searchParams.get("returnSame") !== "false" &&
+      searchParams.get("return_same") !== "false",
+    pickupDate: pickupDateTime.date,
+    pickupTime: pickupDateTime.time,
+    returnDate: returnDateTime.date,
+    returnTime: returnDateTime.time,
+    carType: ftypeToCarType[searchParams.get("ftype")] || "any",
+    passengers: Number(searchParams.get("passengers")) || 1,
+    promo: searchParams.get("promo") || "",
+  };
+}
+
+/**
+ * BookingBox (Reusable)
+ * props:
+ *  - onSearch(payload)         : callback (optional)
+ *  - pickupLocation            : string (optional, พรีฟิล)
+ *  - setPickupLocation(v)      : fn (optional, bubble ค่ากลับขึ้น parent)
+ *  - pushToCars                : boolean (default true) จะ router.push ไป /cars ให้เลย
+ *  - defaultShowMore           : boolean (optional) เปิดส่วนเสริมไว้ก่อน
+ */
+export default function BookingBox({
+  onSearch,
+  pickupLocation = "",
+  setPickupLocation,
+  pushToCars = true,
+  defaultShowMore = false,
+}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ดึงข้อมูลจาก URL parameters มาใส่ในฟอร์ม
+  const urlData = fromURLParams(searchParams);
 
   const [form, setForm] = useState({
-    pickupLocation: "",
-    returnSame: true,
-    dropoffLocation: "",
-    pickupDate: "",
-    pickupTime: "01:00",
-    returnDate: "",
-    returnTime: "23:59",
-    carType: "any",
-    passengers: 1,
-    promo: "",
+    pickupLocation: pickupLocation || urlData.pickupLocation,
+    returnSame: urlData.returnSame,
+    dropoffLocation: urlData.dropoffLocation,
+    pickupDate: urlData.pickupDate,
+    pickupTime: urlData.pickupTime,
+    returnDate: urlData.returnDate,
+    returnTime: urlData.returnTime,
+    carType: urlData.carType,
+    passengers: urlData.passengers,
+    promo: urlData.promo,
   });
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  // ✅ sync ค่า pickupLocation จาก prop แบบถูกต้อง (เลี่ยง setState ระหว่าง render)
+  useEffect(() => {
+    setForm((prev) =>
+      prev.pickupLocation === (pickupLocation || "")
+        ? prev
+        : { ...prev, pickupLocation: pickupLocation || "" }
+    );
+  }, [pickupLocation]);
+
+  // ✅ อัปเดตฟอร์มเมื่อ URL parameters เปลี่ยน
+  useEffect(() => {
+    const newUrlData = fromURLParams(searchParams);
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      pickupLocation: pickupLocation || newUrlData.pickupLocation,
+      returnSame: newUrlData.returnSame,
+      dropoffLocation: newUrlData.dropoffLocation,
+      pickupDate: newUrlData.pickupDate,
+      pickupTime: newUrlData.pickupTime,
+      returnDate: newUrlData.returnDate,
+      returnTime: newUrlData.returnTime,
+      carType: newUrlData.carType,
+      passengers: newUrlData.passengers,
+      promo: newUrlData.promo,
     }));
-  };
+  }, [searchParams, pickupLocation]);
+
+  // ✅ state สำหรับเปิด–ปิด "ตัวเลือกเพิ่มเติม"
+  const [showMore, setShowMore] = useState(!!defaultShowMore);
 
   const canSubmit = useMemo(() => {
     const required = [
@@ -62,10 +163,16 @@ export default function BookingBox({ onSearch }) {
     return required.every((k) => !!form[k]);
   }, [form]);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const v = type === "checkbox" ? checked : value;
+    setForm((prev) => ({ ...prev, [name]: v }));
+    if (name === "pickupLocation") setPickupLocation?.(v);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 1) เช็คฟิลด์จำเป็น
     const required = [
       "pickupLocation",
       "pickupDate",
@@ -79,7 +186,6 @@ export default function BookingBox({ onSearch }) {
       return;
     }
 
-    // 2) เช็คช่วงเวลา
     const pickupISO = toLocalISO(form.pickupDate, clampTime(form.pickupTime));
     const returnISO = toLocalISO(form.returnDate, clampTime(form.returnTime));
     if (
@@ -91,7 +197,6 @@ export default function BookingBox({ onSearch }) {
       return;
     }
 
-    // 3) เตรียม payload
     const payload = {
       pickup_location: form.pickupLocation,
       dropoff_location: form.returnSame
@@ -105,252 +210,278 @@ export default function BookingBox({ onSearch }) {
         ? { ftype: carTypeToFType[form.carType] }
         : {}),
       _raw: { ...form },
-      return_same: form.returnSame, // เผื่อฝั่งรับเป็น snake_case
+      return_same: form.returnSame,
     };
 
-    // 4) query ไป /cars
-    const q = new URLSearchParams();
-    if (payload.pickup_at) q.set("pickup_at", payload.pickup_at);
-    if (payload.return_at) q.set("return_at", payload.return_at);
-    if (payload.passengers) q.set("passengers", String(payload.passengers));
-    if (payload.promo) q.set("promo", payload.promo);
-    if (payload.ftype) q.set("ftype", payload.ftype);
+    onSearch?.(payload);
 
-    q.set("pickupLocation", form.pickupLocation);
-    if (!form.returnSame && form.dropoffLocation) {
-      q.set("dropoffLocation", form.dropoffLocation);
+    if (pushToCars) {
+      const q = new URLSearchParams();
+      if (payload.pickup_at) q.set("pickup_at", payload.pickup_at);
+      if (payload.return_at) q.set("return_at", payload.return_at);
+      if (payload.passengers) q.set("passengers", String(payload.passengers));
+      if (payload.promo) q.set("promo", payload.promo);
+      if (payload.ftype) q.set("ftype", payload.ftype);
+      q.set("pickupLocation", form.pickupLocation);
+      if (!form.returnSame && form.dropoffLocation) {
+        q.set("dropoffLocation", form.dropoffLocation);
+      }
+      q.set("returnSame", String(form.returnSame));
+      router.push(`/cars?${q.toString()}`);
     }
-    q.set("returnSame", String(form.returnSame));
-
-    try {
-      onSearch?.(payload);
-    } catch (err) {
-      console.error("onSearch error:", err);
-    }
-
-    router.push(`/cars?${q.toString()}`);
-    console.log("Booking search payload:", payload);
   };
 
   return (
-    <section className="w-full text-black pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
-      <div className="mx-auto w-full max-w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
-        <div className="rounded-2xl shadow-lg border border-gray-200 bg-white/95 backdrop-blur">
-          <div className="overflow-hidden rounded-2xl">
-            <form
-              onSubmit={handleSubmit}
-              className="w-full box-border p-4 sm:p-5 md:p-6 lg:p-8"
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl bg-white/10 backdrop-blur-md shadow-2xl border border-white/20 px-3 sm:px-4 py-2 text-white"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 items-stretch">
+        {/* สถานที่ */}
+        <div className="lg:col-span-5">
+          <label className="sr-only">สถานที่รับรถ</label>
+          <div className="h-14 w-full rounded-xl border border-white/30 focus-within:ring-2 focus-within:ring-yellow-400/40 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-5 h-5 text-yellow-400"
+              fill="currentColor"
             >
-              <div className="mb-4 md:mb-6 flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight">
-                  ค้นหายานพาหนะ
-                </h2>
+              <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5Z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="สถานที่รับรถ (เช่น สนามบินเชียงใหม่)"
+              className="w-full bg-transparent outline-none placeholder:text-slate-300 text-white"
+              name="pickupLocation"
+              value={form.pickupLocation}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* toggle คืนรถคนละที่ */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2">
+              <input
+                id="returnSame"
+                type="checkbox"
+                name="returnSame"
+                checked={form.returnSame}
+                onChange={handleChange}
+                className="rounded border-white/40 text-yellow-400 focus:ring-yellow-400 bg-white/10"
+              />
+              <span className="text-sm text-slate-200">คืนรถจุดเดิม</span>
+            </label>
+
+            <div
+              className={[
+                "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+                form.returnSame
+                  ? "grid-rows-[0fr] opacity-0 pointer-events-none"
+                  : "grid-rows-[1fr] opacity-100",
+                "w-full sm:flex-1",
+              ].join(" ")}
+            >
+              <div className="overflow-hidden">
+                <input
+                  type="text"
+                  name="dropoffLocation"
+                  placeholder="จุดคืนรถ"
+                  value={form.dropoffLocation}
+                  onChange={handleChange}
+                  className="mt-2 sm:mt-0 w-full sm:min-w-[220px] rounded-lg border border-white/30 px-3 py-1.5 text-sm bg-white/10 backdrop-blur-sm text-white placeholder:text-slate-300 hover:bg-white/15 transition-all duration-300"
+                />
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* กริดหลัก: มือถือ 1 คอลัมน์ / md=มือถือแนวนอน+ไอแพด 6 / xl เดสก์ท็อป 12 */}
-              <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-4 md:gap-5 min-w-0">
-                {/* Pickup Location */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    จุดรับรถ *
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <input
-                      type="text"
-                      name="pickupLocation"
-                      placeholder="เช่น สนามบินหาดใหญ่"
-                      value={form.pickupLocation}
-                      onChange={handleChange}
-                      autoComplete="off"
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                      required
-                    />
-                  </div>
-                  <label className="mt-2 inline-flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="returnSame"
-                      checked={form.returnSame}
-                      onChange={handleChange}
-                      className="rounded border-gray-500 text-black focus:ring-black"
-                    />
-                    คืนรถที่จุดเดิม
-                  </label>
-                </div>
-
-                {/* Drop-off Location */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    จุดคืนรถ {form.returnSame ? "(ล็อกเป็นจุดรับรถ)" : ""}
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <input
-                      type="text"
-                      name="dropoffLocation"
-                      placeholder="เช่น สาขาหาดใหญ่"
-                      value={
-                        form.returnSame
-                          ? form.pickupLocation
-                          : form.dropoffLocation
-                      }
-                      onChange={handleChange}
-                      disabled={form.returnSame}
-                      autoComplete="off"
-                      className={`w-full rounded-lg md:rounded-xl px-3 py-2 h-11 appearance-none border ${
-                        form.returnSame
-                          ? "bg-gray-100 border-gray-300 text-gray-500"
-                          : "border-gray-500 focus:border-black focus:ring-black"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Car Type */}
-                <div className="md:col-span-6 xl:col-span-4 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    ประเภทรถ
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <select
-                      name="carType"
-                      value={form.carType}
-                      onChange={handleChange}
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                    >
-                      {carTypes.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* ===== กลุ่ม วันที่/เวลา รับรถ : กริดย่อย 2 ช่อง ===== */}
-                <div className="md:col-span-6 xl:col-span-6 min-w-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        วันที่รับรถ *
-                      </label>
-                      <input
-                        type="date"
-                        name="pickupDate"
-                        value={form.pickupDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                        required
-                      />
-                    </div>
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        เวลารับรถ *
-                      </label>
-                      <input
-                        type="time"
-                        name="pickupTime"
-                        value={form.pickupTime}
-                        onChange={handleChange}
-                        step="60"
-                        min="01:00"
-                        max="23:59"
-                        lang="en-GB"
-                        inputMode="numeric"
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none text-[16px]"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ===== กลุ่ม วันที่/เวลา คืนรถ : กริดย่อย 2 ช่อง ===== */}
-                <div className="md:col-span-6 xl:col-span-6 min-w-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        วันที่คืนรถ *
-                      </label>
-                      <input
-                        type="date"
-                        name="returnDate"
-                        value={form.returnDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                        required
-                      />
-                    </div>
-                    <div className="relative focus-within:z-10">
-                      <label className="block text-sm font-medium mb-1">
-                        เวลาคืนรถ *
-                      </label>
-                      <input
-                        type="time"
-                        name="returnTime"
-                        value={form.returnTime}
-                        onChange={handleChange}
-                        step="60"
-                        min="01:00"
-                        max="23:59"
-                        lang="en-GB"
-                        inputMode="numeric"
-                        className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none text-[16px]"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Passengers */}
-                <div className="md:col-span-3 xl:col-span-3 min-w-0">
-                  <label className="block text-sm font-medium mb-1">
-                    ผู้โดยสาร
-                  </label>
-                  <div className="relative focus-within:z-10">
-                    <select
-                      name="passengers"
-                      value={form.passengers}
-                      onChange={handleChange}
-                      className="w-full rounded-lg md:rounded-xl border border-gray-500 focus:border-black focus:ring-black px-3 py-2 h-11 appearance-none"
-                    >
-                      {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <div className="md:col-span-6 xl:col-span-12 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 md:px-6 py-3 rounded-xl md:rounded-2xl bg-black text-white font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-[.99] transition"
-                    title={!canSubmit ? "กรอกข้อมูลที่จำเป็นให้ครบก่อน" : ""}
-                  >
-                    ค้นหารถว่าง
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="h-5 w-5"
-                    >
-                      <path d="M13.5 4.5a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 1 .75.75v5.25a.75.75 0 0 1-1.5 0V6.31l-7.22 7.22a.75.75 0 1 1-1.06-1.06l7.22-7.22h-3.44a.75.75 0 0 1-.75-.75Z" />
-                      <path d="M3.75 5.25A2.25 2.25 0 0 1 6 3h5.25a.75.75 0 0 1 0 1.5H6A.75.75 0 0 0 5.25 5.25v12A.75.75 0 0 0 6 18h12a.75.75 0 0 0 .75-.75V12a.75.75 0 0 1 1.5 0v5.25A2.25 2.25 0 0 1 18 19.5H6A2.25 2.25 0 0 1 3.75 17.25v-12Z" />
-                    </svg>
-                  </button>
-                </div>
+        {/* รับรถ (วัน/เวลา) */}
+        <div className="lg:col-span-3">
+          <div className="h-14 w-full rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center hover:bg-white/15 transition-all duration-300">
+            <div className="w-full grid grid-cols-2 gap-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-300">วันรับรถ</span>
+                <input
+                  type="date"
+                  name="pickupDate"
+                  value={form.pickupDate}
+                  onChange={handleChange}
+                  className="outline-none bg-transparent text-[15px] text-white"
+                  required
+                />
               </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-300">เวลา</span>
+                <input
+                  type="time"
+                  name="pickupTime"
+                  value={form.pickupTime}
+                  onChange={handleChange}
+                  step="60"
+                  min="01:00"
+                  max="23:59"
+                  lang="en-GB"
+                  inputMode="numeric"
+                  className="outline-none bg-transparent text-[15px] text-white"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <p className="mt-3 text-xs">
-                *
-                กรุณากรอกข้อมูลที่จำเป็นให้ครบเพื่อค้นหารถว่างตามช่วงเวลาที่คุณต้องการ
-              </p>
-            </form>
+        {/* คืนรถ (วัน/เวลา) */}
+        <div className="lg:col-span-3">
+          <div className="h-14 w-full rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-3 sm:px-4 flex items-center hover:bg-white/15 transition-all duration-300">
+            <div className="w-full grid grid-cols-2 gap-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-300">วันคืนรถ</span>
+                <input
+                  type="date"
+                  name="returnDate"
+                  value={form.returnDate}
+                  onChange={handleChange}
+                  className="outline-none bg-transparent text-[15px] text-white"
+                  required
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-300">เวลา</span>
+                <input
+                  type="time"
+                  name="returnTime"
+                  value={form.returnTime}
+                  onChange={handleChange}
+                  step="60"
+                  min="01:00"
+                  max="23:59"
+                  lang="en-GB"
+                  inputMode="numeric"
+                  className="outline-none bg-transparent text-[15px] text-white"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ปุ่มค้นหา */}
+        <div className="lg:col-span-1 flex">
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full h-14 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:from-amber-500 hover:to-yellow-400 disabled:bg-slate-600 disabled:text-slate-400 inline-flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 disabled:scale-100"
+            title={!canSubmit ? "กรอกข้อมูลที่จำเป็นให้ครบก่อน" : ""}
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+              <path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4a1 1 0 0 0 1.4-1.4l-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4Z" />
+            </svg>
+            ค้นหา
+          </button>
+        </div>
+      </div>
+
+      {/* แถวปุ่ม toggle + hint */}
+      <div className="mt-2 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setShowMore((s) => !s)}
+          aria-expanded={showMore}
+          className="text-sm text-slate-200 hover:text-yellow-400 inline-flex items-center gap-1 transition-colors duration-300"
+        >
+          ตัวเลือกเพิ่มเติม
+          <svg
+            viewBox="0 0 24 24"
+            className={`w-4 h-4 transition ${showMore ? "rotate-180" : ""}`}
+            fill="currentColor"
+          >
+            <path d="M12 15.5 5 8.5h14l-7 7Z" />
+          </svg>
+        </button>
+
+        <div className="text-xs text-slate-300">
+          * โปรดเลือกวัน-เวลาให้ครบเพื่อค้นหารถว่าง
+        </div>
+      </div>
+
+      {/* ส่วน “ตัวเลือกเพิ่มเติม” พร้อมแอนิเมชันลื่น ๆ */}
+      <div
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${
+          showMore ? "max-h-[420px] opacity-100 pt-3" : "max-h-0 opacity-0 pt-0"
+        }`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-sm mb-1 text-white">ประเภทรถ</label>
+            <select
+              name="carType"
+              value={form.carType}
+              onChange={handleChange}
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
+              style={{
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              {carTypes.map((c) => (
+                <option
+                  key={c.value}
+                  value={c.value}
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    padding: "8px 12px",
+                  }}
+                >
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1 text-white">ผู้โดยสาร</label>
+            <select
+              name="passengers"
+              value={form.passengers}
+              onChange={handleChange}
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
+              style={{
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
+                <option
+                  key={n}
+                  value={n}
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    padding: "8px 12px",
+                  }}
+                >
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1 text-white">
+              โค้ดโปรโมชัน
+            </label>
+            <input
+              type="text"
+              name="promo"
+              value={form.promo}
+              onChange={handleChange}
+              placeholder="กรอกถ้ามี"
+              className="w-full h-11 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm text-white px-3 placeholder:text-slate-300 hover:bg-white/15 transition-all duration-300 focus:ring-2 focus:ring-yellow-400/40 focus:outline-none"
+            />
           </div>
         </div>
       </div>
-    </section>
+    </form>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160"
 ).replace(/\/+$/, "");
 
 async function postERP(url, cookie, data) {
@@ -48,7 +48,7 @@ export async function POST(req) {
     };
 
     const out = await postERP(
-      `${ERP_BASE}/api/method/erpnext.api.create_rental`,
+      `${ERP_BASE}/api/method/frappe.api.api.create_rental`,
       cookie,
       payload
     );

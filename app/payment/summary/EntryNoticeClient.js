@@ -31,19 +31,33 @@ export default function EntryNoticeClient() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={dismiss} />
       <div
-        className="relative z-10 w-[92%] max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={dismiss}
+      />
+      <div
+        className="relative z-10 w-[92%] max-w-md rounded-2xl sm:rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md p-4 sm:p-5 shadow-2xl"
         role="dialog"
         aria-modal="true"
       >
-        <h3 className="text-lg font-bold text-slate-900">แจ้งเตือน</h3>
-        <p className="mt-2 text-sm text-slate-700">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center">
+          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg mr-2 sm:mr-3 flex items-center justify-center">
+            <svg
+              className="w-3 h-3 sm:w-4 sm:h-4 text-black"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+          </div>
+          แจ้งเตือน
+        </h3>
+        <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-slate-300">
           กรุณาบันทึกภาพหน้าจอเพื่อเป็นหลักฐานการจองด้วยค่ะ
         </p>
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-4 sm:mt-5 flex justify-end gap-2">
           <button
-            className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50"
+            className="px-3 sm:px-4 py-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-all duration-300 text-sm"
             onClick={dismiss}
           >
             รับทราบ

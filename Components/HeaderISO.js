@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const ERP_BASE = (
-  process.env.NEXT_PUBLIC_ERP_BASE || "https://demo.erpeazy.com"
+  process.env.NEXT_PUBLIC_ERP_BASE || "http://203.154.83.160"
 ).replace(/\/+$/, "");
 
 export default function Header() {
@@ -24,13 +24,13 @@ export default function Header() {
     return { uid, name: nameFromStorage || fallback };
   };
 
-  async function hydrateFromERP() {
+  const hydrateFromERP = useCallback(async () => {
     try {
       // 1) หา user จาก localStorage; ถ้าไม่มีให้ถาม ERP ก่อน
       let uid = localStorage.getItem("vrent_user_id") || "";
       if (!uid) {
         const whoRes = await fetch(
-          `${ERP_BASE}/api/method/frappe.auth.get_logged_user`,
+          `http://203.154.83.160/api/method/frappe.auth.get_logged_user`,
           { method: "GET", credentials: "include", cache: "no-store" }
         );
         const whoJson = await whoRes.json().catch(() => ({}));
@@ -44,7 +44,7 @@ export default function Header() {
 
       // 2) เรียก get_user_information พร้อม query user_id
       const u = new URL(
-        `${ERP_BASE}/api/method/erpnext.api.get_user_information`
+        `http://203.154.83.160/api/method/frappe.api.api.get_user_information`
       );
       u.searchParams.set("user_id", uid);
       const r = await fetch(u.toString(), {
@@ -86,7 +86,7 @@ export default function Header() {
     } catch (e) {
       // ไม่มี session/เรียกไม่สำเร็จ ก็ข้ามไปเงียบ ๆ
     }
-  }
+  }, []);
 
   useEffect(() => {
     const { uid, name } = computeFromStorage();
@@ -102,13 +102,13 @@ export default function Header() {
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [hydrateFromERP]);
 
   const handleSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      await fetch(`${ERP_BASE}/api/method/logout`, {
+      await fetch(`http://203.154.83.160/api/method/logout`, {
         method: "GET",
         credentials: "include",
       });
@@ -131,16 +131,31 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full bg-black text-white px-6 py-4 flex items-center justify-between shadow-md">
-      <div className="text-2xl font-bold">
-        <Link href="/mainpage">V-Rent</Link>
+    <header
+      className="w-full bg-white/10 backdrop-blur-md text-white px-6 py-4 flex items-center justify-between border-0 shadow-lg ring-1 ring-white/20 outline-none relative z-20"
+      style={{
+        boxShadow:
+          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      }}
+    >
+      <div className="text-3xl font-bold">
+        <Link
+          href="/mainpage"
+          className="flex items-center gap-1 hover:scale-105 transition-transform duration-300"
+        >
+          <span>V</span>
+          <span className="bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+            -
+          </span>
+          <span>Rent</span>
+        </Link>
       </div>
 
       <div className="flex items-center space-x-3">
         {userId ? (
           <>
             <span
-              className="px-3 py-1.5 text-sm text-gray-300 rounded-md bg-gray-800 cursor-default select-none"
+              className="px-3 py-1.5 text-sm text-slate-200 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 cursor-default select-none"
               title="ชื่อผู้ใช้"
             >
               {displayName || userId}
@@ -149,7 +164,7 @@ export default function Header() {
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="px-3 py-1.5 text-sm rounded-md bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-60 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-md bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700 disabled:opacity-60 transition-all duration-300 transform hover:scale-105"
             >
               {signingOut ? "กำลังออก..." : "Sign out"}
             </button>
@@ -157,7 +172,7 @@ export default function Header() {
         ) : (
           <Link
             href="/Login"
-            className="px-3 py-1.5 text-sm text-gray-200 rounded-md hover:bg-gray-800 transition-colors"
+            className="px-3 py-1.5 text-sm text-slate-200 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-yellow-400/30 transition-all duration-300"
           >
             Login
           </Link>

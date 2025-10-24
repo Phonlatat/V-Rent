@@ -3,8 +3,13 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: "http",
+        hostname: "203.154.83.160",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
-        hostname: "demo.erpeazy.com",
+        hostname: "203.154.83.160",
         pathname: "/**",
       },
       {
@@ -12,7 +17,6 @@ const nextConfig = {
         hostname: "v-rent-app-916879005749.asia-southeast1.run.app",
         pathname: "/**",
       },
-      // ถ้ามีโดเมนรูปอื่น ๆ ใส่เพิ่มที่นี่
     ],
     unoptimized: true,
   },
